@@ -110,7 +110,7 @@ void ChMaterialSurfaceSMC::ArchiveIN(ChArchiveIn& marchive) {
 // -----------------------------------------------------------------------------
 
 ChMaterialCompositeSMC::ChMaterialCompositeSMC()
-    : E_eff(0), G_eff(0), mu_eff(0), muR_eff(0), cr_eff(0), adhesion_eff(0), adhesionMultDMT_eff(0), kn(0), kt(0), gn(0), gt(0) {}
+    : E_eff(0), G_eff(0), mu_eff(0), muRoll_eff(0), muSpin_eff(0), cr_eff(0), adhesion_eff(0), adhesionMultDMT_eff(0), kn(0), kt(0), gn(0), gt(0) {}
 
 ChMaterialCompositeSMC::ChMaterialCompositeSMC(ChMaterialCompositionStrategy<float>* strategy,
                                                std::shared_ptr<ChMaterialSurfaceSMC> mat1,

@@ -56,6 +56,8 @@ void function_CalcContactForces(
     bool use_mat_props,                                   // flag specifying how coefficients are obtained
     real char_vel,                                        // characteristic velocity (Hooke)
     real min_slip_vel,                                    // threshold tangential velocity
+    real min_roll_vel,                                    // threshold rolling velocity
+    real min_spin_vel,                                    // threshold spinning velocity
     real dT,                                              // integration time step
     real* mass,                                           // body masses
     real3* pos,                                           // body positions
@@ -329,6 +331,29 @@ void function_CalcContactForces(
                 real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
                 real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
+				// Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
+                real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
+                if (Length(v_rot) > min_roll_vel) {
+                    real3 torque_buff =
+                        muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
+                    torque1_loc += torque_buff;
+                    torque2_loc += torque_buff;
+                }
+
+                // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
+                // r_c is the radius of the circle resulting from the intersecting body surfaces
+                if (Length(o_body2 - o_body1) > min_spin_vel) {
+                    double R1 = Length(pt1_loc), R2 = Length(pt2_loc);
+                    double R_center = (R1 * R1 - R2 * R2) / (2 * (R1 + R2 - delta_n)) + 0.5 * (R1 + R2 - delta_n);
+                    double r_c = sqrt(pow(R1, 2) - pow(R_center, 2));
+                    real3 torque_buff =
+                        muSpin_eff * r_c *
+                        (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / Length(o_body1 - o_body2)) *
+                        normal[index];
+                    torque1_loc -= torque_buff;
+                    torque2_loc -= torque_buff;
+                }
+
                 ext_body_id[2 * index] = body1;
                 ext_body_id[2 * index + 1] = body2;
                 ext_body_force[2 * index] = -force;
@@ -420,6 +445,27 @@ void function_CalcContactForces(
     real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
     real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
+	// Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
+    real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
+    if (Length(v_rot) > min_roll_vel) {
+        real3 torque_buff = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
+        torque1_loc += torque_buff;
+        torque2_loc += torque_buff;
+    }
+
+    // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
+    // r_c is the radius of the circle resulting from the intersecting body surfaces
+    if (Length(o_body2 - o_body1) > min_spin_vel) {
+        double R1 = Length(pt1_loc), R2 = Length(pt2_loc);
+        double R_center = (R1 * R1 - R2 * R2) / (2 * (R1 + R2 - delta_n)) + 0.5 * (R1 + R2 - delta_n);
+        double r_c = sqrt(pow(R1, 2) - pow(R_center, 2));
+        real3 torque_buff = muSpin_eff * r_c *
+                            (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / Length(o_body1 - o_body2)) *
+                            normal[index];
+        torque1_loc -= torque_buff;
+        torque2_loc -= torque_buff;
+    }
+
     // Store body forces and torques, duplicated for the two bodies.
     ext_body_id[2 * index] = body1;
     ext_body_id[2 * index + 1] = body2;
@@ -445,7 +491,8 @@ void ChIterativeSolverParallelSMC::host_CalcContactForces(custom_vector<int>& ex
             data_manager->settings.solver.adhesion_force_model, data_manager->settings.solver.tangential_displ_mode,
             data_manager->composition_strategy.get(), data_manager->settings.solver.use_material_properties,
             data_manager->settings.solver.characteristic_vel, data_manager->settings.solver.min_slip_vel,
-            data_manager->settings.step_size, data_manager->host_data.mass_rigid.data(),
+            data_manager->settings.solver.min_roll_vel, data_manager->settings.solver.min_spin_vel,
+			data_manager->settings.step_size, data_manager->host_data.mass_rigid.data(),
             data_manager->host_data.pos_rigid.data(), data_manager->host_data.rot_rigid.data(),
             data_manager->host_data.v.data(), data_manager->host_data.elastic_moduli.data(),
             data_manager->host_data.cr.data(), data_manager->host_data.smc_coeffs.data(),

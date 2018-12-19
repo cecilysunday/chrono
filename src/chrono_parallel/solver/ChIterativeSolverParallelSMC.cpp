@@ -282,7 +282,7 @@ void function_CalcContactForces(
 
         case ChSystemSMC::ContactForceModel::Hertz:
             if (use_mat_props) {
-                real sqrt_Rd = Sqrt(eff_radius[index] * delta_n);
+                real sqrt_Rd = Sqrt(eff_radius[index]);
                 real Sn = 2 * E_eff * sqrt_Rd;
                 real St = 8 * G_eff * sqrt_Rd;
                 real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
@@ -292,7 +292,7 @@ void function_CalcContactForces(
                 gn = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
                 gt = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff);
             } else {
-                real tmp = eff_radius[index] * Sqrt(delta_n);
+                real tmp = eff_radius[index];
                 kn = tmp * user_kn;
                 kt = tmp * user_kt;
                 gn = tmp * m_eff * user_gn;
@@ -303,74 +303,22 @@ void function_CalcContactForces(
 
         case ChSystemSMC::ContactForceModel::PlainCoulomb:
             if (use_mat_props) {
-                real sqrt_Rd = Sqrt(delta_n);
-                real Sn = 2 * E_eff * sqrt_Rd;
-                real St = 8 * G_eff * sqrt_Rd;
+                real Sn = 2 * E_eff;
+                real St = 8 * G_eff;
                 real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                 real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                 kn = (2.0 / 3) * Sn;
+                kt = 0;
                 gn = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
+                gt = 0;
             } else {
-                real tmp = Sqrt(delta_n);
-                kn = tmp * user_kn;
-                gn = tmp * user_gn;
+                kn = user_kn;
+                kt = 0;
+                gn = user_gn;
+                gt = 0;
             }
 
-            kt = 0;
-            gt = 0;
-
-            {
-                real forceN_mag = kn * delta_n - gn * relvel_n_mag;
-                if (forceN_mag < 0)
-                    forceN_mag = 0;
-                real forceT_mag = mu_eff * Tanh(5.0 * relvel_t_mag) * forceN_mag;
-                switch (adhesion_model) {
-                    case ChSystemSMC::AdhesionForceModel::Constant:
-                        forceN_mag -= adhesion_eff;
-                        break;
-                    case ChSystemSMC::AdhesionForceModel::DMT:
-                        forceN_mag -= adhesionMultDMT_eff * Sqrt(eff_radius[index]);
-                        break;
-                }
-                real3 force = forceN_mag * normal[index];
-                if (relvel_t_mag >= (real)1e-4)
-                    force -= (forceT_mag / relvel_t_mag) * relvel_t;
-
-                real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
-                real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
-
-				// Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
-                real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
-                if (Length(v_rot) > min_roll_vel) {
-                    real3 torque_buff =
-                        muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
-                    torque1_loc += torque_buff;
-                    torque2_loc += torque_buff;
-                }
-
-                // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
-                // r_c is the radius of the circle resulting from the intersecting body surfaces
-                if (Length(o_body2 - o_body1) > min_spin_vel) {
-                    double R1 = Length(pt1_loc), R2 = Length(pt2_loc);
-                    double R_center = (R1 * R1 - R2 * R2) / (2 * (R1 + R2 - delta_n)) + 0.5 * (R1 + R2 - delta_n);
-                    double r_c = sqrt(pow(R1, 2) - pow(R_center, 2));
-                    real3 torque_buff =
-                        muSpin_eff * r_c *
-                        (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / Length(o_body1 - o_body2)) *
-                        normal[index];
-                    torque1_loc -= torque_buff;
-                    torque2_loc -= torque_buff;
-                }
-
-                ext_body_id[2 * index] = body1;
-                ext_body_id[2 * index + 1] = body2;
-                ext_body_force[2 * index] = -force;
-                ext_body_force[2 * index + 1] = force;
-                ext_body_torque[2 * index] = -torque1_loc;
-                ext_body_torque[2 * index + 1] = torque2_loc;
-            }
-
-            return;
+            break;
     }
 
     // Calculate the the normal and tangential contact forces.
@@ -379,9 +327,79 @@ void function_CalcContactForces(
     // The tangential force is a vector with two parts: one depends on the stored
     // contact history tangential (or shear) displacement vector delta_t, and the
     // other depends on the current relative velocity vector (for viscous damping).
-    real forceN_mag = kn * delta_n - gn * relvel_n_mag;
-    real3 forceT_stiff = kt * delta_t;
-    real3 forceT_damp = gt * relvel_t;
+	real forceN_mag;
+    real3 forceT_stiff, forceT_damp;
+
+    switch (contact_model) {
+        case ChSystemSMC::Hooke:
+            forceN_mag = kn * delta_n - gn * relvel_n_mag;
+            forceT_stiff = kt * delta_t;
+            forceT_damp = gt * relvel_t;
+            break;
+
+        case ChSystemSMC::Hertz:
+            forceN_mag = kn * Pow(delta_n, 1.5) - gn * Pow(delta_n, 0.25) * relvel_n_mag;
+            forceT_stiff = kt * Pow(delta_n, 1.5) * delta_t;
+            forceT_damp = gt * Pow(delta_n, 0.25) * relvel_t;
+            break;
+
+        case ChSystemSMC::PlainCoulomb: {
+            forceN_mag = kn * Pow(delta_n, 1.5) - gn * Pow(delta_n, 0.25) * relvel_n_mag;
+            if (forceN_mag < 0)
+                forceN_mag = 0;
+            real forceT_mag = mu_eff * Tanh(5.0 * relvel_t_mag) * forceN_mag;
+            
+			// Include adhesion force.
+			switch (adhesion_model) {
+                case ChSystemSMC::AdhesionForceModel::Constant:
+                    forceN_mag -= adhesion_eff;
+                    break;
+                case ChSystemSMC::AdhesionForceModel::DMT:
+                    forceN_mag -= adhesionMultDMT_eff * Sqrt(eff_radius[index]);
+                    break;
+            }
+			
+			real3 force = forceN_mag * normal[index];
+            if (relvel_t_mag >= (real)1e-4)
+                force -= (forceT_mag / relvel_t_mag) * relvel_t;
+
+            real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
+            real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
+
+            // Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
+            real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
+            if (Length(v_rot) > min_roll_vel) {
+                real3 torque_buff = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
+                torque1_loc += torque_buff;
+                torque2_loc += torque_buff;
+            }
+
+            // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
+            // r_c is the radius of the circle resulting from the intersecting body surfaces
+            if (Length(o_body2 - o_body1) > min_spin_vel) {
+                double R1 = Length(pt1_loc), R2 = Length(pt2_loc);
+                double R_center = (R1 * R1 - R2 * R2) / (2 * (R1 + R2 - delta_n)) + 0.5 * (R1 + R2 - delta_n);
+                double r_c = sqrt(pow(R1, 2) - pow(R_center, 2));
+                real3 torque_buff = muSpin_eff * r_c *
+                                    (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / Length(o_body1 - o_body2)) *
+                                    normal[index];
+                torque1_loc -= torque_buff;
+                torque2_loc -= torque_buff;
+            }
+
+            ext_body_id[2 * index] = body1;
+            ext_body_id[2 * index + 1] = body2;
+            ext_body_force[2 * index] = -force;
+            ext_body_force[2 * index + 1] = force;
+            ext_body_torque[2 * index] = -torque1_loc;
+            ext_body_torque[2 * index + 1] = torque2_loc;
+
+            return;
+        }
+    }
+
+
+
 
     // If the resulting normal force is negative, then the two shapes are
     // moving away from each other so fast that no contact force is generated.

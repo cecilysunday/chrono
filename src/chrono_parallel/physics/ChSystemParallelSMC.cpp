@@ -71,6 +71,8 @@ void ChSystemParallelSMC::AddMaterialSurfaceData(std::shared_ptr<ChBody> newbody
         for (int i = 0; i < max_shear; i++) {
             data_manager->host_data.shear_neigh.push_back(vec3(-1, -1, -1));
             data_manager->host_data.shear_disp.push_back(real3(0, 0, 0));
+            data_manager->host_data.contact_coeff.push_back(real4(0, 0, 0, 0));
+            data_manager->host_data.contact_relvel_init.push_back(0);
         }
     }
 }

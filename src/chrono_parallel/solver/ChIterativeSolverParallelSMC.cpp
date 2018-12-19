@@ -78,12 +78,14 @@ void function_CalcContactForces(
     real3* normal,                                        // contact normal (per contact)
     real* depth,                                          // penetration depth (per contact)
     real* eff_radius,                                     // effective contact radius (per contact)
-    vec3* shear_neigh,      // neighbor list of contacting bodies and shapes (max_shear per body)
-    char* shear_touch,      // flag if contact in neighbor list is persistent (max_shear per body)
-    real3* shear_disp,      // accumulated shear displacement for each neighbor (max_shear per body)
-    int* ext_body_id,       // [output] body IDs (two per contact)
-    real3* ext_body_force,  // [output] body force (two per contact)
-    real3* ext_body_torque  // [output] body torque (two per contact)
+    vec3* shear_neigh,			// neighbor list of contacting bodies and shapes (max_shear per body)
+    char* shear_touch,			// flag if contact in neighbor list is persistent (max_shear per body)
+    real3* shear_disp,			// accumulated shear displacement for each neighbor (max_shear per body)
+    real4* contact_coeff,		// stiffness and damping coefficients per contact pair, calculated at first contact (max_shear per body)
+    real* contact_relvel_init,  // initial relative normal velocity manitude per contact pair, calculated at first contact (max_shear per body)
+	int* ext_body_id,			// [output] body IDs (two per contact)
+    real3* ext_body_force,		// [output] body force (two per contact)
+    real3* ext_body_torque		// [output] body torque (two per contact)
     ) {
     // Identify the two bodies in contact.
     int body1 = body_id[index].x;
@@ -503,7 +505,8 @@ void ChIterativeSolverParallelSMC::host_CalcContactForces(custom_vector<int>& ex
             data_manager->host_data.cptb_rigid_rigid.data(), data_manager->host_data.norm_rigid_rigid.data(),
             data_manager->host_data.dpth_rigid_rigid.data(), data_manager->host_data.erad_rigid_rigid.data(),
             data_manager->host_data.shear_neigh.data(), shear_touch.data(), data_manager->host_data.shear_disp.data(),
-            ext_body_id.data(), ext_body_force.data(), ext_body_torque.data());
+            data_manager->host_data.contact_coeff.data(), data_manager->host_data.contact_relvel_init.data(),
+			ext_body_id.data(), ext_body_force.data(), ext_body_torque.data());
     }
 }
 

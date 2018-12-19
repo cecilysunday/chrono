@@ -35,6 +35,7 @@ class ChApi ChSystemSMC : public ChSystem {
     enum ContactForceModel {
         Hooke,        ///< linear Hookean model
         Hertz,        ///< nonlinear Hertzian model
+        Flores,        ///< nonlinear Hertzian model
         PlainCoulomb  ///< basic tangential force definition for non-granular bodies
     };
 

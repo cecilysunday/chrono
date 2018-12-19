@@ -301,6 +301,25 @@ void function_CalcContactForces(
 
             break;
 
+			case ChSystemSMC::Flores:
+            if (use_mat_props) {
+                real sqrt_R = Sqrt(eff_radius[index]);
+                double cr = (cr_eff < eps) ? eps : cr_eff;
+                cr = (cr_eff > 1 - eps) ? 1 - eps : cr;
+                kn = (4.0 / 3.0) * E_eff * sqrt_R;
+                kt = kn;
+                gn = 8.0 * (1.0 - cr) * kn / (5.0 * cr * relvel_init);
+                gt = gn;
+            } else {
+                real tmp = eff_radius[index];
+                kn = tmp * user_kn;
+                kt = tmp * user_kt;
+                gn = tmp * m_eff * user_gn;
+                gt = tmp * m_eff * user_gt;
+            }
+
+            break;
+
         case ChSystemSMC::ContactForceModel::PlainCoulomb:
             if (use_mat_props) {
                 real Sn = 2 * E_eff;
@@ -339,7 +358,13 @@ void function_CalcContactForces(
 
         case ChSystemSMC::Hertz:
             forceN_mag = kn * Pow(delta_n, 1.5) - gn * Pow(delta_n, 0.25) * relvel_n_mag;
-            forceT_stiff = kt * Pow(delta_n, 1.5) * delta_t;
+            forceT_stiff = kt * Pow(delta_n, 0.5) * delta_t;
+            forceT_damp = gt * Pow(delta_n, 0.25) * relvel_t;
+            break;
+
+		case ChSystemSMC::Flores:
+            forceN_mag = kn * Pow(delta_n, 1.5) - gn * Pow(delta_n, 1.5) * relvel_n_mag;
+            forceT_stiff = kt * Pow(delta_n, 0.5) * delta_t;
             forceT_damp = gt * Pow(delta_n, 0.25) * relvel_t;
             break;
 
@@ -397,9 +422,6 @@ void function_CalcContactForces(
             return;
         }
     }
-
-
-
 
     // If the resulting normal force is negative, then the two shapes are
     // moving away from each other so fast that no contact force is generated.

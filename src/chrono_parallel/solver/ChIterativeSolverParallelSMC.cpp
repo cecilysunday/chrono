@@ -176,6 +176,8 @@ void function_CalcContactForces(
     real gn;
     real gt;
 
+	real relvel_init;
+
     real delta_n = -depth[index];
     real3 delta_t = real3(0);
 
@@ -228,6 +230,7 @@ void function_CalcContactForces(
                     shear_disp[ctIdUnrolled].x = 0;
                     shear_disp[ctIdUnrolled].y = 0;
                     shear_disp[ctIdUnrolled].z = 0;
+                    contact_relvel_init[ctIdUnrolled] = abs(relvel_n_mag);
                     break;
                 }
             }
@@ -249,6 +252,9 @@ void function_CalcContactForces(
             shear_disp[ctSaveId] -= Dot(shear_disp[ctSaveId], normal[index]) * normal[index];
             delta_t = -shear_disp[ctSaveId];
         }
+
+		// Load the initial relative impact velocity from the contact history
+        relvel_init = contact_relvel_init[ctSaveId];
     }
 
     double eps = std::numeric_limits<double>::epsilon();
@@ -257,7 +263,7 @@ void function_CalcContactForces(
         case ChSystemSMC::ContactForceModel::Hooke:
             if (use_mat_props) {
                 real tmp_k = (16.0 / 15) * Sqrt(eff_radius[index]) * E_eff;
-                real v2 = char_vel * char_vel;
+                real v2 = relvel_init * relvel_init;
                 real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                 loge = (cr_eff > 1 - eps) ? Log(1 - eps) : loge;
                 real tmp_g = 1 + Pow(CH_C_PI / loge, 2);

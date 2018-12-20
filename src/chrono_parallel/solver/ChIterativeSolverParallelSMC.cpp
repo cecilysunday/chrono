@@ -173,36 +173,12 @@ void function_CalcContactForces(
 
     // Calculate composite material properties
     // ---------------------------------------
-
-    real m_eff = mass[body1] * mass[body2] / (mass[body1] + mass[body2]);
-
     real mu_eff = strategy->CombineFriction(mu[body1], mu[body2]);
     real muRoll_eff = strategy->CombineFriction(muRoll[body1], muRoll[body2]);
     real muSpin_eff = strategy->CombineFriction(muSpin[body1], muSpin[body2]);
     real adhesion_eff = strategy->CombineCohesion(adhesion[body1], adhesion[body2]);
     real adhesionMultDMT_eff = strategy->CombineAdhesionMultiplier(adhesionMultDMT[body1], adhesionMultDMT[body2]);
     real adhesionSPerko_eff = strategy->CombineAdhesionMultiplier(adhesionSPerko[body1], adhesionSPerko[body2]);
-
-    real E_eff, G_eff, cr_eff;
-    real user_kn, user_kt, user_gn, user_gt;
-
-    if (use_mat_props) {
-        real Y1 = elastic_moduli[body1].x;
-        real Y2 = elastic_moduli[body2].x;
-        real nu1 = elastic_moduli[body1].y;
-        real nu2 = elastic_moduli[body2].y;
-        real inv_E = (1 - nu1 * nu1) / Y1 + (1 - nu2 * nu2) / Y2;
-        real inv_G = 2 * (2 - nu1) * (1 + nu1) / Y1 + 2 * (2 - nu2) * (1 + nu2) / Y2;
-
-        E_eff = 1 / inv_E;
-        G_eff = 1 / inv_G;
-        cr_eff = strategy->CombineRestitution(cr[body1], cr[body2]);
-    } else {
-        user_kn = strategy->CombineStiffnessCoefficient(smc_coeffs[body1].x, smc_coeffs[body2].x);
-        user_kt = strategy->CombineStiffnessCoefficient(smc_coeffs[body1].y, smc_coeffs[body2].y);
-        user_gn = strategy->CombineDampingCoefficient(smc_coeffs[body1].z, smc_coeffs[body2].z);
-        user_gt = strategy->CombineDampingCoefficient(smc_coeffs[body1].w, smc_coeffs[body2].w);
-    }
 
     // Contact force
     // -------------
@@ -216,7 +192,6 @@ void function_CalcContactForces(
     real kt;
     real gn;
     real gt;
-
     real relvel_init;
 
     real delta_n = -depth[index];
@@ -229,11 +204,119 @@ void function_CalcContactForces(
     int shear_shape1;
     int shear_shape2;
     bool newcontact = true;
+    double eps = std::numeric_limits<double>::epsilon();
 
     if (displ_mode == ChSystemSMC::TangentialDisplacementModel::OneStep) {
         delta_t = relvel_t * dT;
         p3 = "TangentialDisplacementModel = OneStep";
 
+		real E_eff, G_eff, cr_eff;
+        real user_kn, user_kt, user_gn, user_gt;
+
+        real m_eff = mass[body1] * mass[body2] / (mass[body1] + mass[body2]);
+
+        if (use_mat_props) {
+            real Y1 = elastic_moduli[body1].x;
+            real Y2 = elastic_moduli[body2].x;
+            real nu1 = elastic_moduli[body1].y;
+            real nu2 = elastic_moduli[body2].y;
+            real inv_E = (1 - nu1 * nu1) / Y1 + (1 - nu2 * nu2) / Y2;
+            real inv_G = 2 * (2 - nu1) * (1 + nu1) / Y1 + 2 * (2 - nu2) * (1 + nu2) / Y2;
+
+            E_eff = 1 / inv_E;
+            G_eff = 1 / inv_G;
+            cr_eff = strategy->CombineRestitution(cr[body1], cr[body2]);
+        } else {
+            user_kn = strategy->CombineStiffnessCoefficient(smc_coeffs[body1].x, smc_coeffs[body2].x);
+            user_kt = strategy->CombineStiffnessCoefficient(smc_coeffs[body1].y, smc_coeffs[body2].y);
+            user_gn = strategy->CombineDampingCoefficient(smc_coeffs[body1].z, smc_coeffs[body2].z);
+            user_gt = strategy->CombineDampingCoefficient(smc_coeffs[body1].w, smc_coeffs[body2].w);
+        }
+
+		switch (contact_model) {
+            case ChSystemSMC::ContactForceModel::Hooke:
+                if (use_mat_props) {
+                    real tmp_k = (16.0 / 15) * Sqrt(eff_radius[index]) * E_eff;
+                    real v2 = relvel_init * relvel_init;
+                    real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
+                    loge = (cr_eff > 1 - eps) ? Log(1 - eps) : loge;
+                    real tmp_g = 1 + Pow(CH_C_PI / loge, 2);
+                    kn = tmp_k * Pow(m_eff * v2 / tmp_k, 1.0 / 5);
+                    kt = kn;
+                    gn = Sqrt(4 * m_eff * kn / tmp_g);
+                    gt = gn;
+                    p4 = "StiffnessDampingCalcMethod = Hooke, use_mat_props";
+                } else {
+                    kn = user_kn;
+                    kt = user_kt;
+                    gn = m_eff * user_gn;
+                    gt = m_eff * user_gt;
+                    p4 = "StiffnessDampingCalcMethod = Hooke, user_props";
+                }
+                break;
+
+            case ChSystemSMC::ContactForceModel::Hertz:
+                if (use_mat_props) {
+                    real sqrt_Rd = Sqrt(eff_radius[index]);
+                    real Sn = 2 * E_eff * sqrt_Rd;
+                    real St = 8 * G_eff * sqrt_Rd;
+                    real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
+                    real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
+                    kn = (2.0 / 3) * Sn;
+                    kt = St;
+                    gn = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
+                    gt = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff);
+                    p4 = "StiffnessDampingCalcMethod = Hertz, use_mat_props";
+                } else {
+                    real tmp = eff_radius[index];
+                    kn = tmp * user_kn;
+                    kt = tmp * user_kt;
+                    gn = tmp * m_eff * user_gn;
+                    gt = tmp * m_eff * user_gt;
+                    p4 = "StiffnessDampingCalcMethod = Hertz, user_props";
+                }
+                break;
+
+            case ChSystemSMC::Flores:
+                if (use_mat_props) {
+                    real sqrt_R = Sqrt(eff_radius[index]);
+                    double cr = (cr_eff < eps) ? eps : cr_eff;
+                    cr = (cr_eff > 1 - eps) ? 1 - eps : cr;
+                    kn = (4.0 / 3.0) * E_eff * sqrt_R;
+                    kt = kn;
+                    gn = 8.0 * (1.0 - cr) * kn / (5.0 * cr * relvel_init);
+                    gt = gn;
+                    p4 = "StiffnessDampingCalcMethod = Flores, use_mat_props";
+                } else {
+                    real tmp = eff_radius[index];
+                    kn = tmp * user_kn;
+                    kt = tmp * user_kt;
+                    gn = tmp * m_eff * user_gn;
+                    gt = tmp * m_eff * user_gt;
+                    p4 = "StiffnessDampingCalcMethod = Flores, user_props";
+                }
+                break;
+
+            case ChSystemSMC::ContactForceModel::PlainCoulomb:
+                if (use_mat_props) {
+                    real Sn = 2 * E_eff;
+                    real St = 8 * G_eff;
+                    real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
+                    real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
+                    kn = (2.0 / 3) * Sn;
+                    kt = 0;
+                    gn = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
+                    gt = 0;
+                    p4 = "StiffnessDampingCalcMethod = PlainCoulomb, use_mat_props";
+                } else {
+                    kn = user_kn;
+                    kt = 0;
+                    gn = user_gn;
+                    gt = 0;
+                    p4 = "StiffnessDampingCalcMethod = PlainCoulomb, user_props";
+                }
+                break;
+        }
     } else if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
         delta_t = relvel_t * dT;
         p3 = "TangentialDisplacementModel = MultiStep";
@@ -274,6 +357,114 @@ void function_CalcContactForces(
                     shear_disp[ctIdUnrolled].y = 0;
                     shear_disp[ctIdUnrolled].z = 0;
                     contact_relvel_init[ctIdUnrolled] = abs(relvel_n_mag);
+
+					real E_eff, G_eff, cr_eff;
+                    real user_kn, user_kt, user_gn, user_gt;
+
+					real m_eff = mass[body1] * mass[body2] / (mass[body1] + mass[body2]);
+
+                    if (use_mat_props) {
+                        real Y1 = elastic_moduli[body1].x;
+                        real Y2 = elastic_moduli[body2].x;
+                        real nu1 = elastic_moduli[body1].y;
+                        real nu2 = elastic_moduli[body2].y;
+                        real inv_E = (1 - nu1 * nu1) / Y1 + (1 - nu2 * nu2) / Y2;
+                        real inv_G = 2 * (2 - nu1) * (1 + nu1) / Y1 + 2 * (2 - nu2) * (1 + nu2) / Y2;
+
+                        E_eff = 1 / inv_E;
+                        G_eff = 1 / inv_G;
+                        cr_eff = strategy->CombineRestitution(cr[body1], cr[body2]);
+                    } else {
+                        user_kn = strategy->CombineStiffnessCoefficient(smc_coeffs[body1].x, smc_coeffs[body2].x);
+                        user_kt = strategy->CombineStiffnessCoefficient(smc_coeffs[body1].y, smc_coeffs[body2].y);
+                        user_gn = strategy->CombineDampingCoefficient(smc_coeffs[body1].z, smc_coeffs[body2].z);
+                        user_gt = strategy->CombineDampingCoefficient(smc_coeffs[body1].w, smc_coeffs[body2].w);
+                    }
+
+					 switch (contact_model) {
+                        case ChSystemSMC::ContactForceModel::Hooke:
+                            if (use_mat_props) {
+                                real tmp_k = (16.0 / 15) * Sqrt(eff_radius[index]) * E_eff;
+                                real v2 = contact_relvel_init[ctIdUnrolled] * contact_relvel_init[ctIdUnrolled];
+                                real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
+                                loge = (cr_eff > 1 - eps) ? Log(1 - eps) : loge;
+                                real tmp_g = 1 + Pow(CH_C_PI / loge, 2);
+                                contact_coeff[ctIdUnrolled].x = tmp_k * Pow(m_eff * v2 / tmp_k, 1.0 / 5);
+                                contact_coeff[ctIdUnrolled].y = contact_coeff[ctIdUnrolled].x;
+                                contact_coeff[ctIdUnrolled].z = Sqrt(4 * m_eff * contact_coeff[ctIdUnrolled].x / tmp_g);
+                                contact_coeff[ctIdUnrolled].w = contact_coeff[ctIdUnrolled].z;
+                                p4 = "StiffnessDampingCalcMethod = Hooke, use_mat_props";
+                            } else {
+                                contact_coeff[ctIdUnrolled].x = user_kn;
+                                contact_coeff[ctIdUnrolled].y = user_kt;
+                                contact_coeff[ctIdUnrolled].z = m_eff * user_gn;
+                                contact_coeff[ctIdUnrolled].w = m_eff * user_gt;
+                                p4 = "StiffnessDampingCalcMethod = Hooke, user_props";
+                            }
+                            break;
+
+                        case ChSystemSMC::ContactForceModel::Hertz:
+                            if (use_mat_props) {
+                                real sqrt_Rd = Sqrt(eff_radius[index]);
+                                real Sn = 2 * E_eff * sqrt_Rd;
+                                real St = 8 * G_eff * sqrt_Rd;
+                                real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
+                                real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
+                                contact_coeff[ctIdUnrolled].x = (2.0 / 3) * Sn;
+                                contact_coeff[ctIdUnrolled].y = St;
+                                contact_coeff[ctIdUnrolled].z = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
+                                contact_coeff[ctIdUnrolled].w = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff);
+                                p4 = "StiffnessDampingCalcMethod = Hertz, use_mat_props";
+                            } else {
+                                real tmp = eff_radius[index];
+                                contact_coeff[ctIdUnrolled].x = tmp * user_kn;
+                                contact_coeff[ctIdUnrolled].y = tmp * user_kt;
+                                contact_coeff[ctIdUnrolled].z = tmp * m_eff * user_gn;
+                                contact_coeff[ctIdUnrolled].w = tmp * m_eff * user_gt;
+                                p4 = "StiffnessDampingCalcMethod = Hertz, user_props";
+                            }
+                            break;
+
+                        case ChSystemSMC::Flores:
+                            if (use_mat_props) {
+                                real sqrt_R = Sqrt(eff_radius[index]);
+                                double cr = (cr_eff < eps) ? eps : cr_eff;
+                                cr = (cr_eff > 1 - eps) ? 1 - eps : cr;
+                                contact_coeff[ctIdUnrolled].x = (4.0 / 3.0) * E_eff * sqrt_R;
+                                contact_coeff[ctIdUnrolled].y = contact_coeff[ctIdUnrolled].x;
+                                contact_coeff[ctIdUnrolled].z = 8.0 * (1.0 - cr) * contact_coeff[ctIdUnrolled].x / (5.0 * cr * contact_relvel_init[ctIdUnrolled]);
+                                contact_coeff[ctIdUnrolled].w = contact_coeff[ctIdUnrolled].z;
+                                p4 = "StiffnessDampingCalcMethod = Flores, use_mat_props";
+                            } else {
+                                real tmp = eff_radius[index];
+                                contact_coeff[ctIdUnrolled].x = tmp * user_kn;
+                                contact_coeff[ctIdUnrolled].y = tmp * user_kt;
+                                contact_coeff[ctIdUnrolled].z = tmp * m_eff * user_gn;
+                                contact_coeff[ctIdUnrolled].w = tmp * m_eff * user_gt;
+                                p4 = "StiffnessDampingCalcMethod = Flores, user_props";
+                            }
+                            break;
+
+                        case ChSystemSMC::ContactForceModel::PlainCoulomb:
+                            if (use_mat_props) {
+                                real Sn = 2 * E_eff;
+                                real St = 8 * G_eff;
+                                real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
+                                real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
+                                contact_coeff[ctIdUnrolled].x = (2.0 / 3) * Sn;
+                                contact_coeff[ctIdUnrolled].y = 0;
+                                contact_coeff[ctIdUnrolled].z = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
+                                contact_coeff[ctIdUnrolled].w = 0;
+                                p4 = "StiffnessDampingCalcMethod = PlainCoulomb, use_mat_props";
+                            } else {
+                                contact_coeff[ctIdUnrolled].x = user_kn;
+                                contact_coeff[ctIdUnrolled].y = 0;
+                                contact_coeff[ctIdUnrolled].z = user_gn;
+                                contact_coeff[ctIdUnrolled].w = 0;
+                                p4 = "StiffnessDampingCalcMethod = PlainCoulomb, user_props";
+                            }
+                            break;
+                    }
                     break;
                 }
             }
@@ -296,100 +487,12 @@ void function_CalcContactForces(
             delta_t = -shear_disp[ctSaveId];
         }
 
-        // Load the initial relative impact velocity from the contact history
-        relvel_init = contact_relvel_init[ctSaveId];
-    }
-
-    double eps = std::numeric_limits<double>::epsilon();
-
-    switch (contact_model) {
-        case ChSystemSMC::ContactForceModel::Hooke:
-            if (use_mat_props) {
-                real tmp_k = (16.0 / 15) * Sqrt(eff_radius[index]) * E_eff;
-                real v2 = relvel_init * relvel_init;
-                real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
-                loge = (cr_eff > 1 - eps) ? Log(1 - eps) : loge;
-                real tmp_g = 1 + Pow(CH_C_PI / loge, 2);
-                kn = tmp_k * Pow(m_eff * v2 / tmp_k, 1.0 / 5);
-                kt = kn;
-                gn = Sqrt(4 * m_eff * kn / tmp_g);
-                gt = gn;
-                p4 = "StiffnessDampingCalcMethod = Hooke, use_mat_props";
-            } else {
-                kn = user_kn;
-                kt = user_kt;
-                gn = m_eff * user_gn;
-                gt = m_eff * user_gt;
-                p4 = "StiffnessDampingCalcMethod = Hooke, user_props";
-            }
-
-            break;
-
-        case ChSystemSMC::ContactForceModel::Hertz:
-            if (use_mat_props) {
-                real sqrt_Rd = Sqrt(eff_radius[index]);
-                real Sn = 2 * E_eff * sqrt_Rd;
-                real St = 8 * G_eff * sqrt_Rd;
-                real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
-                real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
-                kn = (2.0 / 3) * Sn;
-                kt = St;
-                gn = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
-                gt = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff);
-                p4 = "StiffnessDampingCalcMethod = Hertz, use_mat_props";
-            } else {
-                real tmp = eff_radius[index];
-                kn = tmp * user_kn;
-                kt = tmp * user_kt;
-                gn = tmp * m_eff * user_gn;
-                gt = tmp * m_eff * user_gt;
-                p4 = "StiffnessDampingCalcMethod = Hertz, user_props";
-            }
-
-            break;
-
-        case ChSystemSMC::Flores:
-            if (use_mat_props) {
-                real sqrt_R = Sqrt(eff_radius[index]);
-                double cr = (cr_eff < eps) ? eps : cr_eff;
-                cr = (cr_eff > 1 - eps) ? 1 - eps : cr;
-                kn = (4.0 / 3.0) * E_eff * sqrt_R;
-                kt = kn;
-                gn = 8.0 * (1.0 - cr) * kn / (5.0 * cr * relvel_init);
-                gt = gn;
-                p4 = "StiffnessDampingCalcMethod = Flores, use_mat_props";
-
-            } else {
-                real tmp = eff_radius[index];
-                kn = tmp * user_kn;
-                kt = tmp * user_kt;
-                gn = tmp * m_eff * user_gn;
-                gt = tmp * m_eff * user_gt;
-                p4 = "StiffnessDampingCalcMethod = Flores, user_props";
-            }
-
-            break;
-
-        case ChSystemSMC::ContactForceModel::PlainCoulomb:
-            if (use_mat_props) {
-                real Sn = 2 * E_eff;
-                real St = 8 * G_eff;
-                real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
-                real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
-                kn = (2.0 / 3) * Sn;
-                kt = 0;
-                gn = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
-                gt = 0;
-                p4 = "StiffnessDampingCalcMethod = PlainCoulomb, use_mat_props";
-            } else {
-                kn = user_kn;
-                kt = 0;
-                gn = user_gn;
-                gt = 0;
-                p4 = "StiffnessDampingCalcMethod = PlainCoulomb, user_props";
-            }
-
-            break;
+        // Load kn, kt, gn, gt, and initial relative impact velocity from the contact history
+        kn = contact_coeff[ctSaveId].x;
+        kt = contact_coeff[ctSaveId].y;
+        gn = contact_coeff[ctSaveId].z;
+        gt = contact_coeff[ctSaveId].w;
+		relvel_init = contact_relvel_init[ctSaveId];
     }
 
     // Calculate the the normal and tangential contact forces.

@@ -530,8 +530,8 @@ void function_CalcContactForces(
 
         case ChSystemSMC::PlainCoulomb: {
             forceN_mag = kn * Pow(delta_n, 1.5) - gn * Pow(delta_n, 0.25) * relvel_n_mag;
-            if (forceN_mag < 0)
-                forceN_mag = 0;
+            // if (forceN_mag < 0)
+            //     forceN_mag = 0;
             real forceT_mag = mu_eff * Tanh(5.0 * relvel_t_mag) * forceN_mag;
             p5 = "ForceModel = PlainCoulomb";
 
@@ -615,6 +615,7 @@ void function_CalcContactForces(
         }
     }
 
+	/*
     // If the resulting normal force is negative, then the two shapes are
     // moving away from each other so fast that no contact force is generated.
     if (forceN_mag < 0) {
@@ -626,6 +627,7 @@ void function_CalcContactForces(
         forceT_damp.y = 0;
         forceT_damp.z = 0;
     }
+    */
 
     // Include adhesion force.
     switch (adhesion_model) {

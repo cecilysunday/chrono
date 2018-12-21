@@ -233,6 +233,8 @@ void function_CalcContactForces(
             user_gt = strategy->CombineDampingCoefficient(smc_coeffs[body1].w, smc_coeffs[body2].w);
         }
 
+		relvel_init = abs(relvel_n_mag);
+
 		switch (contact_model) {
             case ChSystemSMC::ContactForceModel::Hooke:
                 if (use_mat_props) {
@@ -584,6 +586,30 @@ void function_CalcContactForces(
             ext_body_force[2 * index + 1] = force;
             ext_body_torque[2 * index] = -torque1_loc;
             ext_body_torque[2 * index + 1] = torque2_loc;
+
+			// Print one-time collision information to userlog
+			chrono::GetLog() << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
+					 << p3 << "; " << p4 << "; " << p5 << "; " << p5 << "; "
+             
+					 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
+					 << relvel_init << "; "
+
+					 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
+					 << "kn = " << kn << "; " << "kt = " << kt << "; " << "gn = " << gn << "; " << "gt = " << gt << "; ";
+
+			// Print collision metadata to tab dilineated chronodat.txt file
+			datao << "\n" << std::left << std::setw(w-10) << runs
+				  << "\t" << std::left << std::setw(w-10) << body1
+				  << "\t" << std::left << std::setw(w-10) << body2
+				  << "\t" << std::left << std::setw(w-10) << newcontact
+				  << "\t" << std::left << std::setw(w-10) << contact_id
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag 
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force);
+			datao.close();
 
             return;
         }

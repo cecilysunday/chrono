@@ -81,21 +81,19 @@ void function_CalcContactForces(
     vec3* shear_neigh,          // neighbor list of contacting bodies and shapes (max_shear per body)
     char* shear_touch,          // flag if contact in neighbor list is persistent (max_shear per body)
     real3* shear_disp,          // accumulated shear displacement for each neighbor (max_shear per body)
-    real4* contact_coeff,       // stiffness and damping coefficients per contact pair, calculated at first contact
-                                // (max_shear per body)
-    real* contact_relvel_init,  // initial relative normal velocity manitude per contact pair, calculated at first
-                                // contact (max_shear per body)
+    real4* contact_coeff,       // stiffness and damping coefficients per contact pair, calculated at first contact (max_shear per body)
+    real* contact_relvel_init,  // initial relative normal velocity manitude per contact pair, calculated at first contact (max_shear per body)
     int* ext_body_id,           // [output] body IDs (two per contact)
     real3* ext_body_force,      // [output] body force (two per contact)
     real3* ext_body_torque      // [output] body torque (two per contact)
 ) {
-    // File froperties and print lines for debugging. Delete during code clean-up
-
+    
+	// File properties and print lines for debugging. Delete during code clean-up
     real p1;         // relvel_n_mag (signed)
     real p2;         // relvel_t_mag (always positive)
     std::string p3;  // Tangential dispplacement method
     std::string p4;  // Method used to obtain k and g
-    std::string p5;  // Contact force mmodel. Should equal p2
+    std::string p5;  // Contact force model
     std::string p6;  // Adhesion model
     std::string p7;
 
@@ -247,13 +245,13 @@ void function_CalcContactForces(
                     kt = kn;
                     gn = Sqrt(4 * m_eff * kn / tmp_g);
                     gt = gn;
-                    p4 = "StiffnessDampingCalcMethod = Hooke, use_mat_props";
+                    p4 = "use_mat_props = TRUE";
                 } else {
                     kn = user_kn;
                     kt = user_kt;
                     gn = m_eff * user_gn;
                     gt = m_eff * user_gt;
-                    p4 = "StiffnessDampingCalcMethod = Hooke, user_props";
+                    p4 = "use_mat_props = FALSE";
                 }
                 break;
 
@@ -268,14 +266,14 @@ void function_CalcContactForces(
                     kt = St;
                     gn = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
                     gt = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff);
-                    p4 = "StiffnessDampingCalcMethod = Hertz, use_mat_props";
+                    p4 = "use_mat_props = TRUE";
                 } else {
                     real tmp = eff_radius[index];
                     kn = tmp * user_kn;
                     kt = tmp * user_kt;
                     gn = tmp * m_eff * user_gn;
                     gt = tmp * m_eff * user_gt;
-                    p4 = "StiffnessDampingCalcMethod = Hertz, user_props";
+                    p4 = "use_mat_props = FALSE";
                 }
                 break;
 
@@ -288,14 +286,14 @@ void function_CalcContactForces(
                     kt = kn;
                     gn = 8.0 * (1.0 - cr) * kn / (5.0 * cr * relvel_init);
                     gt = gn;
-                    p4 = "StiffnessDampingCalcMethod = Flores, use_mat_props";
+                    p4 = "use_mat_props = TRUE";
                 } else {
                     real tmp = eff_radius[index];
                     kn = tmp * user_kn;
                     kt = tmp * user_kt;
                     gn = tmp * m_eff * user_gn;
                     gt = tmp * m_eff * user_gt;
-                    p4 = "StiffnessDampingCalcMethod = Flores, user_props";
+                    p4 = "use_mat_props = FALSE";
                 }
                 break;
 
@@ -309,13 +307,13 @@ void function_CalcContactForces(
                     kt = 0;
                     gn = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
                     gt = 0;
-                    p4 = "StiffnessDampingCalcMethod = PlainCoulomb, use_mat_props";
+                    p4 = "use_mat_props = TRUE";
                 } else {
                     kn = user_kn;
                     kt = 0;
                     gn = user_gn;
                     gt = 0;
-                    p4 = "StiffnessDampingCalcMethod = PlainCoulomb, user_props";
+                    p4 = "use_mat_props = FALSE";
                 }
                 break;
         }
@@ -395,13 +393,13 @@ void function_CalcContactForces(
                                 contact_coeff[ctIdUnrolled].y = contact_coeff[ctIdUnrolled].x;
                                 contact_coeff[ctIdUnrolled].z = Sqrt(4 * m_eff * contact_coeff[ctIdUnrolled].x / tmp_g);
                                 contact_coeff[ctIdUnrolled].w = contact_coeff[ctIdUnrolled].z;
-                                p4 = "StiffnessDampingCalcMethod = Hooke, use_mat_props";
+                                p4 = "use_mat_props = TRUE";
                             } else {
                                 contact_coeff[ctIdUnrolled].x = user_kn;
                                 contact_coeff[ctIdUnrolled].y = user_kt;
                                 contact_coeff[ctIdUnrolled].z = m_eff * user_gn;
                                 contact_coeff[ctIdUnrolled].w = m_eff * user_gt;
-                                p4 = "StiffnessDampingCalcMethod = Hooke, user_props";
+                                p4 = "use_mat_props = FALSE";
                             }
                             break;
 
@@ -416,14 +414,14 @@ void function_CalcContactForces(
                                 contact_coeff[ctIdUnrolled].y = St;
                                 contact_coeff[ctIdUnrolled].z = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
                                 contact_coeff[ctIdUnrolled].w = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff);
-                                p4 = "StiffnessDampingCalcMethod = Hertz, use_mat_props";
+                                p4 = "use_mat_props = TRUE";
                             } else {
                                 real tmp = eff_radius[index];
                                 contact_coeff[ctIdUnrolled].x = tmp * user_kn;
                                 contact_coeff[ctIdUnrolled].y = tmp * user_kt;
                                 contact_coeff[ctIdUnrolled].z = tmp * m_eff * user_gn;
                                 contact_coeff[ctIdUnrolled].w = tmp * m_eff * user_gt;
-                                p4 = "StiffnessDampingCalcMethod = Hertz, user_props";
+                                p4 = "use_mat_props = FALSE";
                             }
                             break;
 
@@ -436,14 +434,14 @@ void function_CalcContactForces(
                                 contact_coeff[ctIdUnrolled].y = contact_coeff[ctIdUnrolled].x;
                                 contact_coeff[ctIdUnrolled].z = 8.0 * (1.0 - cr) * contact_coeff[ctIdUnrolled].x / (5.0 * cr * contact_relvel_init[ctIdUnrolled]);
                                 contact_coeff[ctIdUnrolled].w = contact_coeff[ctIdUnrolled].z;
-                                p4 = "StiffnessDampingCalcMethod = Flores, use_mat_props";
+                                p4 = "use_mat_props = TRUE";
                             } else {
                                 real tmp = eff_radius[index];
                                 contact_coeff[ctIdUnrolled].x = tmp * user_kn;
                                 contact_coeff[ctIdUnrolled].y = tmp * user_kt;
                                 contact_coeff[ctIdUnrolled].z = tmp * m_eff * user_gn;
                                 contact_coeff[ctIdUnrolled].w = tmp * m_eff * user_gt;
-                                p4 = "StiffnessDampingCalcMethod = Flores, user_props";
+                                p4 = "use_mat_props = FALSE";
                             }
                             break;
 
@@ -457,13 +455,13 @@ void function_CalcContactForces(
                                 contact_coeff[ctIdUnrolled].y = 0;
                                 contact_coeff[ctIdUnrolled].z = -2 * Sqrt(5.0 / 6) * beta * Sqrt(Sn * m_eff);
                                 contact_coeff[ctIdUnrolled].w = 0;
-                                p4 = "StiffnessDampingCalcMethod = PlainCoulomb, use_mat_props";
+                                p4 = "use_mat_props = TRUE";
                             } else {
                                 contact_coeff[ctIdUnrolled].x = user_kn;
                                 contact_coeff[ctIdUnrolled].y = 0;
                                 contact_coeff[ctIdUnrolled].z = user_gn;
                                 contact_coeff[ctIdUnrolled].w = 0;
-                                p4 = "StiffnessDampingCalcMethod = PlainCoulomb, user_props";
+                                p4 = "use_mat_props = FALSE";
                             }
                             break;
                     }
@@ -589,10 +587,10 @@ void function_CalcContactForces(
 
 			// Print one-time collision information to userlog
 			chrono::GetLog() << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-					 << p3 << "; " << p4 << "; " << p5 << "; " << p5 << "; "
+					 << p3 << "; " << p4 << "; " << p5 << "; " << p6 << "; "
              
 					 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-					 << relvel_init << "; "
+					 << "rel_vel_init = " << relvel_init << "; "
 
 					 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
 					 << "kn = " << kn << "; " << "kt = " << kt << "; " << "gn = " << gn << "; " << "gt = " << gt << "; ";
@@ -724,10 +722,10 @@ void function_CalcContactForces(
 
     // Print one-time collision information to userlog
     chrono::GetLog() << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-			 << p3 << "; " << p4 << "; " << p5 << "; " << p5 << "; "
+			 << p3 << "; " << p4 << "; " << p5 << "; " << p6 << "; "
              
 			 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-			 << relvel_init << "; "
+			 << "relvel_init = " << relvel_init << "; " << eps << ";" 
 
 		     << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
 			 << "kn = " << kn << "; " << "kt = " << kt << "; " << "gn = " << gn << "; " << "gt = " << gt << "; ";

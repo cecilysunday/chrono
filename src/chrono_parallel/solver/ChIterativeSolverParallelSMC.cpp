@@ -89,33 +89,50 @@ void function_CalcContactForces(
 ) {
     
 	// File properties and print lines for debugging. Delete during code clean-up
-    real p1;         // relvel_n_mag (signed)
-    real p2;         // relvel_t_mag (always positive)
-    std::string p3;  // Tangential dispplacement method
-    std::string p4;  // Method used to obtain k and g
-    std::string p5;  // Contact force model
-    std::string p6;  // Adhesion model
-    std::string p7;
+    real p1;				// relvel_n_mag (signed)
+    real p2;				// relvel_t_mag (always positive)
+    std::string p3;			// Tangential dispplacement method
+    std::string p4;			// Method used to obtain k and g
+    std::string p5;			// Contact force model
+    std::string p6;			// Adhesion model
+    real p7, p8, p9;		// Rotational velocity of body1
+    real p10, p11, p12;		// Rotational velocity of body2
+    real p13, p14,p15;		// Velocity of contact point1
+    real p16, p17, p18;		// Velocity of contact point2
+    real p19, p20, p21;		// Rolling friction torque
+    real p22, p23, p24;		// Spinning friction torque
+    std::string p25;
+    real p26;
 
     static int runs = 0;
     uint prec = 10;
-    uint w = 20;
+    uint w = 17;
 
     std::ofstream datao;
 
 	if (runs == 0) {
 		datao.open(GetChronoOutputPath() + "/chronodat.txt");
-		datao << std::left << std::setw(w - 10) << "runs"
-				<< "\t" << std::left << std::setw(w - 10) << "body1"
-				<< "\t" << std::left << std::setw(w - 10) << "body2"
-				<< "\t" << std::left << std::setw(w - 10) << "newcontact"
-				<< "\t" << std::left << std::setw(w - 10) << "contact_id"
-				<< "\t" << std::left << std::setw(w) << "delta_n"
-				<< "\t" << std::left << std::setw(w) << "delta_t"
-				<< "\t" << std::left << std::setw(w) << "forceN_mag"
-				<< "\t" << std::left << std::setw(w) << "forceT_stiff"
-				<< "\t" << std::left << std::setw(w) << "forceT_damp"
-				<< "\t" << std::left << std::setw(w) << "force";
+        datao << std::left << std::setw(w - 5) << "stp"
+              << "\t" << std::left << std::setw(w - 5) << "body1"
+              << "\t" << std::left << std::setw(w - 5) << "body2"
+              << "\t" << std::left << std::setw(w - 5) << "newcontact"
+              << "\t" << std::left << std::setw(w - 5) << "contact_id"
+              << "\t" << std::left << std::setw(w) << "delta_n"
+              << "\t" << std::left << std::setw(w) << "delta_t"
+              << "\t" << std::left << std::setw(w) << "relvel_n_mag"
+              << "\t" << std::left << std::setw(w) << "relvel_t_mag"
+              << "\t" << std::left << std::setw(w) << "forceN_mag"
+              << "\t" << std::left << std::setw(w) << "forceT_stiff"
+              << "\t" << std::left << std::setw(w) << "forceT_damp"
+              << "\t" << std::left << std::setw(w) << "force"
+              << "\t" << std::left << std::setw(w) << "torque1"
+              << "\t" << std::left << std::setw(w) << "torque2"
+              << "\t" << std::left << std::setw(w) << "t_rf_x"
+              << "\t" << std::left << std::setw(w) << "t_rf_y"
+              << "\t" << std::left << std::setw(w) << "t_rf_z"
+              << "\t" << std::left << std::setw(w) << "t_sf_x"
+              << "\t" << std::left << std::setw(w) << "t_sf_y"
+              << "\t" << std::left << std::setw(w) << "t_sf_z";
 		runs++;
     } else {
         datao.open(GetChronoOutputPath() + "/chronodat.txt", std::ios::app);
@@ -157,6 +174,11 @@ void function_CalcContactForces(
     real3 vel1 = v_body1 + Rotate(Cross(o_body1, pt1_loc), rot[body1]);
     real3 vel2 = v_body2 + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
 
+	p7 = o_body1.x, p8 = o_body1.y, p9 = o_body1.z;
+    p10 = o_body2.x, p11 = o_body2.y, p12 = o_body2.z;
+    p13 = vel1.x, p14 = vel1.y, p15 = vel1.z;
+    p16 = vel2.x, p17 = vel2.y, p18 = vel2.z;
+
     // Calculate relative velocity (in global frame)
     // Note that relvel_n_mag is a signed quantity, while relvel_t_mag is an
     // actual magnitude (always positive).
@@ -167,7 +189,7 @@ void function_CalcContactForces(
     real relvel_t_mag = Length(relvel_t);
 
     p1 = relvel_n_mag;
-    p2 = relvel_n_mag;
+    p2 = relvel_t_mag;
 
     // Calculate composite material properties
     // ---------------------------------------
@@ -532,7 +554,8 @@ void function_CalcContactForces(
             //     forceN_mag = 0;
             real forceT_mag = mu_eff * Tanh(5.0 * relvel_t_mag) * forceN_mag;
             p5 = "ForceModel = PlainCoulomb";
-
+            
+			/*
             // Include adhesion force.
             switch (adhesion_model) {
                 case ChSystemSMC::AdhesionForceModel::Constant:
@@ -548,6 +571,7 @@ void function_CalcContactForces(
                     p6 = "AdhesionModel = Perko";
                     break;
             }
+            */
 
             real3 force = forceN_mag * normal[index];
             if (relvel_t_mag >= (real)1e-4)
@@ -563,6 +587,8 @@ void function_CalcContactForces(
                     muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
                 torque1_loc += torque_buff;
                 torque2_loc += torque_buff;
+
+                p19 = torque_buff.x, p20 = torque_buff.y, p21 = torque_buff.z;
             }
 
             // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
@@ -576,6 +602,24 @@ void function_CalcContactForces(
                                     normal[index];
                 torque1_loc -= torque_buff;
                 torque2_loc -= torque_buff;
+                
+				p22 = torque_buff.x, p23 = torque_buff.y, p24 = torque_buff.z;
+            }
+
+			// Include adhesion force.
+            switch (adhesion_model) {
+                case ChSystemSMC::AdhesionForceModel::Constant:
+                    force -= adhesion_eff * normal[index];
+                    p6 = "AdhesionModel = Constant";
+                    break;
+                case ChSystemSMC::AdhesionForceModel::DMT:
+                    force -= adhesionMultDMT_eff * Sqrt(eff_radius[index] * normal[index]);
+                    p6 = "AdhesionModel = DMT";
+                    break;
+                case ChSystemSMC::AdhesionForceModel::Perko:
+                    force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
+                    p6 = "AdhesionModel = Perko";
+                    break;
             }
 
             ext_body_id[2 * index] = body1;
@@ -586,27 +630,37 @@ void function_CalcContactForces(
             ext_body_torque[2 * index + 1] = torque2_loc;
 
 			// Print one-time collision information to userlog
-			chrono::GetLog() << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-					 << p3 << "; " << p4 << "; " << p5 << "; " << p6 << "; "
+            if (runs == 1) {
+				chrono::GetLog() << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
+								 << p3 << "; " << p4 << "; " << p5 << "; " << p6 << "; "
              
-					 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-					 << "rel_vel_init = " << relvel_init << "; "
-
-					 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-					 << "kn = " << kn << "; " << "kt = " << kt << "; " << "gn = " << gn << "; " << "gt = " << gt << "; ";
+								 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
+								 << "kn = " << kn << "; " << "kt = " << kt << "; " << "gn = " << gn << "; " << "gt = " << gt << "; ";
+			}
 
 			// Print collision metadata to tab dilineated chronodat.txt file
-			datao << "\n" << std::left << std::setw(w-10) << runs
-				  << "\t" << std::left << std::setw(w-10) << body1
-				  << "\t" << std::left << std::setw(w-10) << body2
-				  << "\t" << std::left << std::setw(w-10) << newcontact
-				  << "\t" << std::left << std::setw(w-10) << contact_id
+			datao << "\n" << std::left << std::setw(w-5) << runs
+				  << "\t" << std::left << std::setw(w-5) << body1
+				  << "\t" << std::left << std::setw(w-5) << body2
+				  << "\t" << std::left << std::setw(w-5) << newcontact
+				  << "\t" << std::left << std::setw(w-5) << contact_id
 				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
-				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t)
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2
 				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
 				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag 
 				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
-				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force);
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force)
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque1_loc)
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque2_loc)
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p19
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p20
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p21
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p22
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p23
+				  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p24;
+		    
 			datao.close();
 
             return;
@@ -625,8 +679,9 @@ void function_CalcContactForces(
         forceT_damp.y = 0;
         forceT_damp.z = 0;
     }
-    */
+*/
 
+/*
     // Include adhesion force.
     switch (adhesion_model) {
         case ChSystemSMC::AdhesionForceModel::Constant:
@@ -644,6 +699,7 @@ void function_CalcContactForces(
             p6 = "AdhesionModel = Perko";
             break;
     }
+*/
 
     // Apply Coulomb friction law.
     // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
@@ -697,9 +753,11 @@ void function_CalcContactForces(
         real3 torque_buff = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
         torque1_loc += torque_buff;
         torque2_loc += torque_buff;
+
+		p19 = torque_buff.x, p20 = torque_buff.y, p21 = torque_buff.z;
     }
 
-    // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
+    // Calculate spinning friction torque as M_spin = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
     // r_c is the radius of the circle resulting from the intersecting body surfaces
     if (Length(o_body2 - o_body1) > min_spin_vel) {
         double R1 = Length(pt1_loc), R2 = Length(pt2_loc);
@@ -710,6 +768,25 @@ void function_CalcContactForces(
                             normal[index];
         torque1_loc -= torque_buff;
         torque2_loc -= torque_buff;
+
+		p22 = torque_buff.x, p23 = torque_buff.y, p24 = torque_buff.z;
+    }
+
+	switch (adhesion_model) {
+        case ChSystemSMC::AdhesionForceModel::Constant:
+            // (This is a very simple model, which can perhaps be improved later.)
+            force -= adhesion_eff * normal[index];
+            p6 = "AdhesionModel = Constant";
+            break;
+        case ChSystemSMC::AdhesionForceModel::DMT:
+            // Derjaguin, Muller and Toporov (DMT) adhesion force,
+            force -= adhesionMultDMT_eff * Sqrt(eff_radius[index] * normal[index]);
+            p6 = "AdhesionModel = DMT";
+            break;
+        case ChSystemSMC::AdhesionForceModel::Perko:
+            force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
+            p6 = "AdhesionModel = Perko";
+            break;
     }
 
     // Store body forces and torques, duplicated for the two bodies.
@@ -721,29 +798,39 @@ void function_CalcContactForces(
     ext_body_torque[2 * index + 1] = torque2_loc;
 
     // Print one-time collision information to userlog
-    chrono::GetLog() << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-			 << p3 << "; " << p4 << "; " << p5 << "; " << p6 << "; "
-             
-			 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-			 << "relvel_init = " << relvel_init << "; " << eps << ";" 
+    if (runs == 1) {
+		chrono::GetLog() << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
+				 << p3 << "; " << p4 << "; " << p5 << "; " << p6 << "; "
 
-		     << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-			 << "kn = " << kn << "; " << "kt = " << kt << "; " << "gn = " << gn << "; " << "gt = " << gt << "; ";
+				 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
+				 << "kn = " << kn << "; " << "kt = " << kt << "; " << "gn = " << gn << "; " << "gt = " << gt << "; ";
+		}
 
 	// Print collision metadata to tab dilineated chronodat.txt file
-	datao << "\n" << std::left << std::setw(w-10) << runs
-		  << "\t" << std::left << std::setw(w-10) << body1
-		  << "\t" << std::left << std::setw(w-10) << body2
-		  << "\t" << std::left << std::setw(w-10) << newcontact
-		  << "\t" << std::left << std::setw(w-10) << contact_id
+	datao << "\n" << std::left << std::setw(w-5) << runs
+		  << "\t" << std::left << std::setw(w-5) << body1
+		  << "\t" << std::left << std::setw(w-5) << body2
+		  << "\t" << std::left << std::setw(w-5) << newcontact
+		  << "\t" << std::left << std::setw(w-5) << contact_id
 		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
-		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t)
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2
 		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
 		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_stiff) 
 		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_damp)
-		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force);
-    datao.close();
-
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force)
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque1_loc)
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque2_loc)
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p19
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p20
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p21
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p22
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p23
+		  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p24;
+    
+	datao.close();
+    
 }
 
 // -----------------------------------------------------------------------------

@@ -101,8 +101,6 @@ void function_CalcContactForces(
     real p16, p17, p18;		// Velocity of contact point2
     real p19, p20, p21;		// Rolling friction torque
     real p22, p23, p24;		// Spinning friction torque
-    std::string p25;
-    real p26;
 
     static int runs = 0;
     uint prec = 10;

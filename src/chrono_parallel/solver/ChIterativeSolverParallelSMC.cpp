@@ -629,11 +629,10 @@ void function_CalcContactForces(
 
 			// Print one-time collision information to userlog
             if (runs == 1) {
-				chrono::GetLog() << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-								 << p3 << "; " << p4 << "; " << p5 << "; " << p6 << "; "
-             
-								 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-								 << "kn = " << kn << "; " << "kt = " << kt << "; " << "gn = " << gn << "; " << "gt = " << gt << "; ";
+				chrono::GetLog() << "\n" << body1 << "_" << body2 << "_kn " << kn
+								 << "\n" << body1 << "_" << body2 << "_kt " << kt
+								 << "\n" << body1 << "_" << body2 << "_gn " << gn
+								 << "\n" << body1 << "_" << body2 << "_gt " << gt;
 			}
 
 			// Print collision metadata to tab dilineated chronodat.txt file
@@ -797,12 +796,11 @@ void function_CalcContactForces(
 
     // Print one-time collision information to userlog
     if (runs == 1) {
-		chrono::GetLog() << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-				 << p3 << "; " << p4 << "; " << p5 << "; " << p6 << "; "
-
-				 << "\n" << "b1 = " << body1 << "; " << "b2 = " << body2 << "; " << "stp = " << runs << "; "
-				 << "kn = " << kn << "; " << "kt = " << kt << "; " << "gn = " << gn << "; " << "gt = " << gt << "; ";
-		}
+		chrono::GetLog() << "\n" << body1 << "_" << body2 << "_kn " << kn
+						 << "\n" << body1 << "_" << body2 << "_kt " << kt
+					     << "\n" << body1 << "_" << body2 << "_gn " << gn
+						 << "\n" << body1 << "_" << body2 << "_gt " << gt;
+	}
 
 	// Print collision metadata to tab dilineated chronodat.txt file
 	datao << "\n" << std::left << std::setw(w-5) << runs

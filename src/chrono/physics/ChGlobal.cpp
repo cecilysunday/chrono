@@ -116,4 +116,24 @@ const std::string& GetChronoOutputPath() {
     return chrono_out_path;
 }
 
+
+
+// -----------------------------------------------------------------------------
+// ADDITION FOR DEBUGGING. DELETE LATER. - CS
+// -----------------------------------------------------------------------------
+
+static bool print_smc_data(FALSE);
+
+/// Set a switch to print or not print from ChIterativeSolverParallelSMC
+void SetPrint(bool print) {
+    print_smc_data = print;
+}
+
+/// Get the switch to print or not print from ChIterativeSolverParallelSMC
+bool GetPrint() {
+    return print_smc_data;
+}
+
+
+
 }  // end namespace chrono

@@ -98,10 +98,6 @@ void function_CalcContactForces(
     std::string p6;      // Adhesion model
     real p7, p8, p9;     // Rotational velocity of body1
     real p10, p11, p12;  // Rotational velocity of body2
-    real p13, p14, p15;  // Velocity of contact point1
-    real p16, p17, p18;  // Velocity of contact point2
-    real p19, p20, p21;  // Rolling friction torque
-    real p22, p23, p24;  // Spinning friction torque
 
     bool print_data = GetPrint();
     static int runs = 0;
@@ -124,15 +120,10 @@ void function_CalcContactForces(
               << "\t" << std::left << std::setw(w) << "forceN_mag"
               << "\t" << std::left << std::setw(w) << "forceT_stiff"
               << "\t" << std::left << std::setw(w) << "forceT_damp"
+              << "\t" << std::left << std::setw(w) << "forceT_mag"
               << "\t" << std::left << std::setw(w) << "force"
               << "\t" << std::left << std::setw(w) << "torque1"
-              << "\t" << std::left << std::setw(w) << "torque2"
-              << "\t" << std::left << std::setw(w) << "t_rf_x"
-              << "\t" << std::left << std::setw(w) << "t_rf_y"
-              << "\t" << std::left << std::setw(w) << "t_rf_z"
-              << "\t" << std::left << std::setw(w) << "t_sf_x"
-              << "\t" << std::left << std::setw(w) << "t_sf_y"
-              << "\t" << std::left << std::setw(w) << "t_sf_z";
+              << "\t" << std::left << std::setw(w) << "torque2";
         if (!print_data) {
             datao.close();
             datao.clear();
@@ -155,8 +146,7 @@ void function_CalcContactForces(
         ext_body_force[2 * index + 1] = real3(0);
         ext_body_torque[2 * index] = real3(0);
         ext_body_torque[2 * index + 1] = real3(0);
-        chrono::GetLog() << "\n"
-                         << "WARNING: Exited function_CalcContactForce() without calculating forces.";
+        chrono::GetLog() << "\n" << "WARNING: Exited function_CalcContactForce() without calculating forces.";
         return;
     }
 
@@ -178,11 +168,6 @@ void function_CalcContactForces(
 
     real3 vel1 = v_body1 + Rotate(Cross(o_body1, pt1_loc), rot[body1]);
     real3 vel2 = v_body2 + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
-
-    p7 = o_body1.x, p8 = o_body1.y, p9 = o_body1.z;
-    p10 = o_body2.x, p11 = o_body2.y, p12 = o_body2.z;
-    p13 = vel1.x, p14 = vel1.y, p15 = vel1.z;
-    p16 = vel2.x, p17 = vel2.y, p18 = vel2.z;
 
     // Calculate relative velocity (in global frame)
     // Note that relvel_n_mag is a signed quantity, while relvel_t_mag is an
@@ -504,7 +489,6 @@ void function_CalcContactForces(
 
         // Increment stored contact history tangential (shear) displacement vector
         // and project it onto the <current> contact plane.
-
         if (shear_body1 == body1) {
             shear_disp[ctSaveId] += delta_t;
             shear_disp[ctSaveId] -= Dot(shear_disp[ctSaveId], normal[index]) * normal[index];
@@ -580,7 +564,7 @@ void function_CalcContactForces(
             */
 
             real3 force = forceN_mag * normal[index];
-            if (relvel_t_mag >= (real)1e-4)
+            if (relvel_t_mag >= (real)1e-4) // Should this be [ if (relvel_t_mag >= min_slip_vel) ] ?
                 force -= (forceT_mag / relvel_t_mag) * relvel_t;
 
             real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
@@ -593,8 +577,6 @@ void function_CalcContactForces(
                     muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
                 torque1_loc += torque_buff;
                 torque2_loc += torque_buff;
-
-                p19 = torque_buff.x, p20 = torque_buff.y, p21 = torque_buff.z;
             }
 
             // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
@@ -608,8 +590,6 @@ void function_CalcContactForces(
                                     normal[index];
                 torque1_loc -= torque_buff;
                 torque2_loc -= torque_buff;
-
-                p22 = torque_buff.x, p23 = torque_buff.y, p24 = torque_buff.z;
             }
 
             // Include adhesion force.
@@ -646,102 +626,137 @@ void function_CalcContactForces(
 
             // Print collision metadata to tab dilineated chronodat.txt file
             if (print_data) {
-                datao << "\n"
-                      << std::left << std::setw(w - 5) << runs << "\t" << std::left << std::setw(w - 5) << body1 << "\t"
-                      << std::left << std::setw(w - 5) << body2 << "\t" << std::left << std::setw(w - 5) << newcontact
-                      << "\t" << std::left << std::setw(w - 5) << contact_id << "\t" << std::left << std::setw(w)
-                      << std::setprecision(prec) << delta_n << "\t" << std::left << std::setw(w)
-                      << std::setprecision(prec) << Length(delta_t) << "\t" << std::left << std::setw(w)
-                      << std::setprecision(prec) << p1 << "\t" << std::left << std::setw(w) << std::setprecision(prec)
-                      << p2 << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag << "\t"
-                      << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag << "\t" << std::left
-                      << std::setw(w) << std::setprecision(prec) << 0 << "\t" << std::left << std::setw(w)
-                      << std::setprecision(prec) << Length(force) << "\t" << std::left << std::setw(w)
-                      << std::setprecision(prec) << Length(torque1_loc) << "\t" << std::left << std::setw(w)
-                      << std::setprecision(prec) << Length(torque2_loc) << "\t" << std::left << std::setw(w)
-                      << std::setprecision(prec) << p19 << "\t" << std::left << std::setw(w) << std::setprecision(prec)
-                      << p20 << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p21 << "\t" << std::left
-                      << std::setw(w) << std::setprecision(prec) << p22 << "\t" << std::left << std::setw(w)
-                      << std::setprecision(prec) << p23 << "\t" << std::left << std::setw(w) << std::setprecision(prec)
-                      << p24;
+                datao << "\n" << std::left << std::setw(w - 5) << runs 
+					  << "\t" << std::left << std::setw(w - 5) << body1 
+					  << "\t" << std::left << std::setw(w - 5) << body2 
+					  << "\t" << std::left << std::setw(w - 5) << newcontact
+                      << "\t" << std::left << std::setw(w - 5) << contact_id 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force) 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque1_loc) 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque2_loc); 
                 datao.close();
             }
 
             return;
         }
-    }
+	}
 
-    /*
-    // If the resulting normal force is negative, then the two shapes are
-    // moving away from each other so fast that no contact force is generated.
-    if (forceN_mag < 0) {
-        forceN_mag = 0;
-        forceT_stiff.x = 0;
-        forceT_stiff.y = 0;
-        forceT_stiff.z = 0;
-        forceT_damp.x = 0;
-        forceT_damp.y = 0;
-        forceT_damp.z = 0;
-    }
-*/
+	/*
+	// If the resulting normal force is negative, then the two shapes are
+	// moving away from each other so fast that no contact force is generated.
+	if (forceN_mag < 0) {
+		forceN_mag = 0;
+		forceT_stiff.x = 0;
+		forceT_stiff.y = 0;
+		forceT_stiff.z = 0;
+		forceT_damp.x = 0;
+		forceT_damp.y = 0;
+		forceT_damp.z = 0;
+	}
 
-    /*
-        // Include adhesion force.
-        switch (adhesion_model) {
-            case ChSystemSMC::AdhesionForceModel::Constant:
-                // (This is a very simple model, which can perhaps be improved later.)
-                forceN_mag -= adhesion_eff;
-                p6 = "AdhesionModel = Constant";
-                break;
-            case ChSystemSMC::AdhesionForceModel::DMT:
-                // Derjaguin, Muller and Toporov (DMT) adhesion force,
-                forceN_mag -= adhesionMultDMT_eff * Sqrt(eff_radius[index]);
-                p6 = "AdhesionModel = DMT";
-                break;
-            case ChSystemSMC::AdhesionForceModel::Perko:
-                forceN_mag -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index];
-                p6 = "AdhesionModel = Perko";
-                break;
-        }
+	// Include adhesion force.
+	switch (adhesion_model) {
+		case ChSystemSMC::AdhesionForceModel::Constant:
+			// (This is a very simple model, which can perhaps be improved later.)
+			forceN_mag -= adhesion_eff;
+			p6 = "AdhesionModel = Constant";
+			break;
+		case ChSystemSMC::AdhesionForceModel::DMT:
+			// Derjaguin, Muller and Toporov (DMT) adhesion force,
+			forceN_mag -= adhesionMultDMT_eff * Sqrt(eff_radius[index]);
+			p6 = "AdhesionModel = DMT";
+			break;
+		case ChSystemSMC::AdhesionForceModel::Perko:
+			forceN_mag -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index];
+			p6 = "AdhesionModel = Perko";
+			break;
+	}
     */
 
-    // Apply Coulomb friction law.
-    // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
-    // If force_T_mag > mu_eff * |forceN_mag| and there is shear displacement
-    // due to contact history, then the shear displacement is scaled so that
-    // the tangential force will be correct if force_T_mag subsequently drops
-    // below the Coulomb limit.  Also, if there is sliding, then there is no
-    // viscous damping in the tangential direction (to keep the Coulomb limit
-    // strict, and independent of velocity).
-    //  real forceT_mag = Length(forceT_stiff + forceT_damp);  // This seems correct
-    real forceT_stiff_mag = Length(forceT_stiff);  // This is what LAMMPS/LIGGGHTS does
-    real delta_t_mag = Length(delta_t);
-    real forceT_slide = mu_eff * Abs(forceN_mag);
-    if (forceT_stiff_mag > forceT_slide) {
-        if (delta_t_mag > eps) {
-            real ratio = forceT_slide / forceT_stiff_mag;
-            forceT_stiff *= ratio;
-            if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
-                if (shear_body1 == body1) {
-                    shear_disp[max_shear * shear_body1 + contact_id] = forceT_stiff / kt;
-                } else {
-                    shear_disp[max_shear * shear_body1 + contact_id] = -forceT_stiff / kt;
-                }
-            }
-        } else {
-            forceT_stiff.x = 0.0;
-            forceT_stiff.y = 0.0;
-            forceT_stiff.z = 0.0;
-        }
-        forceT_damp.x = 0.0;
-        forceT_damp.y = 0.0;
-        forceT_damp.z = 0.0;
-    }
+	// Apply Coulomb friction law.
+	// We must enforce force_T_mag <= mu_eff * |forceN_mag|.
+	// If force_T_mag > mu_eff * |forceN_mag| and there is shear displacement
+	// due to contact history, then the shear displacement is scaled so that
+	// the tangential force will be correct if force_T_mag subsequently drops
+	// below the Coulomb limit.  Also, if there is sliding, then there is no
+	// viscous damping in the tangential direction (to keep the Coulomb limit
+	// strict, and independent of velocity).
+	// real forceT_mag = Length(forceT_stiff + forceT_damp);  // This seems correct
 
-    // Accumulate normal and tangential forces
-    real3 force = forceN_mag * normal[index];
-    force -= forceT_stiff;
-    force -= forceT_damp;
+	/*
+	real forceT_stiff_mag = Length(forceT_stiff);  // This is what LAMMPS/LIGGGHTS does
+	real delta_t_mag = Length(delta_t);
+	real forceT_slide = mu_eff * Abs(forceN_mag);
+	if (forceT_stiff_mag > forceT_slide) {
+		if (delta_t_mag > eps) {
+			real ratio = forceT_slide / forceT_stiff_mag;
+			forceT_stiff *= ratio;
+			if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
+				if (shear_body1 == body1) {
+					shear_disp[max_shear * shear_body1 + contact_id] = forceT_stiff / kt;
+				} else {
+					shear_disp[max_shear * shear_body1 + contact_id] = -forceT_stiff / kt;
+				}
+			}
+		} else {
+			forceT_stiff.x = 0.0;
+			forceT_stiff.y = 0.0;
+			forceT_stiff.z = 0.0;
+		}
+		forceT_damp.x = 0.0;
+		forceT_damp.y = 0.0;
+		forceT_damp.z = 0.0;
+	}
+
+	// Accumulate normal and tangential forces
+	real3 force = forceN_mag * normal[index];
+	force -= forceT_stiff;
+	force -= forceT_damp;
+    */
+
+
+
+
+	real3 forceT = forceT_stiff + forceT_damp;
+    real forceT_mag = Length(forceT); // * sign of forceT?
+	real forceT_slide = mu_eff * Abs(forceN_mag);
+	real delta_t_mag = Length(delta_t);
+	if (forceT_mag > forceT_slide) {
+		if (delta_t_mag > eps) {
+            real3 forceT_dir = forceT / forceT_mag;
+            forceT_mag = forceT_slide;
+			if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) { // Should this be based on the Force model?
+				if (shear_body1 == body1) {
+                    shear_disp[max_shear * shear_body1 + contact_id] = forceT_slide * forceT_dir / kt;
+				}
+				else {
+                    shear_disp[max_shear * shear_body1 + contact_id] = -forceT_slide * forceT_dir / kt;
+				}
+			}
+		}
+		else {
+			forceT_mag = 0; // and is this right ??
+		}
+	}
+
+	// Accumulate normal and tangential forces 
+	real3 force = forceN_mag * normal[index];
+    if (relvel_t_mag >= min_slip_vel) { 
+        force -= (forceT_mag / relvel_t_mag) * relvel_t;
+	}
+
+
+
+
+
 
     // Body forces (in global frame) & torques (in local frame)
     // --------------------------------------------------------
@@ -757,8 +772,6 @@ void function_CalcContactForces(
         real3 torque_buff = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
         torque1_loc += torque_buff;
         torque2_loc += torque_buff;
-
-        p19 = torque_buff.x, p20 = torque_buff.y, p21 = torque_buff.z;
     }
 
     // Calculate spinning friction torque as M_spin = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
@@ -772,8 +785,6 @@ void function_CalcContactForces(
                             normal[index];
         torque1_loc -= torque_buff;
         torque2_loc -= torque_buff;
-
-        p22 = torque_buff.x, p23 = torque_buff.y, p24 = torque_buff.z;
     }
 
     switch (adhesion_model) {
@@ -812,23 +823,22 @@ void function_CalcContactForces(
 
     // Print collision metadata to tab dilineated chronodat.txt file
     if (print_data) {
-        datao << "\n"
-              << std::left << std::setw(w - 5) << runs << "\t" << std::left << std::setw(w - 5) << body1 << "\t"
-              << std::left << std::setw(w - 5) << body2 << "\t" << std::left << std::setw(w - 5) << newcontact << "\t"
-              << std::left << std::setw(w - 5) << contact_id << "\t" << std::left << std::setw(w)
-              << std::setprecision(prec) << delta_n << "\t" << std::left << std::setw(w) << std::setprecision(prec)
-              << Length(delta_t) << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 << "\t"
-              << std::left << std::setw(w) << std::setprecision(prec) << p2 << "\t" << std::left << std::setw(w)
-              << std::setprecision(prec) << forceN_mag << "\t" << std::left << std::setw(w) << std::setprecision(prec)
-              << Length(forceT_stiff) << "\t" << std::left << std::setw(w) << std::setprecision(prec)
-              << Length(forceT_damp) << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force)
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque1_loc) << "\t"
-              << std::left << std::setw(w) << std::setprecision(prec) << Length(torque2_loc) << "\t" << std::left
-              << std::setw(w) << std::setprecision(prec) << p19 << "\t" << std::left << std::setw(w)
-              << std::setprecision(prec) << p20 << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p21
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p22 << "\t" << std::left
-              << std::setw(w) << std::setprecision(prec) << p23 << "\t" << std::left << std::setw(w)
-              << std::setprecision(prec) << p24;
+        datao << "\n" << std::left << std::setw(w - 5) << runs 
+			  << "\t" << std::left << std::setw(w - 5) << body1 
+			  << "\t" << std::left << std::setw(w - 5) << body2 
+			  << "\t" << std::left << std::setw(w - 5) << newcontact 
+			  << "\t" << std::left << std::setw(w - 5) << contact_id 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t)  
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_stiff) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_damp)
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force)
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque1_loc) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque2_loc); 
         datao.close();
     }
 }

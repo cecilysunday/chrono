@@ -717,11 +717,19 @@ void function_CalcContactForces(
     force -= forceT_damp;
     */
 
+	// TODO: Note that the mu in the parameter list is the static friction coefficient and
+	// is set in ChSystemParallel.cpp. Either update the parameter list to give the sliding
+	// friction coefficient, or re-write the implementation of Coulomb Friction to use the 
+	// static friction coefficient.
+
+	// TODO: Ahesion should be added before checking the Coulomb criteria. WHen doing this
+	// however, the spinning friction test fails because angular momentum is not consereved
+	
     // Apply Coulomb friction law.
     // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
-    // If force_T_mag > mu_eff * |forceN_mag|, then the shear displacement is 
-	// scaled so that the tangential force will be correct if force_T_mag 
-	// subsequently drops below the Coulomb limit.
+    // If force_T_mag > mu_eff * |forceN_mag|, then the shear displacement is
+    // scaled so that the tangential force will be correct if force_T_mag
+    // subsequently drops below the Coulomb limit
     real3 forceT = forceT_stiff + forceT_damp;
     real forceT_mag = Length(forceT);  // Is it an issue that this is always positive?
     real forceT_slide = mu_eff * Abs(forceN_mag);
@@ -808,19 +816,22 @@ void function_CalcContactForces(
 
     // Print collision metadata to tab dilineated chronodat.txt file
     if (print_data) {
-        datao << "\n"
-              << std::left << std::setw(w - 5) << runs << "\t" << std::left << std::setw(w - 5) << body1 << "\t"
-              << std::left << std::setw(w - 5) << body2 << "\t" << std::left << std::setw(w - 5) << newcontact << "\t"
-              << std::left << std::setw(w - 5) << contact_id << "\t" << std::left << std::setw(w)
-              << std::setprecision(prec) << delta_n << "\t" << std::left << std::setw(w) << std::setprecision(prec)
-              << Length(delta_t) << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 << "\t"
-              << std::left << std::setw(w) << std::setprecision(prec) << p2 << "\t" << std::left << std::setw(w)
-              << std::setprecision(prec) << forceN_mag << "\t" << std::left << std::setw(w) << std::setprecision(prec)
-              << Length(forceT_stiff) << "\t" << std::left << std::setw(w) << std::setprecision(prec)
-              << Length(forceT_damp) << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force) << "\t" << std::left
-              << std::setw(w) << std::setprecision(prec) << Length(torque1_loc) << "\t" << std::left << std::setw(w)
-              << std::setprecision(prec) << Length(torque2_loc);
+        datao << "\n" << std::left << std::setw(w - 5) << runs 
+			  << "\t" << std::left << std::setw(w - 5) << body1 
+			  << "\t" << std::left << std::setw(w - 5) << body2 
+			  << "\t" << std::left << std::setw(w - 5) << newcontact 
+			  << "\t" << std::left << std::setw(w - 5) << contact_id 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_stiff) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_damp) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque1_loc) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(torque2_loc);
         datao.close();
     }
 }

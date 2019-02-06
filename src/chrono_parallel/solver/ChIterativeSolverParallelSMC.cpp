@@ -71,7 +71,8 @@ void function_CalcContactForces(
     real* muSpin,                                         // coefficient of spinning friction (per body)
 	real* adhesion,                                       // constant force (per body)
     real* adhesionMultDMT,                                // Adhesion force multiplier (per body), in DMT model.
-    vec2* body_id,                                        // body IDs (per contact)
+    real* adhesionSPerko,                                 // Cleanliness factor (per body), in Perko model.
+	vec2* body_id,                                        // body IDs (per contact)
     vec2* shape_id,                                       // shape IDs (per contact)
     real3* pt1,                                           // point on shape 1 (per contact)
     real3* pt2,                                           // point on shape 2 (per contact)
@@ -138,6 +139,7 @@ void function_CalcContactForces(
     real muSpin_eff = strategy->CombineFriction(muSpin[body1], muSpin[body2]);
     real adhesion_eff = strategy->CombineCohesion(adhesion[body1], adhesion[body2]);
     real adhesionMultDMT_eff = strategy->CombineAdhesionMultiplier(adhesionMultDMT[body1], adhesionMultDMT[body2]);
+    real adhesionSPerko_eff = strategy->CombineAdhesionMultiplier(adhesionSPerko[body1], adhesionSPerko[body2]);
 
     real E_eff, G_eff, cr_eff;
     real user_kn, user_kt, user_gn, user_gt;
@@ -322,6 +324,9 @@ void function_CalcContactForces(
                     case ChSystemSMC::AdhesionForceModel::DMT:
                         forceN_mag -= adhesionMultDMT_eff * Sqrt(eff_radius[index]);
                         break;
+                    case ChSystemSMC::AdhesionForceModel::Perko:
+                        forceN_mag -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index];
+                        break;
                 }
                 real3 force = forceN_mag * normal[index];
                 if (relvel_t_mag >= (real)1e-4)
@@ -395,6 +400,9 @@ void function_CalcContactForces(
         case ChSystemSMC::AdhesionForceModel::DMT:
             // Derjaguin, Muller and Toporov (DMT) adhesion force,
             forceN_mag -= adhesionMultDMT_eff * Sqrt(eff_radius[index]);
+            break;
+        case ChSystemSMC::AdhesionForceModel::Perko:
+            forceN_mag -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index];
             break;
     }
 
@@ -497,8 +505,8 @@ void ChIterativeSolverParallelSMC::host_CalcContactForces(custom_vector<int>& ex
             data_manager->host_data.cr.data(), data_manager->host_data.smc_coeffs.data(),
             data_manager->host_data.mu.data(), data_manager->host_data.muRoll.data(),
             data_manager->host_data.muSpin.data(), data_manager->host_data.cohesion_data.data(),
-            data_manager->host_data.adhesionMultDMT_data.data(), data_manager->host_data.bids_rigid_rigid.data(),
-            shape_pairs.data(), data_manager->host_data.cpta_rigid_rigid.data(),
+            data_manager->host_data.adhesionMultDMT_data.data(), data_manager->host_data.adhesionSPerko_data.data(),
+            data_manager->host_data.bids_rigid_rigid.data(), shape_pairs.data(), data_manager->host_data.cpta_rigid_rigid.data(),
             data_manager->host_data.cptb_rigid_rigid.data(), data_manager->host_data.norm_rigid_rigid.data(),
             data_manager->host_data.dpth_rigid_rigid.data(), data_manager->host_data.erad_rigid_rigid.data(),
             data_manager->host_data.shear_neigh.data(), shear_touch.data(), data_manager->host_data.shear_disp.data(),

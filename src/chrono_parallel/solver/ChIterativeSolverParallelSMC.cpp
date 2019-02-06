@@ -87,6 +87,38 @@ void function_CalcContactForces(
     real3* ext_body_force,		// [output] body force (two per contact)
     real3* ext_body_torque		// [output] body torque (two per contact)
     ) {
+	// Format header and output file for debugging lines. Delete this after completing simple sphere validation tests
+    bool print_data = GetPrint();
+    std::ofstream datao;
+    static int runs = 0;
+    uint prec = 10;
+    uint w = 17;
+
+    if (runs == 0) {
+        datao.open(GetChronoOutputPath() + "/chronodat.txt");
+        datao << std::left << std::setw(w - 5) << "stp"
+              << "\t" << std::left << std::setw(w) << "delta_n"
+              << "\t" << std::left << std::setw(w) << "delta_t_x"
+              << "\t" << std::left << std::setw(w) << "delta_t_y"
+              << "\t" << std::left << std::setw(w) << "delta_t_z"
+              << "\t" << std::left << std::setw(w) << "delta_t"
+              << "\t" << std::left << std::setw(w) << "forceN_mag"
+              << "\t" << std::left << std::setw(w) << "forceT_stiff"
+              << "\t" << std::left << std::setw(w) << "forceT_damp"
+              << "\t" << std::left << std::setw(w) << "forceT_x"
+              << "\t" << std::left << std::setw(w) << "forceT_y"
+              << "\t" << std::left << std::setw(w) << "forceT_z"
+              << "\t" << std::left << std::setw(w) << "forceT_mag";
+        if (!print_data) {
+            datao.close();
+            datao.clear();
+        }
+        runs++;
+    } else if (print_data) {
+        datao.open(GetChronoOutputPath() + "/chronodat.txt", std::ios::app);
+        runs++;
+    }
+
     // Identify the two bodies in contact.
     int body1 = body_id[index].x;
     int body2 = body_id[index].y;
@@ -540,6 +572,24 @@ void function_CalcContactForces(
     ext_body_force[2 * index + 1] = force;
     ext_body_torque[2 * index] = -torque1_loc;
     ext_body_torque[2 * index + 1] = torque2_loc;
+
+	// Print collision metadata to tab chronodat.txt file. Delete this after completing simple sphere validation tests
+    if (print_data) {
+        datao << "\n" << std::left << std::setw(w - 5) << runs 
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_t.x
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_t.y
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_t.z
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t)
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_stiff) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_damp)
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.x
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.y
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.z
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT);
+        datao.close();
+    }
 }
 
 // -----------------------------------------------------------------------------

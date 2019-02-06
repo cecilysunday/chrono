@@ -441,7 +441,7 @@ void function_CalcContactForces(
     // viscous damping in the tangential direction (to keep the Coulomb limit
     // strict, and independent of velocity).
     //  real forceT_mag = Length(forceT_stiff + forceT_damp);  // This seems correct
-    real forceT_stiff_mag = Length(forceT_stiff);  // This is what LAMMPS/LIGGGHTS does
+    /*real forceT_stiff_mag = Length(forceT_stiff);  // This is what LAMMPS/LIGGGHTS does
     real delta_t_mag = Length(delta_t);
     real forceT_slide = mu_eff * Abs(forceN_mag);
     if (forceT_stiff_mag > forceT_slide) {
@@ -468,7 +468,41 @@ void function_CalcContactForces(
     // Accumulate normal and tangential forces
     real3 force = forceN_mag * normal[index];
     force -= forceT_stiff;
-    force -= forceT_damp;
+    force -= forceT_damp;*/
+
+	    // TODO: Note that the mu in the parameter list is the static friction coefficient and
+    // is set in ChSystemParallel.cpp. Either update the parameter list to give the sliding
+    // friction coefficient, or re-write the implementation of Coulomb Friction to use the
+    // static friction coefficient.
+
+    // TODO: Ahesion should be added before checking the Coulomb criteria. When doing this
+    // however, the spinning friction test fails because angular momentum is not consereved
+
+    // Apply Coulomb friction law.
+    // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
+    // If force_T_mag > mu_eff * |forceN_mag|, then the shear displacement is
+    // scaled so that the tangential force will be correct if force_T_mag
+    // subsequently drops below the Coulomb limit
+    real3 forceT = forceT_stiff + forceT_damp;
+    real forceT_mag = Length(forceT);
+    real forceT_slide = mu_eff * forceN_mag;
+    if (forceT_mag > abs(forceT_slide)) {
+        real3 forceT_dir = forceT / forceT_mag;
+        forceT_mag = forceT_slide;
+        forceT = forceT_mag * forceT_dir;
+        if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
+            delta_t = (forceT - forceT_damp) / kt;
+            if (shear_body1 == body1) {
+                shear_disp[max_shear * shear_body1 + contact_id] = delta_t;
+            } else {
+                shear_disp[max_shear * shear_body1 + contact_id] = -delta_t;
+            }
+        }
+    }
+
+	// Accumulate normal and tangential forces
+    real3 force = forceN_mag * normal[index];
+    force -= forceT;
 
     // Body forces (in global frame) & torques (in local frame)
     // --------------------------------------------------------

@@ -541,8 +541,8 @@ void function_CalcContactForces(
             real3 M_roll = real3(0);
             real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) - Rotate(Cross(o_body2, pt2_loc), rot[body2]);
             if (Length(v_rot) > min_roll_vel) {
-                M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
-                // M_roll = muRoll_eff * eff_radius[index] * Length(v_rot) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 2
+                // M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
+                M_roll = muRoll_eff * eff_radius[index] * Length(v_rot) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 2
                 torque1_loc += M_roll;
                 torque2_loc += M_roll;
             }
@@ -579,17 +579,6 @@ void function_CalcContactForces(
             ext_body_force[2 * index + 1] = force;
             ext_body_torque[2 * index] = -torque1_loc;
             ext_body_torque[2 * index + 1] = torque2_loc;
-
-			/*
-            // Print one-time collision information to userlog
-            if (runs == 1 && print_data) {
-                chrono::GetLog() << "\n"
-                                 << body1 << "_" << body2 << "_kn " << kn << "\n"
-                                 << body1 << "_" << body2 << "_kt " << kt << "\n"
-                                 << body1 << "_" << body2 << "_gn " << gn << "\n"
-                                 << body1 << "_" << body2 << "_gt " << gt;
-            }
-			*/
 
             // Print collision metadata to tab dilineated chronodat.txt file
             if (print_data) {
@@ -693,7 +682,6 @@ void function_CalcContactForces(
 
     // TODO: Ahesion should be added before checking the Coulomb criteria. When doing this
     // however, the spinning friction test fails because angular momentum is not consereved
-    
 	
     // Apply Coulomb friction law.
     // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
@@ -746,8 +734,8 @@ void function_CalcContactForces(
     real3 M_roll = real3(0);
 	real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) - Rotate(Cross(o_body2, pt2_loc), rot[body2]);
     if (Length(v_rot) > min_roll_vel) {
-        M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
-        // M_roll = muRoll_eff * eff_radius[index] * Length(v_rot) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 2
+        //M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
+        M_roll = muRoll_eff * eff_radius[index] * Length(v_rot) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 2
         torque1_loc += M_roll;
         torque2_loc += M_roll;
     }
@@ -787,17 +775,6 @@ void function_CalcContactForces(
     ext_body_torque[2 * index] = -torque1_loc;
     ext_body_torque[2 * index + 1] = torque2_loc;
 
-	/*
-    // Print one-time collision information to userlog
-    if (runs == 0 && print_data) {
-        chrono::GetLog() << "\n"
-                         << body1 << "_" << body2 << "_kn " << kn << "\n"
-                         << body1 << "_" << body2 << "_kt " << kt << "\n"
-                         << body1 << "_" << body2 << "_gn " << gn << "\n"
-                         << body1 << "_" << body2 << "_gt " << gt;
-    }
-	*/
-
     // Print collision metadata to tab dilineated chronodat.txt file
     if (print_data) {
         datao << "\n" << std::left << std::setw(w - 5) << runs 
@@ -815,7 +792,7 @@ void function_CalcContactForces(
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.y
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.z
               << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT)
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(M_roll);
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << M_roll.z;
         datao.close();
     }
 }

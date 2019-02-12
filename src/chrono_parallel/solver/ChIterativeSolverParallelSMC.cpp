@@ -114,7 +114,8 @@ void function_CalcContactForces(
               << "\t" << std::left << std::setw(w) << "forceT_x"
               << "\t" << std::left << std::setw(w) << "forceT_y"
               << "\t" << std::left << std::setw(w) << "forceT_z"
-              << "\t" << std::left << std::setw(w) << "forceT_mag";
+              << "\t" << std::left << std::setw(w) << "forceT_mag"
+              << "\t" << std::left << std::setw(w) << "M_roll";
         if (!print_data) {
             datao.close();
             datao.clear();
@@ -537,12 +538,13 @@ void function_CalcContactForces(
             real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
             // Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
-            real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
+            real3 M_roll = real3(0);
+            real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) - Rotate(Cross(o_body2, pt2_loc), rot[body2]);
             if (Length(v_rot) > min_roll_vel) {
-                real3 torque_buff =
-                    muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
-                torque1_loc += torque_buff;
-                torque2_loc += torque_buff;
+                M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
+                // M_roll = muRoll_eff * eff_radius[index] * Length(v_rot) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 2
+                torque1_loc += M_roll;
+                torque2_loc += M_roll;
             }
 
             // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
@@ -605,7 +607,8 @@ void function_CalcContactForces(
 					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
 					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
 					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag;
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(M_roll);
                 datao.close();
             }
 
@@ -740,11 +743,13 @@ void function_CalcContactForces(
     real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
     // Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
-    real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
+    real3 M_roll = real3(0);
+	real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) - Rotate(Cross(o_body2, pt2_loc), rot[body2]);
     if (Length(v_rot) > min_roll_vel) {
-        real3 torque_buff = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
-        torque1_loc += torque_buff;
-        torque2_loc += torque_buff;
+        M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
+        // M_roll = muRoll_eff * eff_radius[index] * Length(v_rot) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 2
+        torque1_loc += M_roll;
+        torque2_loc += M_roll;
     }
 
     // Calculate spinning friction torque as M_spin = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
@@ -809,7 +814,8 @@ void function_CalcContactForces(
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.x
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.y
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.z
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT);
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT)
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(M_roll);
         datao.close();
     }
 }

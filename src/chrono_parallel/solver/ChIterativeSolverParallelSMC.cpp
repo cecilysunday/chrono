@@ -194,7 +194,6 @@ void function_CalcContactForces(
     real kt;
     real gn;
     real gt;
-    real relvel_init;
 
     real delta_n = -depth[index];
     real3 delta_t = real3(0);
@@ -234,13 +233,11 @@ void function_CalcContactForces(
             user_gt = strategy->CombineDampingCoefficient(smc_coeffs[body1].w, smc_coeffs[body2].w);
         }
 
-        relvel_init = abs(relvel_n_mag);
-
         switch (contact_model) {
             case ChSystemSMC::ContactForceModel::Hooke:
                 if (use_mat_props) {
                     real tmp_k = (16.0 / 15) * Sqrt(eff_radius[index]) * E_eff;
-                    real v2 = relvel_init * relvel_init;
+                    real v2 = char_vel * char_vel;
                     real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                     loge = (cr_eff > 1 - eps) ? Log(1 - eps) : loge;
                     real tmp_g = 1 + Pow(CH_C_PI / loge, 2);
@@ -258,9 +255,9 @@ void function_CalcContactForces(
 
             case ChSystemSMC::ContactForceModel::Hertz:
                 if (use_mat_props) {
-                    real sqrt_Rd = Sqrt(eff_radius[index]);
-                    real Sn = 2 * E_eff * sqrt_Rd;
-                    real St = 8 * G_eff * sqrt_Rd;
+                    real sqrt_R = Sqrt(eff_radius[index]);
+                    real Sn = 2 * E_eff * sqrt_R;
+                    real St = 8 * G_eff * sqrt_R;
                     real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                     real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                     kn = (2.0 / 3) * Sn;
@@ -279,12 +276,16 @@ void function_CalcContactForces(
             case ChSystemSMC::Flores:
                 if (use_mat_props) {
                     real sqrt_R = Sqrt(eff_radius[index]);
+                    real Sn = 2 * E_eff * sqrt_R;
+                    real St = 8 * G_eff * sqrt_R;
+                    real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
+                    real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                     double cr = (cr_eff < eps) ? eps : cr_eff;
                     cr = (cr_eff > 1 - eps) ? 1 - eps : cr;
-                    kn = (4.0 / 3.0) * E_eff * sqrt_R;
-                    kt = kn;
-                    gn = 8.0 * (1.0 - cr) * kn / (5.0 * cr * relvel_init);
-                    gt = gn;
+                    kn = (2.0 / 3.0) * Sn;
+                    kt = St;
+                    gn = 8.0 * (1.0 - cr) * kn / (5.0 * cr * char_vel);
+                    gt = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff);
                 } else {
                     real tmp = eff_radius[index];
                     kn = tmp * user_kn;
@@ -297,7 +298,6 @@ void function_CalcContactForces(
             case ChSystemSMC::ContactForceModel::PlainCoulomb:
                 if (use_mat_props) {
                     real Sn = 2 * E_eff;
-                    real St = 8 * G_eff;
                     real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                     real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                     kn = (2.0 / 3) * Sn;
@@ -350,7 +350,7 @@ void function_CalcContactForces(
                     shear_disp[ctIdUnrolled].x = 0;
                     shear_disp[ctIdUnrolled].y = 0;
                     shear_disp[ctIdUnrolled].z = 0;
-                    contact_relvel_init[ctIdUnrolled] = abs(relvel_n_mag);
+                    contact_relvel_init[ctIdUnrolled] = Length(relvel);
 
                     real E_eff, G_eff, cr_eff;
                     real user_kn, user_kt, user_gn, user_gt;
@@ -397,9 +397,9 @@ void function_CalcContactForces(
 
                         case ChSystemSMC::ContactForceModel::Hertz:
                             if (use_mat_props) {
-                                real sqrt_Rd = Sqrt(eff_radius[index]);
-                                real Sn = 2 * E_eff * sqrt_Rd;
-                                real St = 8 * G_eff * sqrt_Rd;
+                                real sqrt_R = Sqrt(eff_radius[index]);
+                                real Sn = 2 * E_eff * sqrt_R;
+                                real St = 8 * G_eff * sqrt_R;
                                 real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                                 real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                                 contact_coeff[ctIdUnrolled].x = (2.0 / 3) * Sn;
@@ -418,13 +418,17 @@ void function_CalcContactForces(
                         case ChSystemSMC::Flores:
                             if (use_mat_props) {
                                 real sqrt_R = Sqrt(eff_radius[index]);
+                                real Sn = 2 * E_eff * sqrt_R;
+                                real St = 8 * G_eff * sqrt_R;
+                                real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
+                                real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                                 double cr = (cr_eff < eps) ? eps : cr_eff;
                                 cr = (cr_eff > 1 - eps) ? 1 - eps : cr;
-                                contact_coeff[ctIdUnrolled].x = (4.0 / 3.0) * E_eff * sqrt_R;
-                                contact_coeff[ctIdUnrolled].y = contact_coeff[ctIdUnrolled].x;
+                                contact_coeff[ctIdUnrolled].x = (2.0 / 3.0) * Sn;
+                                contact_coeff[ctIdUnrolled].y = St;
                                 contact_coeff[ctIdUnrolled].z = 8.0 * (1.0 - cr) * contact_coeff[ctIdUnrolled].x /
                                                                 (5.0 * cr * contact_relvel_init[ctIdUnrolled]);
-                                contact_coeff[ctIdUnrolled].w = contact_coeff[ctIdUnrolled].z;
+                                contact_coeff[ctIdUnrolled].w = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff);
                             } else {
                                 real tmp = eff_radius[index];
                                 contact_coeff[ctIdUnrolled].x = tmp * user_kn;
@@ -437,7 +441,6 @@ void function_CalcContactForces(
                         case ChSystemSMC::ContactForceModel::PlainCoulomb:
                             if (use_mat_props) {
                                 real Sn = 2 * E_eff;
-                                real St = 8 * G_eff;
                                 real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                                 real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                                 contact_coeff[ctIdUnrolled].x = (2.0 / 3) * Sn;
@@ -478,7 +481,6 @@ void function_CalcContactForces(
         kt = contact_coeff[ctSaveId].y;
         gn = contact_coeff[ctSaveId].z;
         gt = contact_coeff[ctSaveId].w;
-        relvel_init = contact_relvel_init[ctSaveId];
     }
 
     // Calculate the the normal and tangential contact forces.

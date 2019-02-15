@@ -81,8 +81,8 @@ void function_CalcContactForces(
     vec3* shear_neigh,          // neighbor list of contacting bodies and shapes (max_shear per body)
     char* shear_touch,          // flag if contact in neighbor list is persistent (max_shear per body)
     real3* shear_disp,          // accumulated shear displacement for each neighbor (max_shear per body)
-    real4* contact_coeff,       // stiffness and damping coefficients per contact pair, calculated at first contact (max_shear per body)
-    real* contact_relvel_init,  // initial relative normal velocity manitude per contact pair, calculated at first contact (max_shear per body)
+    real4* contact_coeff,       // stiffness and damping coefficients per contact pair, calculated at first contact
+    real* contact_relvel_init,  // initial relative normal velocity manitude per contact pair, calculated at first contact
     int* ext_body_id,           // [output] body IDs (two per contact)
     real3* ext_body_force,      // [output] body force (two per contact)
     real3* ext_body_torque      // [output] body torque (two per contact)
@@ -97,13 +97,12 @@ void function_CalcContactForces(
     uint w = 17;
 
     std::ofstream datao;
+    if (datao.is_open()) {
+        datao.close();
+        datao.clear();
+    }
 
     if (runs == 0) {
-        if (datao.is_open()) {
-            datao.close();
-            datao.flush();
-            datao.clear();
-		}
         datao.open(GetChronoOutputPath() + "/chronodat.txt");
         datao << std::left << std::setw(w - 5) << "stp"
               << "\t" << std::left << std::setw(w) << "delta_n"
@@ -124,7 +123,7 @@ void function_CalcContactForces(
               << "\t" << std::left << std::setw(w) << "force_y"
               << "\t" << std::left << std::setw(w) << "force_z"
               << "\t" << std::left << std::setw(w) << "force_mag"
-              << "\t" << std::left << std::setw(w) << "XXXXXM_roll";
+              << "\t" << std::left << std::setw(w) << "M_roll";
         if (!print_data) {
             datao.close();
             datao.clear();
@@ -531,20 +530,6 @@ void function_CalcContactForces(
             if (relvel_t_mag >= (real)1e-4)  // Should this be [ if (relvel_t_mag >= min_slip_vel) ] ?
                 force -= (forceT_mag / relvel_t_mag) * relvel_t;
 
-			// Include adhesion as part of the total force calculation rather than part of
-            // the the forceN_max calculation to prevent the effects of adhesion from canceling out
-			switch (adhesion_model) {
-                case ChSystemSMC::AdhesionForceModel::Constant:
-                    force -= adhesion_eff * normal[index];
-                    break;
-                case ChSystemSMC::AdhesionForceModel::DMT:
-                    force -= adhesionMultDMT_eff * Sqrt(eff_radius[index]) * normal[index];
-                    break;
-                case ChSystemSMC::AdhesionForceModel::Perko:
-                    force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
-                    break;
-            }
-
 			// Convert force into the local body frames and calculate induced torques
             real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
             real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
@@ -570,6 +555,21 @@ void function_CalcContactForces(
                                     normal[index];
                 torque1_loc -= torque_buff;
                 torque2_loc -= torque_buff;
+            }
+
+			// Include adhesion as part of the total force calculation rather than part of
+            // the the forceN_max calculation to prevent its effects from canceling out
+            // in the normal force calculation
+            switch (adhesion_model) {
+                case ChSystemSMC::AdhesionForceModel::Constant:
+                    force -= adhesion_eff * normal[index];
+                    break;
+                case ChSystemSMC::AdhesionForceModel::DMT:
+                    force -= adhesionMultDMT_eff * Sqrt(eff_radius[index]) * normal[index];
+                    break;
+                case ChSystemSMC::AdhesionForceModel::Perko:
+                    force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
+                    break;
             }
 
             ext_body_id[2 * index] = body1;
@@ -703,23 +703,8 @@ void function_CalcContactForces(
     real3 force = forceN_mag * normal[index];
 	force -= forceT;
 
-	// Include adhesion as part of the total force calculation rather than part of
-	// the the forceN_max calculation to prevent the effects of adhesion from canceling out
-	switch (adhesion_model) {
-		case ChSystemSMC::AdhesionForceModel::Constant:
-            force -= adhesion_eff * normal[index];
-			break;
-		case ChSystemSMC::AdhesionForceModel::DMT:
-            force -= adhesionMultDMT_eff * Sqrt(eff_radius[index]) * normal[index];
-			break;
-		case ChSystemSMC::AdhesionForceModel::Perko:
-            force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
-			break;
-	}
-
-    // Body forces (in global frame) & torques (in local frame)
+	// Body forces (in global frame) & torques (in local frame)
     // --------------------------------------------------------
-
     // Convert force into the local body frames and calculate induced torques
     //    n' = s' x F' = s' x (A*F)
     real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
@@ -746,6 +731,21 @@ void function_CalcContactForces(
                             normal[index];
         torque1_loc -= torque_buff;
         torque2_loc -= torque_buff;
+    }
+
+	// Include adhesion as part of the total force calculation rather than part of
+    // the the forceN_max calculation to prevent its effects from canceling out
+    // in the normal force calculation
+    switch (adhesion_model) {
+        case ChSystemSMC::AdhesionForceModel::Constant:
+            force -= adhesion_eff * normal[index];
+            break;
+        case ChSystemSMC::AdhesionForceModel::DMT:
+            force -= adhesionMultDMT_eff * Sqrt(eff_radius[index]) * normal[index];
+            break;
+        case ChSystemSMC::AdhesionForceModel::Perko:
+            force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
+            break;
     }
 
     // Store body forces and torques, duplicated for the two bodies.

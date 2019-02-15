@@ -536,9 +536,9 @@ void function_CalcContactForces(
 
             // Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
             real3 M_roll = real3(0);
-            real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) - Rotate(Cross(o_body2, pt2_loc), rot[body2]);
+            real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
             if (Length(v_rot) > min_roll_vel) {
-                // M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
+                //M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
                 M_roll = muRoll_eff * eff_radius[index] * Length(v_rot) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 2
                 torque1_loc += M_roll;
                 torque2_loc += M_roll;
@@ -579,7 +579,7 @@ void function_CalcContactForces(
             ext_body_torque[2 * index] = -torque1_loc;
             ext_body_torque[2 * index + 1] = torque2_loc;
 
-            // Print collision metadata to tab dilineated chronodat.txt file
+            // Print collision metadata to chronodat.txt
             if (print_data) {
 				datao << "\n" << std::left << std::setw(w - 5) << runs 
 					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n
@@ -673,35 +673,37 @@ void function_CalcContactForces(
     real forceT_mag = Length(forceT);					
     real forceT_slide = mu_eff * forceN_mag;
     if (forceT_mag > abs(forceT_slide)) {
-        real3 forceT_dir = forceT / forceT_mag;
-        forceT_mag = forceT_slide;
-        forceT = forceT_mag * forceT_dir;
-        if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
-			switch (contact_model) {
-                case ChSystemSMC::Hooke:
-                    delta_t = (forceT - forceT_damp) / kt;
-                    break;
+        if (Length(delta_t) > eps) {
+			real3 forceT_dir = forceT / forceT_mag;
+			forceT_mag = forceT_slide;
+			forceT = forceT_mag * forceT_dir;
+			if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
+				switch (contact_model) {
+					case ChSystemSMC::Hooke:
+						delta_t = (forceT - forceT_damp) / kt;
+						break;
 
-                case ChSystemSMC::Hertz:
-                    delta_t = (forceT - forceT_damp) / (kt * Pow(delta_n, 0.5));
-                    break;
+					case ChSystemSMC::Hertz:
+						delta_t = (forceT - forceT_damp) / (kt * Pow(delta_n, 0.5));
+						break;
 
-                case ChSystemSMC::Flores:
-                    delta_t = (forceT - forceT_damp) / (kt * Pow(delta_n, 0.5));
-                    break;
+					case ChSystemSMC::Flores:
+						delta_t = (forceT - forceT_damp) / (kt * Pow(delta_n, 0.5));
+						break;
+				}
+				if (shear_body1 == body1) { 
+					shear_disp[max_shear * shear_body1 + contact_id] = delta_t;
+				} else {
+					shear_disp[max_shear * shear_body1 + contact_id] = -delta_t;
+				}
 			}
-	
-			if (shear_body1 == body1) { 
-                shear_disp[max_shear * shear_body1 + contact_id] = delta_t;
-			} else {
-                shear_disp[max_shear * shear_body1 + contact_id] = -delta_t;
-            }
+        } else {
+            forceT = real3(0);
         }
     }
 
     // Accumulate normal and tangential forces
-    real3 force = forceN_mag * normal[index];
-	force -= forceT;
+    real3 force = forceN_mag * normal[index] - forceT;
 
 	// Body forces (in global frame) & torques (in local frame)
     // --------------------------------------------------------
@@ -712,10 +714,10 @@ void function_CalcContactForces(
 
     // Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
     real3 M_roll = real3(0);
-	real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) - Rotate(Cross(o_body2, pt2_loc), rot[body2]);
+	real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
     if (Length(v_rot) > min_roll_vel) {
         //M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
-        M_roll = muRoll_eff * eff_radius[index] * Length(v_rot) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 2
+        M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot); // MODEL 2
         torque1_loc += M_roll;
         torque2_loc += M_roll;
     }
@@ -747,7 +749,7 @@ void function_CalcContactForces(
             force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
             break;
     }
-
+	
     // Store body forces and torques, duplicated for the two bodies.
     ext_body_id[2 * index] = body1;
     ext_body_id[2 * index + 1] = body2;
@@ -756,7 +758,7 @@ void function_CalcContactForces(
     ext_body_torque[2 * index] = -torque1_loc;
     ext_body_torque[2 * index + 1] = torque2_loc;
 
-    // Print collision metadata to tab dilineated chronodat.txt file
+    // Print collision metadata to chronodat.txt
     if (print_data) {
         datao << "\n" << std::left << std::setw(w - 5) << runs 
               << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n

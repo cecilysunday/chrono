@@ -99,6 +99,11 @@ void function_CalcContactForces(
     std::ofstream datao;
 
     if (runs == 0) {
+        if (datao.is_open()) {
+            datao.close();
+            datao.flush();
+            datao.clear();
+		}
         datao.open(GetChronoOutputPath() + "/chronodat.txt");
         datao << std::left << std::setw(w - 5) << "stp"
               << "\t" << std::left << std::setw(w) << "delta_n"
@@ -115,7 +120,11 @@ void function_CalcContactForces(
               << "\t" << std::left << std::setw(w) << "forceT_y"
               << "\t" << std::left << std::setw(w) << "forceT_z"
               << "\t" << std::left << std::setw(w) << "forceT_mag"
-              << "\t" << std::left << std::setw(w) << "M_roll";
+              << "\t" << std::left << std::setw(w) << "force_x"
+              << "\t" << std::left << std::setw(w) << "force_y"
+              << "\t" << std::left << std::setw(w) << "force_z"
+              << "\t" << std::left << std::setw(w) << "force_mag"
+              << "\t" << std::left << std::setw(w) << "XXXXXM_roll";
         if (!print_data) {
             datao.close();
             datao.clear();
@@ -138,7 +147,7 @@ void function_CalcContactForces(
         ext_body_force[2 * index + 1] = real3(0);
         ext_body_torque[2 * index] = real3(0);
         ext_body_torque[2 * index + 1] = real3(0);
-        chrono::GetLog() << "\n" << "WARNING: Exited function_CalcContactForce() without calculating forces.";
+        chrono::GetLog() << "\n" << "WARNING: Exited function_CalcContactForce() without calculating forces for contact step: " << runs;
         return;
     }
 
@@ -517,25 +526,26 @@ void function_CalcContactForces(
             //     forceN_mag = 0;
             real forceT_mag = mu_eff * Tanh(5.0 * relvel_t_mag) * forceN_mag;
 
-            /*
-            // Include adhesion force.
-            switch (adhesion_model) {
-                case ChSystemSMC::AdhesionForceModel::Constant:
-                    forceN_mag -= adhesion_eff;
-                    break;
-                case ChSystemSMC::AdhesionForceModel::DMT:
-                    forceN_mag -= adhesionMultDMT_eff * Sqrt(eff_radius[index]);
-                    break;
-                case ChSystemSMC::AdhesionForceModel::Perko:
-                    forceN_mag -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index];
-                    break;
-            }
-            */
-
+			// Accumulate normal and tangential forces
             real3 force = forceN_mag * normal[index];
             if (relvel_t_mag >= (real)1e-4)  // Should this be [ if (relvel_t_mag >= min_slip_vel) ] ?
                 force -= (forceT_mag / relvel_t_mag) * relvel_t;
 
+			// Include adhesion as part of the total force calculation rather than part of
+            // the the forceN_max calculation to prevent the effects of adhesion from canceling out
+			switch (adhesion_model) {
+                case ChSystemSMC::AdhesionForceModel::Constant:
+                    force -= adhesion_eff * normal[index];
+                    break;
+                case ChSystemSMC::AdhesionForceModel::DMT:
+                    force -= adhesionMultDMT_eff * Sqrt(eff_radius[index]) * normal[index];
+                    break;
+                case ChSystemSMC::AdhesionForceModel::Perko:
+                    force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
+                    break;
+            }
+
+			// Convert force into the local body frames and calculate induced torques
             real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
             real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
@@ -560,19 +570,6 @@ void function_CalcContactForces(
                                     normal[index];
                 torque1_loc -= torque_buff;
                 torque2_loc -= torque_buff;
-            }
-
-            // Include adhesion force.
-            switch (adhesion_model) {
-                case ChSystemSMC::AdhesionForceModel::Constant:
-                    force -= adhesion_eff * normal[index];
-                    break;
-                case ChSystemSMC::AdhesionForceModel::DMT:
-                    force -= adhesionMultDMT_eff * Sqrt(eff_radius[index] * normal[index]);
-                    break;
-                case ChSystemSMC::AdhesionForceModel::Perko:
-                    force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
-                    break;
             }
 
             ext_body_id[2 * index] = body1;
@@ -607,8 +604,7 @@ void function_CalcContactForces(
         }
     }
 
-    /*
-    // If the resulting normal force is negative, then the two shapes are
+    /*// If the resulting normal force is negative, then the two shapes are
     // moving away from each other so fast that no contact force is generated.
     if (forceN_mag < 0) {
         forceN_mag = 0;
@@ -618,24 +614,9 @@ void function_CalcContactForces(
         forceT_damp.x = 0;
         forceT_damp.y = 0;
         forceT_damp.z = 0;
-    }
+    }*/
 
-    // Include adhesion force.
-    switch (adhesion_model) {
-        case ChSystemSMC::AdhesionForceModel::Constant:
-            // (This is a very simple model, which can perhaps be improved later.)
-            forceN_mag -= adhesion_eff;
-            break;
-        case ChSystemSMC::AdhesionForceModel::DMT:
-            // Derjaguin, Muller and Toporov (DMT) adhesion force,
-            forceN_mag -= adhesionMultDMT_eff * Sqrt(eff_radius[index]);
-            break;
-        case ChSystemSMC::AdhesionForceModel::Perko:
-            forceN_mag -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index];
-            break;
-    }
-
-    // Apply Coulomb friction law.
+    /*// Apply Coulomb friction law.
     // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
     // If force_T_mag > mu_eff * |forceN_mag| and there is shear displacement
     // due to contact history, then the shear displacement is scaled so that
@@ -673,9 +654,7 @@ void function_CalcContactForces(
     force -= forceT_stiff;
     force -= forceT_damp;
 	
-    
-	real3 forceT = forceT_stiff + forceT_damp;
-	*/
+	real3 forceT = forceT_stiff + forceT_damp;*/
 
     // TODO: Note that the mu in the parameter list is the static friction coefficient and
     // is set in ChSystemParallel.cpp. Either update the parameter list to give the sliding
@@ -690,8 +669,8 @@ void function_CalcContactForces(
     // If force_T_mag > mu_eff * |forceN_mag|, then the shear displacement is
     // scaled so that the tangential force will be correct if force_T_mag
     // subsequently drops below the Coulomb limit
-    real3 forceT = forceT_stiff + forceT_damp;
-    real forceT_mag = Length(forceT);					// Is it an issue that this is always positive?
+	real3 forceT = forceT_stiff + forceT_damp;
+    real forceT_mag = Length(forceT);					
     real forceT_slide = mu_eff * forceN_mag;
     if (forceT_mag > abs(forceT_slide)) {
         real3 forceT_dir = forceT / forceT_mag;
@@ -722,7 +701,21 @@ void function_CalcContactForces(
 
     // Accumulate normal and tangential forces
     real3 force = forceN_mag * normal[index];
-    force -= forceT;
+	force -= forceT;
+
+	// Include adhesion as part of the total force calculation rather than part of
+	// the the forceN_max calculation to prevent the effects of adhesion from canceling out
+	switch (adhesion_model) {
+		case ChSystemSMC::AdhesionForceModel::Constant:
+            force -= adhesion_eff * normal[index];
+			break;
+		case ChSystemSMC::AdhesionForceModel::DMT:
+            force -= adhesionMultDMT_eff * Sqrt(eff_radius[index]) * normal[index];
+			break;
+		case ChSystemSMC::AdhesionForceModel::Perko:
+            force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
+			break;
+	}
 
     // Body forces (in global frame) & torques (in local frame)
     // --------------------------------------------------------
@@ -755,20 +748,6 @@ void function_CalcContactForces(
         torque2_loc -= torque_buff;
     }
 
-    switch (adhesion_model) {
-        case ChSystemSMC::AdhesionForceModel::Constant:
-            // (This is a very simple model, which can perhaps be improved later.)
-            force -= adhesion_eff * normal[index];
-            break;
-        case ChSystemSMC::AdhesionForceModel::DMT:
-            // Derjaguin, Muller and Toporov (DMT) adhesion force,
-            force -= adhesionMultDMT_eff * Sqrt(eff_radius[index] * normal[index]);
-            break;
-        case ChSystemSMC::AdhesionForceModel::Perko:
-            force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
-            break;
-    }
-
     // Store body forces and torques, duplicated for the two bodies.
     ext_body_id[2 * index] = body1;
     ext_body_id[2 * index + 1] = body2;
@@ -794,6 +773,10 @@ void function_CalcContactForces(
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.y
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.z
               << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT)
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.x
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.y
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.z
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force)
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << M_roll.z;
         datao.close();
     }

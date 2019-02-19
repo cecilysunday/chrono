@@ -16,17 +16,6 @@ if(NOT ENABLE_MODULE_PARALLEL)
   mark_as_advanced(FORCE USE_PARALLEL_DOUBLE)
   mark_as_advanced(FORCE USE_PARALLEL_SIMD)
   mark_as_advanced(FORCE USE_PARALLEL_CUDA)
-
-  # GCC > 4.9 does not support CUDA (<= 8.0) by default. 
-  # Users may explicitly select CUDA support if they are sure that their compiler
-  # does make use of any conflicting features, such as C++14.
-  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9)
-      message(STATUS "GCC version:  ${CMAKE_CXX_COMPILER_VERSION} does not support USE_PARALLEL_CUDA by default")
-      set(USE_PARALLEL_CUDA OFF CACHE OFF "")
-    endif()
-  endif()
-
   return()
 endif()
 
@@ -77,6 +66,12 @@ ENDIF()
 # ----- Thrust library -----
 
 find_package(Thrust)
+
+if(NOT THRUST_FOUND)
+  mark_as_advanced(CLEAR THRUST_INCLUDE_DIR)
+else()
+  mark_as_advanced(FORCE THRUST_INCLUDE_DIR)
+endif()
 
 # ----- Blaze library -----
 
@@ -449,18 +444,3 @@ IF(USE_PARALLEL_CUDA)
           DESTINATION include/chrono_parallel
           FILES_MATCHING PATTERN "*.cuh")
 ENDIF()
-
-mark_as_advanced(FORCE
-    CUDA_BUILD_CUBIN
-    CUDA_BUILD_EMULATION
-    CUDA_SEPARABLE_COMPILATION
-    CUDA_SDK_ROOT_DIR
-    CUDA_VERBOSE_BUILD
-    CUDA_HOST_COMPILER)
-
-
-
-
-
-
-

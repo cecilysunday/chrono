@@ -82,14 +82,14 @@ void function_CalcContactForces(
     char* shear_touch,          // flag if contact in neighbor list is persistent (max_shear per body)
     real3* shear_disp,          // accumulated shear displacement for each neighbor (max_shear per body)
     real4* contact_coeff,       // stiffness and damping coefficients per contact pair, calculated at first contact
-    real* contact_relvel_init,  // initial relative normal velocity manitude per contact pair, calculated at first contact
+    real* contact_relvel_init,  // initial relative normal vel manitude per contact pair, calculated at first contact
     int* ext_body_id,           // [output] body IDs (two per contact)
     real3* ext_body_force,      // [output] body force (two per contact)
     real3* ext_body_torque      // [output] body torque (two per contact)
 ) {
     // File properties and print lines for debugging. Delete during code clean-up
-    real p1;             // relvel_n_mag (signed)
-    real p2;             // relvel_t_mag (always positive)
+    real p1;  // relvel_n_mag (signed)
+    real p2;  // relvel_t_mag (always positive)
 
     bool print_data = GetPrint();
     static int runs = 0;
@@ -97,33 +97,27 @@ void function_CalcContactForces(
     uint w = 17;
 
     std::ofstream datao;
-    if (datao.is_open()) {
-        datao.close();
-        datao.clear();
-    }
 
     if (runs == 0) {
         datao.open(GetChronoOutputPath() + "/chronodat.txt");
         datao << std::left << std::setw(w - 5) << "stp"
               << "\t" << std::left << std::setw(w) << "delta_n"
-              << "\t" << std::left << std::setw(w) << "delta_t_x"
-              << "\t" << std::left << std::setw(w) << "delta_t_y"
-              << "\t" << std::left << std::setw(w) << "delta_t_z"
               << "\t" << std::left << std::setw(w) << "delta_t"
-              << "\t" << std::left << std::setw(w) << "relvel_n_mag"
-              << "\t" << std::left << std::setw(w) << "relvel_t_mag"
-              << "\t" << std::left << std::setw(w) << "forceN_mag"
-              << "\t" << std::left << std::setw(w) << "forceT_stiff"
-              << "\t" << std::left << std::setw(w) << "forceT_damp"
-              << "\t" << std::left << std::setw(w) << "forceT_x"
-              << "\t" << std::left << std::setw(w) << "forceT_y"
-              << "\t" << std::left << std::setw(w) << "forceT_z"
-              << "\t" << std::left << std::setw(w) << "forceT_mag"
+              << "\t" << std::left << std::setw(w) << "relvel_n"
+              << "\t" << std::left << std::setw(w) << "relvel_t"
+              << "\t" << std::left << std::setw(w) << "force_n_mag"
+              << "\t" << std::left << std::setw(w) << "force_t_stiff"
+              << "\t" << std::left << std::setw(w) << "force_t_damp"
+              << "\t" << std::left << std::setw(w) << "force_t_x"
+              << "\t" << std::left << std::setw(w) << "force_t_y"
+              << "\t" << std::left << std::setw(w) << "force_t_z"
+              << "\t" << std::left << std::setw(w) << "force_t_mag"
               << "\t" << std::left << std::setw(w) << "force_x"
               << "\t" << std::left << std::setw(w) << "force_y"
               << "\t" << std::left << std::setw(w) << "force_z"
               << "\t" << std::left << std::setw(w) << "force_mag"
-              << "\t" << std::left << std::setw(w) << "M_roll";
+              << "\t" << std::left << std::setw(w) << "moment_roll"
+              << "\t" << std::left << std::setw(w) << "moment_spin";
         if (!print_data) {
             datao.close();
             datao.clear();
@@ -146,7 +140,9 @@ void function_CalcContactForces(
         ext_body_force[2 * index + 1] = real3(0);
         ext_body_torque[2 * index] = real3(0);
         ext_body_torque[2 * index + 1] = real3(0);
-        chrono::GetLog() << "\n" << "WARNING: Exited function_CalcContactForce() without calculating forces for contact step: " << runs;
+        chrono::GetLog() << "\n"
+                         << "WARNING: Exited function_CalcContactForce() without calculating forces for contact step: "
+                         << runs;
         return;
     }
 
@@ -475,7 +471,7 @@ void function_CalcContactForces(
         // Increment stored contact history tangential (shear) displacement vector
         // and project it onto the <current> contact plane.
         if (shear_body1 == body1) {
-			shear_disp[ctSaveId] += delta_t;
+            shear_disp[ctSaveId] += delta_t;
             shear_disp[ctSaveId] -= Dot(shear_disp[ctSaveId], normal[index]) * normal[index];
             delta_t = shear_disp[ctSaveId];
         } else {
@@ -525,39 +521,41 @@ void function_CalcContactForces(
             //     forceN_mag = 0;
             real forceT_mag = mu_eff * Tanh(5.0 * relvel_t_mag) * forceN_mag;
 
-			// Accumulate normal and tangential forces
+            // Accumulate normal and tangential forces
+            real delta_t_mag = Length(delta_t);
             real3 force = forceN_mag * normal[index];
-            if (relvel_t_mag >= (real)1e-4)  // Should this be [ if (relvel_t_mag >= min_slip_vel) ] ?
+            if (relvel_t_mag >= min_slip_vel) {
                 force -= (forceT_mag / relvel_t_mag) * relvel_t;
+            }
 
-			// Convert force into the local body frames and calculate induced torques
+            // Convert force into the local body frames and calculate induced torques
             real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
             real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
             // Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
-            real3 M_roll = real3(0);
+            real3 moment_roll = real3(0);
             real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
             if (Length(v_rot) > min_roll_vel) {
-                //M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
-                M_roll = muRoll_eff * eff_radius[index] * Length(v_rot) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 2
-                torque1_loc += M_roll;
-                torque2_loc += M_roll;
+                // moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);  // MODEL 1
+                moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot); // MODEL 2
+                torque1_loc += moment_roll;
+                torque2_loc += moment_roll;
             }
 
             // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
             // r_c is the radius of the circle resulting from the intersecting body surfaces
+			real3 moment_spin = real3(0);
             if (Length(o_body2 - o_body1) > min_spin_vel) {
-                double R1 = Length(pt1_loc), R2 = Length(pt2_loc);
-                double R_center = (R1 * R1 - R2 * R2) / (2 * (R1 + R2 - delta_n)) + 0.5 * (R1 + R2 - delta_n);
-                double r_c = sqrt(pow(R1, 2) - pow(R_center, 2));
-                real3 torque_buff = muSpin_eff * r_c *
-                                    (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / Length(o_body1 - o_body2)) *
-                                    normal[index];
-                torque1_loc -= torque_buff;
-                torque2_loc -= torque_buff;
+                double r1 = Length(pt1_loc), r2 = Length(pt2_loc);
+                double x_c = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
+                double r_c = sqrt(pow(r1, 2) - pow(x_c, 2));
+                moment_spin = muSpin_eff * r_c * (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / 
+							  Length(o_body1 - o_body2)) * normal[index];
+                torque1_loc -= moment_spin;
+                torque2_loc -= moment_spin;
             }
 
-			// Include adhesion as part of the total force calculation rather than part of
+            // Include adhesion as part of the total force calculation rather than part of
             // the the forceN_max calculation to prevent its effects from canceling out
             // in the normal force calculation
             switch (adhesion_model) {
@@ -581,22 +579,24 @@ void function_CalcContactForces(
 
             // Print collision metadata to chronodat.txt
             if (print_data) {
-				datao << "\n" << std::left << std::setw(w - 5) << runs 
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_t.x
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_t.y
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_t.z
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t)
+                datao << "\n" << std::left << std::setw(w - 5) << runs 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
 					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2 
 					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
 					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_stiff) 
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_damp)
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag 
-					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(M_roll);
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_damp) 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.x 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.y 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.z 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force) 
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(moment_roll)
+					  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(moment_spin);
                 datao.close();
             }
 
@@ -653,50 +653,47 @@ void function_CalcContactForces(
     real3 force = forceN_mag * normal[index];
     force -= forceT_stiff;
     force -= forceT_damp;
-	
-	real3 forceT = forceT_stiff + forceT_damp;*/
+    
+    real3 forceT = forceT_stiff + forceT_damp;*/
 
     // TODO: Note that the mu in the parameter list is the static friction coefficient and
     // is set in ChSystemParallel.cpp. Either update the parameter list to give the sliding
     // friction coefficient, or re-write the implementation of Coulomb Friction to use the
     // static friction coefficient.
 
-    // TODO: Ahesion should be added before checking the Coulomb criteria. When doing this
-    // however, the spinning friction test fails because angular momentum is not consereved
-	
     // Apply Coulomb friction law.
     // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
     // If force_T_mag > mu_eff * |forceN_mag|, then the shear displacement is
     // scaled so that the tangential force will be correct if force_T_mag
     // subsequently drops below the Coulomb limit
-	real3 forceT = forceT_stiff + forceT_damp;
-    real forceT_mag = Length(forceT);					
+    real3 forceT = forceT_stiff + forceT_damp;
+    real forceT_mag = Length(forceT);
     real forceT_slide = mu_eff * forceN_mag;
     if (forceT_mag > abs(forceT_slide)) {
         if (Length(delta_t) > eps) {
-			real3 forceT_dir = forceT / forceT_mag;
-			forceT_mag = forceT_slide;
-			forceT = forceT_mag * forceT_dir;
-			if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
-				switch (contact_model) {
-					case ChSystemSMC::Hooke:
-						delta_t = (forceT - forceT_damp) / kt;
-						break;
+            real3 forceT_dir = forceT / forceT_mag;
+            forceT_mag = forceT_slide;
+            forceT = forceT_mag * forceT_dir;
+            if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
+                switch (contact_model) {
+                    case ChSystemSMC::Hooke:
+                        delta_t = (forceT - forceT_damp) / kt;
+                        break;
 
-					case ChSystemSMC::Hertz:
-						delta_t = (forceT - forceT_damp) / (kt * Pow(delta_n, 0.5));
-						break;
+                    case ChSystemSMC::Hertz:
+                        delta_t = (forceT - forceT_damp) / (kt * Pow(delta_n, 0.5));
+                        break;
 
-					case ChSystemSMC::Flores:
-						delta_t = (forceT - forceT_damp) / (kt * Pow(delta_n, 0.5));
-						break;
-				}
-				if (shear_body1 == body1) { 
-					shear_disp[max_shear * shear_body1 + contact_id] = delta_t;
-				} else {
-					shear_disp[max_shear * shear_body1 + contact_id] = -delta_t;
-				}
-			}
+                    case ChSystemSMC::Flores:
+                        delta_t = (forceT - forceT_damp) / (kt * Pow(delta_n, 0.5));
+                        break;
+                }
+                if (shear_body1 == body1) {
+                    shear_disp[max_shear * shear_body1 + contact_id] = delta_t;
+                } else {
+                    shear_disp[max_shear * shear_body1 + contact_id] = -delta_t;
+                }
+            }
         } else {
             forceT = real3(0);
         }
@@ -705,37 +702,38 @@ void function_CalcContactForces(
     // Accumulate normal and tangential forces
     real3 force = forceN_mag * normal[index] - forceT;
 
-	// Body forces (in global frame) & torques (in local frame)
+    // Body forces (in global frame) & torques (in local frame)
     // --------------------------------------------------------
+
     // Convert force into the local body frames and calculate induced torques
     //    n' = s' x F' = s' x (A*F)
     real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
     real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
     // Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
-    real3 M_roll = real3(0);
-	real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
+    real3 moment_roll = real3(0);
+    real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
     if (Length(v_rot) > min_roll_vel) {
-        //M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot); // MODEL 1
-        M_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot); // MODEL 2
-        torque1_loc += M_roll;
-        torque2_loc += M_roll;
+        // moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);  // MODEL 1
+        moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot); // MODEL 2
+        torque1_loc += moment_roll;
+        torque2_loc += moment_roll;
     }
 
     // Calculate spinning friction torque as M_spin = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
     // r_c is the radius of the circle resulting from the intersecting body surfaces
+    real3 moment_spin = real3(0);
     if (Length(o_body2 - o_body1) > min_spin_vel) {
-        double R1 = Length(pt1_loc), R2 = Length(pt2_loc);
-        double R_center = (R1 * R1 - R2 * R2) / (2 * (R1 + R2 - delta_n)) + 0.5 * (R1 + R2 - delta_n);
-        double r_c = sqrt(pow(R1, 2) - pow(R_center, 2));
-        real3 torque_buff = muSpin_eff * r_c *
-                            (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / Length(o_body1 - o_body2)) *
-                            normal[index];
-        torque1_loc -= torque_buff;
-        torque2_loc -= torque_buff;
+        double r1 = Length(pt1_loc), r2 = Length(pt2_loc);
+        double x_c = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
+        double r_c = sqrt(pow(r1, 2) - pow(x_c, 2));
+        moment_spin = muSpin_eff * r_c * (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / 
+				 Length(o_body1 - o_body2)) * normal[index];
+        torque1_loc -= moment_spin;
+        torque2_loc -= moment_spin;
     }
 
-	// Include adhesion as part of the total force calculation rather than part of
+    // Include adhesion as part of the total force calculation rather than part of
     // the the forceN_max calculation to prevent its effects from canceling out
     // in the normal force calculation
     switch (adhesion_model) {
@@ -749,7 +747,7 @@ void function_CalcContactForces(
             force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
             break;
     }
-	
+
     // Store body forces and torques, duplicated for the two bodies.
     ext_body_id[2 * index] = body1;
     ext_body_id[2 * index + 1] = body2;
@@ -761,25 +759,23 @@ void function_CalcContactForces(
     // Print collision metadata to chronodat.txt
     if (print_data) {
         datao << "\n" << std::left << std::setw(w - 5) << runs 
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_t.x
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_t.y
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_t.z
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t)
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_stiff) 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_damp)
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.x
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.y
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.z
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT)
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.x
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.y
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.z
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force)
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << M_roll.z;
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_stiff)
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_damp) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.x 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.y 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.z 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.x 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.y 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.z 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(moment_roll)
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(moment_spin);
         datao.close();
     }
 }

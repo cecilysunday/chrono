@@ -81,6 +81,47 @@ void function_CalcContactForces(
     real3* ext_body_force,  // [output] body force (two per contact)
     real3* ext_body_torque  // [output] body torque (two per contact)
     ) {
+    // File properties and print lines for debugging. Delete during code clean-up
+    real p1;  // relvel_n_mag (signed)
+    real p2;  // relvel_t_mag (always positive)
+
+    bool print_data = GetPrint();
+    static int runs = 0;
+    uint prec = 10;
+    uint w = 17;
+
+    std::ofstream datao;
+
+    if (runs == 0) {
+        datao.open(GetChronoOutputPath() + "/chronodat.txt");
+        datao << std::left << std::setw(w - 5) << "stp"
+              << "\t" << std::left << std::setw(w) << "delta_n"
+              << "\t" << std::left << std::setw(w) << "delta_t"
+              << "\t" << std::left << std::setw(w) << "relvel_n"
+              << "\t" << std::left << std::setw(w) << "relvel_t"
+              << "\t" << std::left << std::setw(w) << "force_n_mag"
+              << "\t" << std::left << std::setw(w) << "force_t_stiff"
+              << "\t" << std::left << std::setw(w) << "force_t_damp"
+              << "\t" << std::left << std::setw(w) << "force_t_x"
+              << "\t" << std::left << std::setw(w) << "force_t_y"
+              << "\t" << std::left << std::setw(w) << "force_t_z"
+              << "\t" << std::left << std::setw(w) << "force_t_mag"
+              << "\t" << std::left << std::setw(w) << "force_x"
+              << "\t" << std::left << std::setw(w) << "force_y"
+              << "\t" << std::left << std::setw(w) << "force_z"
+              << "\t" << std::left << std::setw(w) << "force_mag"
+              << "\t" << std::left << std::setw(w) << "moment_roll"
+              << "\t" << std::left << std::setw(w) << "moment_spin";
+        if (!print_data) {
+            datao.close();
+            datao.clear();
+        }
+        runs++;
+    } else if (print_data) {
+        datao.open(GetChronoOutputPath() + "/chronodat.txt", std::ios::app);
+        runs++;
+    }
+
     // Identify the two bodies in contact.
     int body1 = body_id[index].x;
     int body2 = body_id[index].y;
@@ -93,7 +134,8 @@ void function_CalcContactForces(
         ext_body_force[2 * index + 1] = real3(0);
         ext_body_torque[2 * index] = real3(0);
         ext_body_torque[2 * index + 1] = real3(0);
-
+        chrono::GetLog() << "\nWARNING: Exited function_CalcContactForce() without calculating forces for contact step: "
+                         << runs;
         return;
     }
 
@@ -124,6 +166,9 @@ void function_CalcContactForces(
     real3 relvel_n = relvel_n_mag * normal[index];
     real3 relvel_t = relvel - relvel_n;
     real relvel_t_mag = Length(relvel_t);
+
+	p1 = relvel_n_mag;
+    p2 = relvel_t_mag;
 
     // Calculate composite material properties
     // ---------------------------------------
@@ -331,7 +376,30 @@ void function_CalcContactForces(
                 ext_body_force[2 * index + 1] = force;
                 ext_body_torque[2 * index] = -torque1_loc;
                 ext_body_torque[2 * index + 1] = torque2_loc;
-            }
+           
+			    // Print collision metadata to chronodat.txt
+				if (print_data) {
+					datao << "\n" << std::left << std::setw(w - 5) << runs 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.x 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.y 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.z 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force) 
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
+						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0;
+					datao.close();
+				}
+			}
 
             return;
     }
@@ -408,6 +476,8 @@ void function_CalcContactForces(
     force -= forceT_stiff;
     force -= forceT_damp;
 
+	real3 forceT = forceT_stiff + forceT_damp; // For print and debugging only
+
     // Body forces (in global frame) & torques (in local frame)
     // --------------------------------------------------------
 
@@ -423,6 +493,29 @@ void function_CalcContactForces(
     ext_body_force[2 * index + 1] = force;
     ext_body_torque[2 * index] = -torque1_loc;
     ext_body_torque[2 * index + 1] = torque2_loc;
+
+	// Print collision metadata to chronodat.txt
+    if (print_data) {
+        datao << "\n" << std::left << std::setw(w - 5) << runs 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_stiff)
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_damp) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.x 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.y 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.z 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.x 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.y 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.z 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0;
+        datao.close();
+    }
 }
 
 // -----------------------------------------------------------------------------

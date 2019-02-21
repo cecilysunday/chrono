@@ -306,6 +306,8 @@ void function_CalcContactForces(
         case ChSystemSMC::ContactForceModel::Hooke:
             if (use_mat_props) {
                 real tmp_k = (16.0 / 15) * Sqrt(eff_radius[index]) * E_eff;
+                char_vel =
+                    (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) ? relvel_init : char_vel;
                 real v2 = char_vel * char_vel;
                 real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                 loge = (cr_eff > 1 - eps) ? Log(1 - eps) : loge;
@@ -344,22 +346,27 @@ void function_CalcContactForces(
 
             break;
 
-		// TODO: Check and fix this model
 		case ChSystemSMC::Flores:
             if (use_mat_props) {
-                real sqrt_R = Sqrt(eff_radius[index]);
+                real sqrt_Rd = Sqrt(eff_radius[index] * delta_n);
+                real Sn = 2 * E_eff * sqrt_Rd;
+                real St = 8 * G_eff * sqrt_Rd;
+                real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
+                real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                 double cr = (cr_eff < eps) ? eps : cr_eff;
                 cr = (cr_eff > 1 - eps) ? 1 - eps : cr;
-                kn = (4.0 / 3.0) * E_eff * sqrt_R * pow(delta_n, 1.0 / 2.0);
-                kt = kn;
-                gn = 8.0 * (1.0 - cr) * kn * delta_n / (5.0 * cr * relvel_init);
-                gt = gn / pow(delta_n, 5.0/4.0);
+                char_vel = 
+					(displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) ? relvel_init : char_vel;
+                kn = (2.0 / 3.0) * Sn;
+                kt = (2.3 / 3.0) * St;
+                gn = 8.0 * (1.0 - cr) * kn * delta_n / (5.0 * cr * char_vel);
+                gt = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff); // Need to multiply St by 2/3 here as well ? 
             } else {
-                real tmp = eff_radius[index];
-                kn = tmp * user_kn * pow(delta_n, 1.0 / 2.0);
-                kt = tmp * user_kt * pow(delta_n, 1.0 / 2.0);
-                gn = tmp * m_eff * user_gn * pow(delta_n, 3.0 / 2.0);
-                gt = tmp * m_eff * user_gt * pow(delta_n, 1.0 / 4.0);
+                real tmp = eff_radius[index] * Sqrt(delta_n);
+                kn = tmp * user_kn;
+                kt = tmp * user_kt;
+                gn = tmp * m_eff * user_gn * delta_n;
+                gt = tmp * m_eff * user_gt;
             }
         
 			break;

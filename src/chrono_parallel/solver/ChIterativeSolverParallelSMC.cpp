@@ -526,8 +526,6 @@ void function_CalcContactForces(
 
     // Accumulate normal and tangential forces
     real3 force = forceN_mag * normal[index] - forceT;
-    force -= forceT_stiff;
-    force -= forceT_damp;
 
     // Body forces (in global frame) & torques (in local frame)
     // --------------------------------------------------------

@@ -220,7 +220,7 @@ void function_CalcContactForces(
     real gn;
     real gt;
 
-	real relvel_init = abs(relvel_n_mag);
+	real relvel_init = Length(relvel);
     real delta_n = -depth[index];
     real3 delta_t = real3(0);
 
@@ -273,7 +273,7 @@ void function_CalcContactForces(
                     shear_disp[ctIdUnrolled].x = 0;
                     shear_disp[ctIdUnrolled].y = 0;
                     shear_disp[ctIdUnrolled].z = 0;
-                    contact_relvel_init[ctIdUnrolled] = abs(relvel_n_mag);
+                    contact_relvel_init[ctIdUnrolled] = relvel_init;
                     break;
                 }
             }
@@ -296,7 +296,7 @@ void function_CalcContactForces(
         }
 
 		// Load the charecteristic velocity from the contact history
-		// TODO: Check that this was implemented correctly
+		// TODO: Check that this was implemented correctly.
 		relvel_init = contact_relvel_init[ctSaveId];
     }
 
@@ -368,7 +368,6 @@ void function_CalcContactForces(
             if (use_mat_props) {
                 real sqrt_Rd = Sqrt(delta_n);
                 real Sn = 2 * E_eff * sqrt_Rd;
-                real St = 8 * G_eff * sqrt_Rd;
                 real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                 real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                 kn = (2.0 / 3) * Sn;
@@ -387,21 +386,13 @@ void function_CalcContactForces(
                 // if (forceN_mag < 0)
                 //     forceN_mag = 0;
                 real forceT_mag = mu_eff * Tanh(5.0 * relvel_t_mag) * forceN_mag;
-                switch (adhesion_model) {
-                    case ChSystemSMC::AdhesionForceModel::Constant:
-                        forceN_mag -= adhesion_eff;
-                        break;
-                    case ChSystemSMC::AdhesionForceModel::DMT:
-                        forceN_mag -= adhesionMultDMT_eff * Sqrt(eff_radius[index]);
-                        break;
-                    case ChSystemSMC::AdhesionForceModel::Perko:
-                        forceN_mag -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index];
-                        break;
-                }
+
+				// Accumulate normal and tangential forces
                 real3 force = forceN_mag * normal[index];
-                if (relvel_t_mag >= (real)1e-4)
+                if (relvel_t_mag >= min_slip_vel)
                     force -= (forceT_mag / relvel_t_mag) * relvel_t;
 
+				// Convert force into the local body frames and calculate induced torques
                 real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
                 real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
@@ -427,6 +418,21 @@ void function_CalcContactForces(
                                   normal[index];
                     torque1_loc -= moment_spin;
                     torque2_loc -= moment_spin;
+                }
+
+				// Include adhesion as part of the total force calculation rather than part of
+                // the the forceN_max calculation to prevent its effects from canceling out
+                // in the normal force calculation
+                switch (adhesion_model) {
+                    case ChSystemSMC::AdhesionForceModel::Constant:
+                        force -= adhesion_eff * normal[index];
+                        break;
+                    case ChSystemSMC::AdhesionForceModel::DMT:
+                        force -= adhesionMultDMT_eff * Sqrt(eff_radius[index]) * normal[index];
+                        break;
+                    case ChSystemSMC::AdhesionForceModel::Perko:
+                        force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
+                        break;
                 }
 
                 ext_body_id[2 * index] = body1;
@@ -485,92 +491,43 @@ void function_CalcContactForces(
         forceT_damp.z = 0;
     }*/
 
-    // Include adhesion force.
-    switch (adhesion_model) {
-        case ChSystemSMC::AdhesionForceModel::Constant:
-            // (This is a very simple model, which can perhaps be improved later.)
-            forceN_mag -= adhesion_eff;
-            break;
-        case ChSystemSMC::AdhesionForceModel::DMT:
-            // Derjaguin, Muller and Toporov (DMT) adhesion force,
-            forceN_mag -= adhesionMultDMT_eff * Sqrt(eff_radius[index]);
-            break;
-        case ChSystemSMC::AdhesionForceModel::Perko:
-            forceN_mag -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index];
-            break;
-    }
-
-    // Apply Coulomb friction law.
+    // TODO: Note that the mu in the parameter list is the static friction coefficient and
+    // is set in ChSystemParallel.cpp. Either update the parameter list to give the sliding
+    // friction coefficient, or re-write the implementation of Coulomb Friction to use the
+    // static friction coefficient.
+	
+	// Apply Coulomb friction law.
     // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
     // If force_T_mag > mu_eff * |forceN_mag| and there is shear displacement
     // due to contact history, then the shear displacement is scaled so that
     // the tangential force will be correct if force_T_mag subsequently drops
-    // below the Coulomb limit.  Also, if there is sliding, then there is no
-    // viscous damping in the tangential direction (to keep the Coulomb limit
-    // strict, and independent of velocity).
-    //  real forceT_mag = Length(forceT_stiff + forceT_damp);  // This seems correct
-    /*real forceT_stiff_mag = Length(forceT_stiff);  // This is what LAMMPS/LIGGGHTS does
+    // below the Coulomb limit.
+    real3 forceT = forceT_stiff + forceT_damp;
+    real forceT_mag = Length(forceT);
     real delta_t_mag = Length(delta_t);
-    real forceT_slide = mu_eff * Abs(forceN_mag);
-    if (forceT_stiff_mag > forceT_slide) {
+    real forceT_slide = mu_eff * forceN_mag;
+    if (forceT_mag > abs(forceT_slide)) {
         if (delta_t_mag > eps) {
-            real ratio = forceT_slide / forceT_stiff_mag;
-            forceT_stiff *= ratio;
+            real3 forceT_dir = forceT / forceT_mag;
+            forceT_mag = forceT_slide;
+            forceT = forceT_mag * forceT_dir;
             if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
+                delta_t = (forceT - forceT_damp) / kt;
                 if (shear_body1 == body1) {
-                    shear_disp[max_shear * shear_body1 + contact_id] = forceT_stiff / kt;
+                    shear_disp[max_shear * shear_body1 + contact_id] = delta_t;
                 } else {
-                    shear_disp[max_shear * shear_body1 + contact_id] = -forceT_stiff / kt;
+                    shear_disp[max_shear * shear_body1 + contact_id] = -delta_t;
                 }
             }
         } else {
-            forceT_stiff.x = 0.0;
-            forceT_stiff.y = 0.0;
-            forceT_stiff.z = 0.0;
+            forceT = real3(0);
         }
-        forceT_damp.x = 0.0;
-        forceT_damp.y = 0.0;
-        forceT_damp.z = 0.0;
     }
 
     // Accumulate normal and tangential forces
-    real3 force = forceN_mag * normal[index];
+    real3 force = forceN_mag * normal[index] - forceT;
     force -= forceT_stiff;
-    force -= forceT_damp;*/
-
-	    // TODO: Note that the mu in the parameter list is the static friction coefficient and
-    // is set in ChSystemParallel.cpp. Either update the parameter list to give the sliding
-    // friction coefficient, or re-write the implementation of Coulomb Friction to use the
-    // static friction coefficient.
-
-    // TODO: Ahesion should be added before checking the Coulomb criteria. When doing this
-    // however, the spinning friction test fails because angular momentum is not consereved
-
-    // Apply Coulomb friction law.
-    // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
-    // If force_T_mag > mu_eff * |forceN_mag|, then the shear displacement is
-    // scaled so that the tangential force will be correct if force_T_mag
-    // subsequently drops below the Coulomb limit
-    real3 forceT = forceT_stiff + forceT_damp;
-    real forceT_mag = Length(forceT);
-    real forceT_slide = mu_eff * forceN_mag;
-    if (forceT_mag > abs(forceT_slide)) {
-        real3 forceT_dir = forceT / forceT_mag;
-        forceT_mag = forceT_slide;
-        forceT = forceT_mag * forceT_dir;
-        if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
-            delta_t = (forceT - forceT_damp) / kt;
-            if (shear_body1 == body1) {
-                shear_disp[max_shear * shear_body1 + contact_id] = delta_t;
-            } else {
-                shear_disp[max_shear * shear_body1 + contact_id] = -delta_t;
-            }
-        }
-    }
-
-	// Accumulate normal and tangential forces
-    real3 force = forceN_mag * normal[index];
-    force -= forceT;
+    force -= forceT_damp;
 
     // Body forces (in global frame) & torques (in local frame)
     // --------------------------------------------------------
@@ -602,6 +559,21 @@ void function_CalcContactForces(
                       (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / Length(o_body1 - o_body2)) * normal[index];
         torque1_loc -= moment_spin;
         torque2_loc -= moment_spin;
+    }
+
+	// Include adhesion as part of the total force calculation rather than part of
+    // the the forceN_max calculation to prevent its effects from canceling out
+    // in the normal force calculation
+    switch (adhesion_model) {
+        case ChSystemSMC::AdhesionForceModel::Constant:
+            force -= adhesion_eff * normal[index];
+            break;
+        case ChSystemSMC::AdhesionForceModel::DMT:
+            force -= adhesionMultDMT_eff * Sqrt(eff_radius[index]) * normal[index];
+            break;
+        case ChSystemSMC::AdhesionForceModel::Perko:
+            force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
+            break;
     }
 
     // Store body forces and torques, duplicated for the two bodies.

@@ -98,7 +98,7 @@ void ChSystemParallelSMC::UpdateMaterialSurfaceData(int index, ChBody* body) {
     ChMaterialSurfaceSMC* mat_ptr = static_cast<ChMaterialSurfaceSMC*>(mat.get());
 
     mass[index] = body->GetMass();
-    mu[index] = mat_ptr->GetSfriction();
+    mu[index] = mat_ptr->GetKfriction();
     muRoll[index] = mat_ptr->GetRollingFriction();
     muSpin[index] = mat_ptr->GetSpinningFriction();
     adhesion[index] = mat_ptr->GetAdhesion();

@@ -295,7 +295,6 @@ void function_CalcContactForces(
         }
 
 		// Load the charecteristic velocity from the contact history
-		// TODO: Check that this was implemented correctly.
 		relvel_init = contact_relvel_init[ctSaveId];
     }
 
@@ -497,11 +496,6 @@ void function_CalcContactForces(
         forceT_damp.z = 0;
     }*/
 
-    // TODO: Note that the mu in the parameter list is the static friction coefficient and
-    // is set in ChSystemParallel.cpp. Either update the parameter list to give the sliding
-    // friction coefficient, or re-write the implementation of Coulomb Friction to use the
-    // static friction coefficient.
-	
 	// Apply Coulomb friction law.
     // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
     // If force_T_mag > mu_eff * |forceN_mag| and there is shear displacement

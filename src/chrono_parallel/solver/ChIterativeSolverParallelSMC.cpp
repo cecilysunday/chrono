@@ -139,8 +139,7 @@ void function_CalcContactForces(
         ext_body_force[2 * index + 1] = real3(0);
         ext_body_torque[2 * index] = real3(0);
         ext_body_torque[2 * index + 1] = real3(0);
-		chrono::GetLog() << "\nWARNING: Exited function_CalcContactForce() without calculating forces for contact step: "
-                         << runs;
+		chrono::GetLog() << "\nWARNING: Exited function_CalcContactForce() at contact step " << runs;
         return;
     }
 
@@ -407,8 +406,8 @@ void function_CalcContactForces(
                 real3 moment_roll = real3(0);
                 real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
                 if (Length(v_rot) > min_roll_vel) {
-                    // moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);  // MODEL 1
-                    moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot);  // MODEL 2
+                    // moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
+                    moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot);
                     torque1_loc += moment_roll;
                     torque2_loc += moment_roll;
                 }
@@ -546,9 +545,8 @@ void function_CalcContactForces(
     real3 moment_roll = real3(0);
     real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
     if (Length(v_rot) > min_roll_vel) {
-        // moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);  //
-        // MODEL 1
-        moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot);  // MODEL 2
+        //moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
+        moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot);
         torque1_loc += moment_roll;
         torque2_loc += moment_roll;
     }

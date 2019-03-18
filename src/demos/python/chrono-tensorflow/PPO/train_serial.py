@@ -15,6 +15,10 @@ from datetime import datetime
 import argparse
 import signal
 
+"""" THIS VARIABLE TOGGLES TIME IN STATE. 
+ REMEMBER THAT CHECKPOINT ARE NOT COMPATIBLE IF THE NUMBER OF STATE IS INCONSISTENT
+ """
+time_state = True
 
 class GracefulKiller:
     """ Gracefully exit program on CTRL-C """
@@ -67,13 +71,15 @@ def run_episode(env, policy, scaler, animate=True):
     done = False
     step = 0.0
     scale, offset = scaler.get()
-    scale[-1] = 1.0  # don't scale time step feature
-    offset[-1] = 0.0  # don't offset time step feature
+    if time_state:
+           scale[-1] = 1.0  # don't scale time step feature
+           offset[-1] = 0.0  # don't offset time step feature
 
     while not done:
 
-        obs = obs.astype(np.float64).reshape((1, -1))  
-        obs = np.append(obs, [[step]], axis=1)  # add time step feature TODO: check if this extra state is useful
+        obs = obs.astype(np.float64).reshape((1, -1))
+        if time_state:
+            obs = np.append(obs, [[step]], axis=1)  # add time step feature TODO: check if this extra state is useful
         unscaled_obs.append(obs)
         obs = (obs - offset) * scale  # center and scale observations TODO: check ifscaler is useful (it should be according to literature)
         observes.append(obs)
@@ -251,7 +257,8 @@ def main(env_name, num_episodes, render, gamma, lam, kl_targ, batch_size):
     """
     killer = GracefulKiller()
     env, obs_dim, act_dim = init_gym(env_name, render)
-    obs_dim += 1  # add 1 to obs dimension for time step feature (see run_episode())
+    if time_state:
+        obs_dim += 1  # add 1 to obs dimension for time step feature (see run_episode())
     now = datetime.utcnow().strftime("%b-%d_%H-%M-%S")  # create unique directories
     logger = Logger(logname=env_name, now=now)
 

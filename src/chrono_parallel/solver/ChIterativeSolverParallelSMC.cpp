@@ -219,7 +219,7 @@ void function_CalcContactForces(
     real gn;
     real gt;
 
-	real relvel_init = Length(relvel);
+	real relvel_init = abs(relvel_n_mag);
     real delta_n = -depth[index];
     real3 delta_t = real3(0);
 
@@ -356,7 +356,7 @@ void function_CalcContactForces(
                 char_vel = 
 					(displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) ? relvel_init : char_vel;
                 kn = (2.0 / 3.0) * Sn;
-                kt = (2.3 / 3.0) * St;
+                kt = (2.0 / 3.0) * St;
                 gn = 8.0 * (1.0 - cr) * kn * delta_n / (5.0 * cr * char_vel);
                 gt = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff); // Need to multiply St by 2/3 here as well ? 
             } else {

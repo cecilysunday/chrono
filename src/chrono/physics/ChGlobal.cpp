@@ -122,7 +122,7 @@ const std::string& GetChronoOutputPath() {
 // ADDITION FOR DEBUGGING. DELETE LATER. - CS
 // -----------------------------------------------------------------------------
 
-static bool print_smc_data(FALSE);
+static bool print_smc_data(false);
 
 /// Set a switch to print or not print from ChIterativeSolverParallelSMC
 void SetPrint(bool print) {

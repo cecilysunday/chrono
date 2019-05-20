@@ -50,7 +50,8 @@ ChTMeasyTire::ChTMeasyTire(const std::string& name)
       m_gamma(0),
       m_gamma_limit(5),
       m_begin_start_transition(0.1),
-      m_end_start_transition(0.25) {
+      m_end_start_transition(0.25),
+      m_use_startup_transition(false) {
     m_tireforce.force = ChVector<>(0, 0, 0);
     m_tireforce.point = ChVector<>(0, 0, 0);
     m_tireforce.moment = ChVector<>(0, 0, 0);
@@ -79,6 +80,7 @@ void ChTMeasyTire::Initialize(std::shared_ptr<ChBody> wheel, VehicleSide side) {
     m_states.Fx_dyn = 0;
     m_states.Fy_dyn = 0;
     m_states.Mb_dyn = 0;
+    m_states.R_eff = m_unloaded_radius;
     m_consider_relaxation = true;
     m_use_Reff_fallback_calculation = false;
     m_integration_method = 2;
@@ -352,7 +354,10 @@ void ChTMeasyTire::Advance(double step) {
 
     double Ms = 0.0;
 
-    double startup = ChSineStep(m_time, m_begin_start_transition, 0.0, m_end_start_transition, 1.0);
+    double startup = 1;
+    if (m_use_startup_transition) {
+        startup = ChSineStep(m_time, m_begin_start_transition, 0.0, m_end_start_transition, 1.0);
+    }
 
     if (m_consider_relaxation) {
         double vtxs = m_states.vta * hsxn;
@@ -377,10 +382,12 @@ void ChTMeasyTire::Advance(double step) {
                 case 1: {
                     // explicit Euler, may be unstable
                     // 1. oder tire dynamics
-                    m_states.xe = m_states.xe + h * (-vtxs * m_TMeasyCoeff.cx * m_states.xe - fos * m_states.vsx) /
-                                                    (vtxs * m_TMeasyCoeff.dx + fos);
-                    m_states.ye = m_states.ye + h * (-vtys * m_TMeasyCoeff.cy * m_states.ye - fos * m_states.vsy) /
-                                                    (vtys * m_TMeasyCoeff.dy + fos);
+                    m_states.xe = m_states.xe +
+                                  h * (-vtxs * m_TMeasyCoeff.cx * m_states.xe - fos * m_states.vsx) /
+                                      (vtxs * m_TMeasyCoeff.dx + fos);
+                    m_states.ye = m_states.ye +
+                                  h * (-vtys * m_TMeasyCoeff.cy * m_states.ye - fos * m_states.vsy) /
+                                      (vtys * m_TMeasyCoeff.dy + fos);
                     // 0. order tire dynamics
                     m_states.Mb_dyn = m_states.Mb_dyn + h * (m_states.Mb - m_states.Mb_dyn) * m_states.vta / relax;
                     break;
@@ -389,13 +396,13 @@ void ChTMeasyTire::Advance(double step) {
                     // semi-implicit Euler, absolutely stable
                     // 1. oder tire dynamics
                     double dFx = -vtxs * m_TMeasyCoeff.cx / (vtxs * m_TMeasyCoeff.dx + fos);
-                    m_states.xe = m_states.xe + h / (1.0 - h * dFx) *
-                                                    (-vtxs * m_TMeasyCoeff.cx * m_states.xe - fos * m_states.vsx) /
-                                                    (vtxs * m_TMeasyCoeff.dx + fos);
+                    m_states.xe = m_states.xe +
+                                  h / (1.0 - h * dFx) * (-vtxs * m_TMeasyCoeff.cx * m_states.xe - fos * m_states.vsx) /
+                                      (vtxs * m_TMeasyCoeff.dx + fos);
                     double dFy = -vtys * m_TMeasyCoeff.cy / (vtys * m_TMeasyCoeff.dy + fos);
-                    m_states.ye = m_states.ye + h / (1.0 - h * dFy) *
-                                                    (-vtys * m_TMeasyCoeff.cy * m_states.ye - fos * m_states.vsy) /
-                                                    (vtys * m_TMeasyCoeff.dy + fos);
+                    m_states.ye = m_states.ye +
+                                  h / (1.0 - h * dFy) * (-vtys * m_TMeasyCoeff.cy * m_states.ye - fos * m_states.vsy) /
+                                      (vtys * m_TMeasyCoeff.dy + fos);
                     // 0. order tire dynamics
                     double dMb = -gain;
                     m_states.Mb_dyn = m_states.Mb_dyn + h / (1.0 - h * dMb) * (m_states.Mb - m_states.Mb_dyn) * gain;
@@ -789,13 +796,13 @@ void ChTMeasyTire::GuessTruck80Par(double tireLoad,   // tire load force [N]
 {
     double secth = tireWidth * ratio;  // tire section height
     double defl_max = 0.16 * secth;    // deflection at tire payload
-    double xi = 0.05;                  // damping ratio
+    double xi = 0.5;                   // damping ratio
 
     m_TMeasyCoeff.pn = 0.5 * tireLoad * pow(pinfl_use / pinfl_li, 0.8);
     m_TMeasyCoeff.pn_max = 3.5 * m_TMeasyCoeff.pn;
 
-    double CZ = m_TMeasyCoeff.pn / defl_max;
-    double DZ = xi * sqrt(CZ * GetMass());
+    double CZ = tireLoad / defl_max;
+    double DZ = 2.0 * xi * sqrt(CZ * GetMass());
 
     SetVerticalStiffness(CZ);
 
@@ -869,7 +876,7 @@ void ChTMeasyTire::GuessPassCar70Par(double tireLoad,   // tire load force [N]
 {
     double secth = tireWidth * ratio;  // tire section height
     double defl_max = 0.16 * secth;    // deflection at tire payload
-    double xi = 0.05;                  // damping ration
+    double xi = 0.5;                   // damping ration
 
     m_TMeasyCoeff.pn = 0.5 * tireLoad * pow(pinfl_use / pinfl_li, 0.8);
     m_TMeasyCoeff.pn_max = 3.5 * m_TMeasyCoeff.pn;
@@ -878,8 +885,8 @@ void ChTMeasyTire::GuessPassCar70Par(double tireLoad,   // tire load force [N]
     m_unloaded_radius = secth + rimDia / 2.0;
     m_TMeasyCoeff.mu_0 = 0.8;
 
-    double CZ = m_TMeasyCoeff.pn / defl_max;
-    double DZ = xi * sqrt(CZ * GetMass());
+    double CZ = tireLoad / defl_max;
+    double DZ = 2.0 * xi * sqrt(CZ * GetMass());
 
     SetVerticalStiffness(CZ);
 

@@ -94,7 +94,7 @@ void ChSystemParallelNSC::UpdateMaterialSurfaceData(int index, ChBody* body) {
     // material properties in a thread-safe manner (we cannot use the function
     // ChBody::GetMaterialSurfaceNSC since that returns a copy of the reference
     // counted shared pointer).
-    std::shared_ptr<ChMaterialSurface>& mat = body->GetMaterialSurfaceBase();
+    std::shared_ptr<ChMaterialSurface>& mat = body->GetMaterialSurface();
     ChMaterialSurfaceNSC* mat_ptr = static_cast<ChMaterialSurfaceNSC*>(mat.get());
 
     friction[index] = real3(mat_ptr->GetKfriction(), mat_ptr->GetRollingFriction(), mat_ptr->GetSpinningFriction());
@@ -104,6 +104,8 @@ void ChSystemParallelNSC::UpdateMaterialSurfaceData(int index, ChBody* body) {
 }
 
 void ChSystemParallelNSC::CalculateContactForces() {
+    uint num_unilaterals = data_manager->num_unilaterals;
+    uint num_rigid_dof = data_manager->num_rigid_bodies * 6;
     uint num_contacts = data_manager->num_rigid_contacts;
     DynamicVector<real>& Fc = data_manager->host_data.Fc;
 
@@ -117,8 +119,9 @@ void ChSystemParallelNSC::CalculateContactForces() {
 
     LOG(INFO) << "ChSystemParallelNSC::CalculateContactForces() ";
 
-    DynamicVector<real>& gamma = data_manager->host_data.gamma;
-    Fc = data_manager->host_data.D * gamma / data_manager->settings.step_size;
+    const SubMatrixType& D_u = blaze::submatrix(data_manager->host_data.D, 0, 0, num_rigid_dof, num_unilaterals);
+    DynamicVector<real> gamma_u = blaze::subvector(data_manager->host_data.gamma, 0, num_unilaterals);
+    Fc = D_u * gamma_u / data_manager->settings.step_size;
 }
 
 real3 ChSystemParallelNSC::GetBodyContactForce(uint body_id) const {
@@ -199,7 +202,7 @@ void ChSystemParallelNSC::AssembleSystem() {
     double C_factor = 1 / step;
 
     for (int ip = 0; ip < linklist.size(); ++ip) {
-        std::shared_ptr<ChLink> Lpointer = linklist[ip];
+        std::shared_ptr<ChLinkBase> Lpointer = linklist[ip];
 
         Lpointer->ConstraintsBiLoad_C(C_factor, max_penetration_recovery_speed, true);
         Lpointer->ConstraintsBiLoad_Ct(Ct_factor);

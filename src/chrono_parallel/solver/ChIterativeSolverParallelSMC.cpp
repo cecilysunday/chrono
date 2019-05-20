@@ -532,7 +532,7 @@ void function_CalcContactForces(
             real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
             real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
-            // Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
+            // Calculate rolling friction torque as M_roll = ï¿½_r * R * (F_N x v_rot) / |v_rot|
             real3 moment_roll = real3(0);
             real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
             if (Length(v_rot) > min_roll_vel) {
@@ -542,7 +542,7 @@ void function_CalcContactForces(
                 torque2_loc += moment_roll;
             }
 
-            // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
+            // Calculate twisting friction torque as M_twist = -ï¿½_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
             // r_c is the radius of the circle resulting from the intersecting body surfaces
 			real3 moment_spin = real3(0);
             if (Length(o_body2 - o_body1) > min_spin_vel) {
@@ -653,7 +653,9 @@ void function_CalcContactForces(
     real3 force = forceN_mag * normal[index];
     force -= forceT_stiff;
     force -= forceT_damp;
-    
+    
+
+
     real3 forceT = forceT_stiff + forceT_damp;*/
 
     // TODO: Note that the mu in the parameter list is the static friction coefficient and
@@ -710,7 +712,7 @@ void function_CalcContactForces(
     real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
     real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
-    // Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
+    // Calculate rolling friction torque as M_roll = ï¿½_r * R * (F_N x v_rot) / |v_rot|
     real3 moment_roll = real3(0);
     real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
     if (Length(v_rot) > min_roll_vel) {
@@ -720,7 +722,7 @@ void function_CalcContactForces(
         torque2_loc += moment_roll;
     }
 
-    // Calculate spinning friction torque as M_spin = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
+    // Calculate spinning friction torque as M_spin = -ï¿½_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
     // r_c is the radius of the circle resulting from the intersecting body surfaces
     real3 moment_spin = real3(0);
     if (Length(o_body2 - o_body1) > min_spin_vel) {
@@ -952,6 +954,7 @@ void ChIterativeSolverParallelSMC::ComputeD() {
 
     uint num_bodies = data_manager->num_rigid_bodies;
     uint num_shafts = data_manager->num_shafts;
+    uint num_motors = data_manager->num_motors;
     uint num_dof = data_manager->num_dof;
     uint num_contacts = data_manager->num_rigid_contacts;
     uint num_bilaterals = data_manager->num_bilaterals;

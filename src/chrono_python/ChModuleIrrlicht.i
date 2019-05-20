@@ -49,7 +49,11 @@
 #include <irrlicht.h>
 #include "chrono_irrlicht/ChIrrAppInterface.h"
 #include "chrono_irrlicht/ChIrrAssetConverter.h"
-
+#include "chrono_irrlicht/ChIrrTools.h"
+#include "chrono_irrlicht/ChIrrEffects.h"
+#include "chrono_irrlicht/ChIrrTools.h"
+#include "chrono_irrlicht/ChIrrWizard.h"
+#include "chrono_irrlicht/ChIrrCamera.h"
 using namespace chrono;
 using namespace chrono::irrlicht;
 using namespace irr;
@@ -102,6 +106,7 @@ using namespace gui;
 // tree must be promoted to %shared_ptr too).
 
 %shared_ptr(chrono::ChSystem)
+%shared_ptr(chrono::ChAsset)
 %shared_ptr(chrono::irrlicht::ChIrrNodeAsset)
 
 
@@ -127,6 +132,7 @@ using namespace gui;
 %import  "ChClassFactory.i"
 %import  "ChSystem.i"
 %import  "ChAsset.i"
+%import  "ChVector.i"
 
 %include "IReferenceCounted.h"
 %include "IImage.h"
@@ -149,6 +155,11 @@ using namespace gui;
 %include "dimension2d.h"
 %template(dimension2du) irr::core::dimension2d<irr::u32>;
 
+%ignore chrono::irrlicht::ScreenQuadCB;
+%include "chrono_irrlicht/ChIrrEffects.h"
+%include "chrono_irrlicht/ChIrrTools.h"
+%include "chrono_irrlicht/ChIrrCamera.h"
+%include "chrono_irrlicht/ChIrrWizard.h"
 %include "ChIrrAppInterface.i"
 %include "ChIrrAssetConverter.i"
 %include "ChIrrApp.i"
@@ -165,13 +176,13 @@ using namespace gui;
 // a lot of code bloat. 
 // Alternatively, in the following we create a set of Python-side
 // functions to perform casting by hand, thank to the macro 
-// %DefChSharedPtrDynamicDowncast(base,derived). 
+// %DefSharedPtrDynamicDowncast(base,derived). 
 // Do not specify the "chrono::" namespace before base or derived!
 // Later, in python, you can do the following:
 //  myvis = chrono.CastToChVisualizationShared(myasset)
 //  print ('Could be cast to visualization object?', !myvis.IsNull())
 
-%DefChSharedPtrDynamicDowncast(ChAsset,ChIrrNodeAsset)
+%DefSharedPtrDynamicDowncast2NS(chrono, chrono::irrlicht, ChAsset,ChIrrNodeAsset)
 
 
 //

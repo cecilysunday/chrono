@@ -9,7 +9,7 @@
 #-----------------------------------------------------------------------------
 
 option(BUILD_DEMOS "Build demo programs" ON)
-option(BUILD_BENCHMARKING "Build benchmark tests" ON)
+option(BUILD_BENCHMARKING "Build benchmark tests" OFF)
 
 #-----------------------------------------------------------------------------
 # Collect compiler flags required to build the Chrono libraries
@@ -467,6 +467,7 @@ add_subdirectory(chrono_postprocess)
 add_subdirectory(chrono_cosimulation)
 add_subdirectory(chrono_python)
 add_subdirectory(chrono_parallel)
+add_subdirectory(chrono_granular)
 add_subdirectory(chrono_opengl)
 add_subdirectory(chrono_distributed)
 #add_subdirectory(chrono_ogre)

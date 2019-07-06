@@ -100,6 +100,38 @@ void function_CalcContactForces(
     if (runs == 0) {
         datao.open(GetChronoOutputPath() + "/chronodat.txt");
         datao << std::left << std::setw(w - 5) << "stp"
+              << "\t" << std::left << std::setw(w) << "body1"
+              << "\t" << std::left << std::setw(w) << "body2"
+              << "\t" << std::left << std::setw(w) << "pt1_par_x"
+              << "\t" << std::left << std::setw(w) << "pt2_par_x"
+              << "\t" << std::left << std::setw(w) << "pt1_par_y"
+              << "\t" << std::left << std::setw(w) << "pt2_par_y"
+              << "\t" << std::left << std::setw(w) << "pt1_par_z"
+              << "\t" << std::left << std::setw(w) << "pt2_par_z"
+              << "\t" << std::left << std::setw(w) << "pt1_loc_x"
+              << "\t" << std::left << std::setw(w) << "pt2_loc_x"
+              << "\t" << std::left << std::setw(w) << "pt1_loc_y"
+              << "\t" << std::left << std::setw(w) << "pt2_loc_y"
+              << "\t" << std::left << std::setw(w) << "pt1_loc_z"
+              << "\t" << std::left << std::setw(w) << "pt2_loc_z"
+              << "\t" << std::left << std::setw(w) << "v_body1_x"
+              << "\t" << std::left << std::setw(w) << "v_body2_x"
+              << "\t" << std::left << std::setw(w) << "v_body1_y"
+              << "\t" << std::left << std::setw(w) << "v_body2_y"
+              << "\t" << std::left << std::setw(w) << "v_body1_z"
+              << "\t" << std::left << std::setw(w) << "v_body2_z"
+              << "\t" << std::left << std::setw(w) << "o_body1_x"
+              << "\t" << std::left << std::setw(w) << "o_body2_x"
+              << "\t" << std::left << std::setw(w) << "o_body1_y"
+              << "\t" << std::left << std::setw(w) << "o_body2_y"
+              << "\t" << std::left << std::setw(w) << "o_body1_z"
+              << "\t" << std::left << std::setw(w) << "o_body2_z"
+              << "\t" << std::left << std::setw(w) << "vel1_x"
+              << "\t" << std::left << std::setw(w) << "vel2_x"
+              << "\t" << std::left << std::setw(w) << "vel1_y"
+              << "\t" << std::left << std::setw(w) << "vel2_y"
+              << "\t" << std::left << std::setw(w) << "vel1_z"
+              << "\t" << std::left << std::setw(w) << "vel2_z"
               << "\t" << std::left << std::setw(w) << "delta_n"
               << "\t" << std::left << std::setw(w) << "delta_t"
               << "\t" << std::left << std::setw(w) << "relvel_n"
@@ -115,7 +147,17 @@ void function_CalcContactForces(
               << "\t" << std::left << std::setw(w) << "force_y"
               << "\t" << std::left << std::setw(w) << "force_z"
               << "\t" << std::left << std::setw(w) << "force_mag"
+              << "\t" << std::left << std::setw(w) << "v_rot_x"
+              << "\t" << std::left << std::setw(w) << "v_rot_y"
+              << "\t" << std::left << std::setw(w) << "v_rot_z"
+              << "\t" << std::left << std::setw(w) << "v_rot"
+              << "\t" << std::left << std::setw(w) << "moment_roll_x"
+              << "\t" << std::left << std::setw(w) << "moment_roll_y"
+              << "\t" << std::left << std::setw(w) << "moment_roll_z"
               << "\t" << std::left << std::setw(w) << "moment_roll"
+              << "\t" << std::left << std::setw(w) << "moment_spin_x"
+              << "\t" << std::left << std::setw(w) << "moment_spin_y"
+              << "\t" << std::left << std::setw(w) << "moment_spin_z"
               << "\t" << std::left << std::setw(w) << "moment_spin";
         if (!print_data) {
             datao.close();
@@ -538,6 +580,7 @@ void function_CalcContactForces(
 	// Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
     real3 moment_roll = real3(0);
     real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
+    //real3 v_rot = Rotate(Cross(o_body2, pt2_loc), rot[body2]) - Rotate(Cross(o_body1, pt1_loc), rot[body1]);
     if (Length(v_rot) > min_roll_vel) {
         //moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
         moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot);
@@ -583,7 +626,39 @@ void function_CalcContactForces(
 
 	// Print collision metadata to tab chronodat.txt file. Delete this after completing simple sphere validation tests
     if (print_data) {
-        datao << "\n" << std::left << std::setw(w - 5) << runs 
+        datao << "\n" << std::left << std::setw(w - 5) << runs
+              << "\t" << std::left << std::setw(w - 5) << body1
+			  << "\t" << std::left << std::setw(w - 5) << body2 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1[index].x
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2[index].x
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1[index].y
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2[index].y
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1[index].z
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2[index].z
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1_loc.x
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2_loc.x
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1_loc.y
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2_loc.y
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1_loc.z
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2_loc.z
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body1.x
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body2.x
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body1.y
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body2.y
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body1.z
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body2.z
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body1.x
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body2.x
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body1.y
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body2.y
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body1.z
+              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body2.z
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel1.x
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel2.x 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel1.y
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel2.y 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel1.z 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel2.z 
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
@@ -598,8 +673,18 @@ void function_CalcContactForces(
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.x 
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.y 
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.z 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force) 
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force)
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_rot.x
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_rot.y
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_rot.z
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(v_rot)
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_roll.x
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_roll.y
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_roll.z
 			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(moment_roll)
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_spin.x
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_spin.y
+			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_spin.z
               << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(moment_spin);
         datao.close();
     }

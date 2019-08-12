@@ -94,75 +94,70 @@ void function_CalcContactForces(
 	bool print_data = GetPrint();
     std::ofstream datao;
     static int runs = 0;
-    uint prec = 10;
-    uint w = 17;
 
-    if (runs == 0) {
+    if (runs == 0 & print_data) {
         datao.open(GetChronoOutputPath() + "/chronodat.txt");
-        datao << std::left << std::setw(w - 5) << "stp"
-              << "\t" << std::left << std::setw(w) << "body1"
-              << "\t" << std::left << std::setw(w) << "body2"
-              << "\t" << std::left << std::setw(w) << "pt1_par_x"
-              << "\t" << std::left << std::setw(w) << "pt2_par_x"
-              << "\t" << std::left << std::setw(w) << "pt1_par_y"
-              << "\t" << std::left << std::setw(w) << "pt2_par_y"
-              << "\t" << std::left << std::setw(w) << "pt1_par_z"
-              << "\t" << std::left << std::setw(w) << "pt2_par_z"
-              << "\t" << std::left << std::setw(w) << "pt1_loc_x"
-              << "\t" << std::left << std::setw(w) << "pt2_loc_x"
-              << "\t" << std::left << std::setw(w) << "pt1_loc_y"
-              << "\t" << std::left << std::setw(w) << "pt2_loc_y"
-              << "\t" << std::left << std::setw(w) << "pt1_loc_z"
-              << "\t" << std::left << std::setw(w) << "pt2_loc_z"
-              << "\t" << std::left << std::setw(w) << "v_body1_x"
-              << "\t" << std::left << std::setw(w) << "v_body2_x"
-              << "\t" << std::left << std::setw(w) << "v_body1_y"
-              << "\t" << std::left << std::setw(w) << "v_body2_y"
-              << "\t" << std::left << std::setw(w) << "v_body1_z"
-              << "\t" << std::left << std::setw(w) << "v_body2_z"
-              << "\t" << std::left << std::setw(w) << "o_body1_x"
-              << "\t" << std::left << std::setw(w) << "o_body2_x"
-              << "\t" << std::left << std::setw(w) << "o_body1_y"
-              << "\t" << std::left << std::setw(w) << "o_body2_y"
-              << "\t" << std::left << std::setw(w) << "o_body1_z"
-              << "\t" << std::left << std::setw(w) << "o_body2_z"
-              << "\t" << std::left << std::setw(w) << "vel1_x"
-              << "\t" << std::left << std::setw(w) << "vel2_x"
-              << "\t" << std::left << std::setw(w) << "vel1_y"
-              << "\t" << std::left << std::setw(w) << "vel2_y"
-              << "\t" << std::left << std::setw(w) << "vel1_z"
-              << "\t" << std::left << std::setw(w) << "vel2_z"
-              << "\t" << std::left << std::setw(w) << "delta_n"
-              << "\t" << std::left << std::setw(w) << "delta_t"
-              << "\t" << std::left << std::setw(w) << "relvel_n"
-              << "\t" << std::left << std::setw(w) << "relvel_t"
-              << "\t" << std::left << std::setw(w) << "force_n_mag"
-              << "\t" << std::left << std::setw(w) << "force_t_stiff"
-              << "\t" << std::left << std::setw(w) << "force_t_damp"
-              << "\t" << std::left << std::setw(w) << "force_t_x"
-              << "\t" << std::left << std::setw(w) << "force_t_y"
-              << "\t" << std::left << std::setw(w) << "force_t_z"
-              << "\t" << std::left << std::setw(w) << "force_t_mag"
-              << "\t" << std::left << std::setw(w) << "force_x"
-              << "\t" << std::left << std::setw(w) << "force_y"
-              << "\t" << std::left << std::setw(w) << "force_z"
-              << "\t" << std::left << std::setw(w) << "force_mag"
-              << "\t" << std::left << std::setw(w) << "v_rot_x"
-              << "\t" << std::left << std::setw(w) << "v_rot_y"
-              << "\t" << std::left << std::setw(w) << "v_rot_z"
-              << "\t" << std::left << std::setw(w) << "v_rot"
-              << "\t" << std::left << std::setw(w) << "moment_roll_x"
-              << "\t" << std::left << std::setw(w) << "moment_roll_y"
-              << "\t" << std::left << std::setw(w) << "moment_roll_z"
-              << "\t" << std::left << std::setw(w) << "moment_roll"
-              << "\t" << std::left << std::setw(w) << "moment_spin_x"
-              << "\t" << std::left << std::setw(w) << "moment_spin_y"
-              << "\t" << std::left << std::setw(w) << "moment_spin_z"
-              << "\t" << std::left << std::setw(w) << "moment_spin";
-        if (!print_data) {
-            datao.close();
-            datao.clear();
-        }
+        datao << "stp\t"         
+			  << "body1\t"     
+			  << "body2\t"
+			  /*<< "pt1_loc_x\t"   
+			  << "pt1_loc_y\t" 
+			  << "pt1_loc_z\t" 
+			  << "pt2_loc_x\t"   
+			  << "pt2_loc_y\t" 
+			  << "pt2_loc_z\t"
+			  << "v_body1_x\t"   
+			  << "v_body1_y\t" 
+			  << "v_body1_z\t"
+			  << "v_body2_x\t"   
+			  << "v_body2_y\t" 
+			  << "v_body2_z\t"
+			  << "o_body1_x\t"   
+			  << "o_body1_y\t" 
+			  << "o_body1_z\t"
+			  << "o_body2_x\t"   
+			  << "o_body2_y\t" 
+			  << "o_body2_z\t"
+			  << "vel1_x\t"      
+			  << "vel1_y\t"    
+			  << "vel1_z\t"
+			  << "vel2_x\t"      
+			  << "vel2_y\t"    
+			  << "vel2_z\t"
+              << "v_rot_x\t"
+              << "v_rot_y\t"
+              << "v_rot_z\t"*/
+              << "delta_n\t"
+              << "delta_t\t"
+              << "relvel_n\t"
+              << "relvel_t\t"
+              << "force_n_mag\t"
+              << "force_t_stiff\t"
+              << "force_t_damp\t"
+              << "force_t_x\t"
+              << "force_t_y\t"
+              << "force_t_z\t"
+              << "force_x\t"
+              << "force_y\t"
+              << "force_z\t"
+              << "torque1_x\t"
+              << "torque1_y\t"
+              << "torque1_z\t"
+              << "torque2_x\t"
+              << "torque2_y\t"
+              << "torque2_z\t"
+              << "m_roll1_x\t"
+              << "m_roll1_y\t"
+              << "m_roll1_z\t"
+              << "m_roll2_x\t"
+              << "m_roll2_y\t"
+              << "m_roll2_z\t"
+              << "m_spin1_x\t"
+              << "m_spin1_y\t"
+              << "m_spin1_z\t"
+              << "m_spin2_x\t"
+              << "m_spin2_y\t"
+              << "m_spin2_z\n";
         runs++;
     } else if (print_data) {
         datao.open(GetChronoOutputPath() + "/chronodat.txt", std::ios::app);
@@ -444,27 +439,36 @@ void function_CalcContactForces(
                 real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
 				// Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
-                real3 moment_roll = real3(0);
-                real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
+                // Calculate v_rot and m_roll exactly as steve does, but note that in the m_roll calc,
+                // eff_radius is temporarily substituted for Length(pt1_loc) and Length(pt2_loc) due to
+                // maybe unrealistic issues that happen when the particles interact with the walls
+                real3 m_roll1 = real3(0);
+                real3 m_roll2 = real3(0);
+
+                real3 v_rot = Length(pt2_loc) * Cross(Rotate(o_body2, rot[body2]), normal[index]) -
+                              Length(pt1_loc) * Cross(Rotate(o_body1, rot[body1]), normal[index]);
+
                 if (Length(v_rot) > min_roll_vel) {
-                    // moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
-                    moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot);
-                    torque1_loc += moment_roll;
-                    torque2_loc += moment_roll;
+                    m_roll1 = muRoll_eff * eff_radius[index] *
+                              RotateT(Cross(forceN_mag * normal[index], v_rot), rot[body1]) / Length(v_rot);
+                    m_roll2 = muRoll_eff * eff_radius[index] *
+                              RotateT(Cross(forceN_mag * normal[index], v_rot), rot[body2]) / Length(v_rot);
                 }
 
-                // Calculate twisting friction torque as M_twist = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
+				// Calculate spinning friction torque as M_spin = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
                 // r_c is the radius of the circle resulting from the intersecting body surfaces
-                real3 moment_spin = real3(0);
-				if (Length(o_body2 - o_body1) > min_spin_vel) {
-                    double r1 = Length(pt1_loc), r2 = Length(pt2_loc);
-                    double x_c = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
-                    double r_c = sqrt(pow(r1, 2) - pow(x_c, 2));
-                    moment_spin = muSpin_eff * r_c *
-                                  (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / Length(o_body1 - o_body2)) *
-                                  normal[index];
-                    torque1_loc -= moment_spin;
-                    torque2_loc -= moment_spin;
+                real3 m_spin1 = real3(0);
+                real3 m_spin2 = real3(0);
+
+                real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
+
+                if (Length(rel_o) > min_spin_vel) {
+                    double r1 = Length(pt1_loc);
+                    double r2 = Length(pt2_loc);
+                    double xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
+                    double rc = sqrt(pow(r1, 2) - pow(xc, 2));
+                    m_spin1 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body1]) / Length(rel_o);
+                    m_spin2 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body2]) / Length(rel_o);
                 }
 
 				// Include adhesion as part of the total force calculation rather than part of
@@ -486,29 +490,12 @@ void function_CalcContactForces(
                 ext_body_id[2 * index + 1] = body2;
                 ext_body_force[2 * index] = -force;
                 ext_body_force[2 * index + 1] = force;
-                ext_body_torque[2 * index] = -torque1_loc;
-                ext_body_torque[2 * index + 1] = torque2_loc;
+                ext_body_torque[2 * index] = -torque1_loc - m_roll1 - m_spin1;
+                ext_body_torque[2 * index + 1] = torque2_loc - m_roll2 - m_spin2;
 
 				// Print collision metadata to chronodat.txt
 				if (print_data) {
-					datao << "\n" << std::left << std::setw(w - 5) << runs 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << 0 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT_mag
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.x 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.y 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.z 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force) 
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(moment_roll)
-						  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(moment_spin);
+                    datao << runs; 
 					datao.close();
 				}
             }
@@ -578,27 +565,39 @@ void function_CalcContactForces(
     real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
 	// Calculate rolling friction torque as M_roll = µ_r * R * (F_N x v_rot) / |v_rot|
-    real3 moment_roll = real3(0);
-    real3 v_rot = Rotate(Cross(o_body1, pt1_loc), rot[body1]) + Rotate(Cross(o_body2, pt2_loc), rot[body2]);
-    //real3 v_rot = Rotate(Cross(o_body2, pt2_loc), rot[body2]) - Rotate(Cross(o_body1, pt1_loc), rot[body1]);
+	// Calculate v_rot and m_roll exactly as steve does, but note that in the m_roll calc,
+	// eff_radius[index] is temporarily substituted for Length(pt1_loc) and Length(pt2_loc) due to
+	// maybe unrealistic issues that happen when the particles interact with the walls
+    real3 m_roll1 = real3(0);
+    real3 m_roll2 = real3(0);
+
+	real3 v_rot = Length(pt2_loc) * Cross(Rotate(o_body2, rot[body2]), normal[index]) -
+                  Length(pt1_loc) * Cross(Rotate(o_body1, rot[body1]), normal[index]);
+
     if (Length(v_rot) > min_roll_vel) {
-        //moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot);
-        moment_roll = muRoll_eff * eff_radius[index] * Cross(forceN_mag * normal[index], v_rot);
-        torque1_loc += moment_roll;
-        torque2_loc += moment_roll;
+        m_roll1 = muRoll_eff * Length(v_rot) * forceN_mag * o_body1 / Length(o_body1);
+        m_roll2 = muRoll_eff * Length(v_rot) * forceN_mag * o_body1 / Length(o_body2);
+        //m_roll1 = muRoll_eff * eff_radius[index] * RotateT(Cross(forceN_mag * normal[index], v_rot), rot[body1]);// / Length(v_rot);
+        //m_roll2 = muRoll_eff * eff_radius[index] * RotateT(Cross(forceN_mag * normal[index], v_rot), rot[body2]);// / Length(v_rot);
     }
 
     // Calculate spinning friction torque as M_spin = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
     // r_c is the radius of the circle resulting from the intersecting body surfaces
-    real3 moment_spin = real3(0);
-    if (Length(o_body2 - o_body1) > min_spin_vel) {
-        double r1 = Length(pt1_loc), r2 = Length(pt2_loc);
-        double x_c = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
-        double r_c = sqrt(pow(r1, 2) - pow(x_c, 2));
-        moment_spin = muSpin_eff * r_c *
-                      (Dot(o_body2 - o_body1, forceN_mag * normal[index]) / Length(o_body1 - o_body2)) * normal[index];
-        torque1_loc -= moment_spin;
-        torque2_loc -= moment_spin;
+    real3 m_spin1 = real3(0);
+    real3 m_spin2 = real3(0);
+
+	real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
+
+    if (Length(rel_o) > min_spin_vel) {
+        double r1 = eff_radius[index];// Length(pt1_loc);
+		double r2 = r1;//Length(pt2_loc);
+        double xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
+        double rc = sqrt(pow(r1, 2) - pow(xc, 2));
+        m_spin1 = muSpin_eff * rc * forceN_mag * RotateT(Dot(rel_o, normal[index]) * normal[index], rot[body1]) / Length(rel_o); 
+		m_spin2 = muSpin_eff * rc * forceN_mag * RotateT(Dot(rel_o, normal[index]) * normal[index], rot[body2]) / Length(rel_o); 
+        // rot[body2]) / Length(rel_o);
+        //m_spin1 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body1]) / Length(rel_o);
+        //m_spin2 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body2]) / Length(rel_o);
     }
 
 	// Include adhesion as part of the total force calculation rather than part of
@@ -621,71 +620,72 @@ void function_CalcContactForces(
     ext_body_id[2 * index + 1] = body2;
     ext_body_force[2 * index] = -force;
     ext_body_force[2 * index + 1] = force;
-    ext_body_torque[2 * index] = -torque1_loc;
-    ext_body_torque[2 * index + 1] = torque2_loc;
+    ext_body_torque[2 * index] = -(torque1_loc - m_roll1 - m_spin1);
+    ext_body_torque[2 * index + 1] = torque2_loc - m_roll2 - m_spin2;
 
 	// Print collision metadata to tab chronodat.txt file. Delete this after completing simple sphere validation tests
     if (print_data) {
-        datao << "\n" << std::left << std::setw(w - 5) << runs
-              << "\t" << std::left << std::setw(w - 5) << body1
-			  << "\t" << std::left << std::setw(w - 5) << body2 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1[index].x
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2[index].x
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1[index].y
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2[index].y
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1[index].z
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2[index].z
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1_loc.x
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2_loc.x
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1_loc.y
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2_loc.y
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt1_loc.z
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << pt2_loc.z
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body1.x
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body2.x
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body1.y
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body2.y
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body1.z
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_body2.z
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body1.x
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body2.x
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body1.y
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body2.y
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body1.z
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << o_body2.z
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel1.x
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel2.x 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel1.y
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel2.y 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel1.z 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << vel2.z 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << delta_n 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(delta_t) 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p1 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << p2 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceN_mag 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_stiff)
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT_damp) 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.x 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.y 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << forceT.z 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(forceT) 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.x 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.y 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << force.z 
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(force)
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_rot.x
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_rot.y
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << v_rot.z
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(v_rot)
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_roll.x
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_roll.y
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_roll.z
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(moment_roll)
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_spin.x
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_spin.y
-			  << "\t" << std::left << std::setw(w) << std::setprecision(prec) << moment_spin.z
-              << "\t" << std::left << std::setw(w) << std::setprecision(prec) << Length(moment_spin);
+        datao << runs << "\t"
+			  << body1 << "\t" 
+			  << body2 << "\t"
+              /*<< pt1_loc.x << "\t"
+              << pt1_loc.y << "\t"
+              << pt1_loc.z << "\t"
+              << pt2_loc.x << "\t"
+              << pt2_loc.y << "\t"
+              << pt2_loc.z << "\t"
+              << v_body1.x << "\t"
+              << v_body1.y << "\t"
+              << v_body1.z << "\t"
+              << v_body2.x << "\t"
+              << v_body2.y << "\t"
+              << v_body2.z << "\t"
+              << o_body1.x << "\t"
+              << o_body1.y << "\t"
+              << o_body1.z << "\t"
+              << o_body2.x << "\t"
+              << o_body2.y << "\t"
+              << o_body2.z << "\t"
+			  << vel1.x << "\t"
+			  << vel1.y << "\t"
+			  << vel1.z << "\t"
+			  << vel2.x << "\t"
+			  << vel2.y << "\t"
+			  << vel2.z << "\t"
+			  << v_rot.x << "\t"
+			  << v_rot.y << "\t"
+			  << v_rot.z << "\t"*/
+			  << delta_n << "\t"
+			  << Length(delta_t) << "\t"
+			  << p1 << "\t"
+			  << p2 << "\t"
+			  << forceN_mag << "\t"
+			  << Length(forceT_stiff) << "\t"
+			  << Length(forceT_damp) << "\t"
+			  << forceT.x << "\t"
+			  << forceT.y << "\t"
+			  << forceT.z << "\t"
+			  << force.x << "\t"
+			  << force.y << "\t"
+			  << force.z << "\t"
+			  << Rotate(torque1_loc, rot[body1]).x << "\t"
+              << Rotate(torque1_loc, rot[body1]).y << "\t"
+              << Rotate(torque1_loc, rot[body1]).z << "\t"
+              << Rotate(torque2_loc, rot[body2]).x << "\t"
+              << Rotate(torque2_loc, rot[body2]).y << "\t"
+              << Rotate(torque2_loc, rot[body2]).z << "\t"
+			  << Rotate(m_roll1, rot[body1]).x << "\t"
+			  << Rotate(m_roll1, rot[body1]).y << "\t"
+              << Rotate(m_roll1, rot[body1]).z << "\t"
+              << Rotate(m_roll2, rot[body2]).x << "\t"
+              << Rotate(m_roll2, rot[body2]).y << "\t"
+              << Rotate(m_roll2, rot[body2]).z << "\t"
+              << Rotate(m_spin1, rot[body1]).x << "\t"
+              << Rotate(m_spin1, rot[body1]).y << "\t"
+              << Rotate(m_spin1, rot[body1]).z << "\t"
+              << Rotate(m_spin2, rot[body2]).x << "\t"
+              << Rotate(m_spin2, rot[body2]).y << "\t"
+              << Rotate(m_spin2, rot[body2]).z << "\n";
         datao.close();
     }
 }

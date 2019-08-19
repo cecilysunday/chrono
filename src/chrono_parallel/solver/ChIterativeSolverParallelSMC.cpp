@@ -571,7 +571,7 @@ void function_CalcContactForces(
     real3 m_roll1 = real3(0);
     real3 m_roll2 = real3(0);
 
-	real3 v_rot = Length(pt2_loc) * Cross(Rotate(o_body2, rot[body2]), normal[index]) -
+	/*real3 v_rot = Length(pt2_loc) * Cross(Rotate(o_body2, rot[body2]), normal[index]) -
                   Length(pt1_loc) * Cross(Rotate(o_body1, rot[body1]), normal[index]);
 
     if (Length(v_rot) > min_roll_vel) {
@@ -579,14 +579,14 @@ void function_CalcContactForces(
         m_roll2 = muRoll_eff * Length(v_rot) * forceN_mag * o_body1 / Length(o_body2);
         //m_roll1 = muRoll_eff * eff_radius[index] * RotateT(Cross(forceN_mag * normal[index], v_rot), rot[body1]);// / Length(v_rot);
         //m_roll2 = muRoll_eff * eff_radius[index] * RotateT(Cross(forceN_mag * normal[index], v_rot), rot[body2]);// / Length(v_rot);
-    }
+    }*/
 
     // Calculate spinning friction torque as M_spin = -µ_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
     // r_c is the radius of the circle resulting from the intersecting body surfaces
     real3 m_spin1 = real3(0);
     real3 m_spin2 = real3(0);
 
-	real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
+	/*real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
 
     if (Length(rel_o) > min_spin_vel) {
         double r1 = eff_radius[index];// Length(pt1_loc);
@@ -598,7 +598,7 @@ void function_CalcContactForces(
         // rot[body2]) / Length(rel_o);
         //m_spin1 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body1]) / Length(rel_o);
         //m_spin2 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body2]) / Length(rel_o);
-    }
+    }*/
 
 	// Include adhesion as part of the total force calculation rather than part of
     // the the forceN_max calculation to prevent its effects from canceling out

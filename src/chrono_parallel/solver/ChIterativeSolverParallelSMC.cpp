@@ -82,7 +82,7 @@ void function_CalcContactForces(
     char* shear_touch,          // flag if contact in neighbor list is persistent (max_shear per body)
     real3* shear_disp,          // accumulated shear displacement for each neighbor (max_shear per body)
     real* contact_relvel_init,  // initial relative normal velocity manitude per contact pair
-    real* contact_duration,     // duration of persistant contact per contact pair
+    real* contact_duration,     // running duration of persistant contact between contact pairs
     int* ext_body_id,           // [output] body IDs (two per contact)
     real3* ext_body_force,      // [output] body force (two per contact)
     real3* ext_body_torque      // [output] body torque (two per contact)
@@ -231,11 +231,14 @@ void function_CalcContactForces(
     real kt;
     real gn;
     real gt;
+    real kn_simple;
+    real gn_simple;
+    real t_overlap;
 
+	real t_current_contact = 0;
     real relvel_init = abs(relvel_n_mag);
-    real t_contact = 0;
     real delta_n = -depth[index];
-    real3 delta_t = real3(0);
+    real3 delta_t = real3(0);    
 
     int i;
     int contact_id;
@@ -269,11 +272,11 @@ void function_CalcContactForces(
         for (i = 0; i < max_shear; i++) {
             int ctIdUnrolled = max_shear * shear_body1 + i;
             if (shear_neigh[ctIdUnrolled].x == shear_body2 && 
-                shear_neigh[ctIdUnrolled].y == shear_shape1 &&
+				shear_neigh[ctIdUnrolled].y == shear_shape1 &&
                 shear_neigh[ctIdUnrolled].z == shear_shape2) {
+                contact_duration[ctIdUnrolled] += dT;
                 contact_id = i;
                 newcontact = false;
-                contact_duration[ctIdUnrolled] += dT;
                 break;
             }
         }
@@ -314,7 +317,7 @@ void function_CalcContactForces(
 
         // Load the charecteristic velocity and contact_duration from the contact history
         relvel_init = contact_relvel_init[ctSaveId];
-        t_contact = contact_duration[ctSaveId];
+        t_current_contact = contact_duration[ctSaveId];
     }
 
     double eps = std::numeric_limits<double>::epsilon();
@@ -339,6 +342,9 @@ void function_CalcContactForces(
                 gt = m_eff * user_gt;
             }
 
+			kn_simple = kn;
+            gn_simple = gn;
+
             break;
 
         case ChSystemSMC::ContactForceModel::Hertz:
@@ -359,6 +365,9 @@ void function_CalcContactForces(
                 gn = tmp * m_eff * user_gn;
                 gt = tmp * m_eff * user_gt;
             }
+
+            kn_simple = kn / Sqrt(delta_n);
+            gn_simple = gn / Pow(delta_n, 1.0 / 4.0);
 
             break;
 
@@ -384,6 +393,9 @@ void function_CalcContactForces(
                 gt = tmp * m_eff * user_gt;
             }
 
+			kn_simple = kn / Sqrt(delta_n);
+            gn_simple = gn / Pow(delta_n, 3.0 / 2.0);
+
             break;
 
         case ChSystemSMC::ContactForceModel::PlainCoulomb:
@@ -399,6 +411,9 @@ void function_CalcContactForces(
                 kn = tmp * user_kn;
                 gn = tmp * user_gn;
             }
+
+			kn_simple = kn / Sqrt(delta_n);
+            gn_simple = gn / Pow(delta_n, 1.0 / 4.0);
 
             kt = 0;
             gt = 0;
@@ -418,42 +433,47 @@ void function_CalcContactForces(
                 real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
                 real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
-                // Calculate rolling friction torque as M_roll = �_r * R * (F_N x v_rot) / |v_rot|
-                // Calculate v_rot and m_roll exactly as steve does, but note that in the m_roll calc,
-                // eff_radius is temporarily substituted for Length(pt1_loc) and Length(pt2_loc) due to
-                // maybe unrealistic issues that happen when the particles interact with the walls
+				// Compute some vales needed for rolling and twisting friction calculations.
+                // If the duration of the current contact is less than the durration of a typical collision,
+                // do not apply friction. To avoid high torques, friction should only be applied to persistant contacts.
+                double dcoeff = (gn_simple / (2 * m_eff)) / Sqrt(kn_simple / m_eff);
+                t_overlap = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - Pow(dcoeff, 2.0))));
+
+                if (t_current_contact <= t_overlap) {
+                    muRoll_eff = 0.0;
+                    muSpin_eff = 0.0;
+                }
+
+                real3 v_rot = Rotate(Cross(o_body2, pt2_loc), rot[body2]) - Rotate(Cross(o_body1, pt1_loc), rot[body1]);
+                real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
+
+                // Calculate rolling friction torque as M_roll = �_r * R * (F_N x v_rot) / |v_rot| (Schwartz et al. 2012)
                 real3 m_roll1 = real3(0);
                 real3 m_roll2 = real3(0);
 
-                real3 v_rot = Length(pt2_loc) * Cross(Rotate(o_body2, rot[body2]), normal[index]) -
-                              Length(pt1_loc) * Cross(Rotate(o_body1, rot[body1]), normal[index]);
-
-                if (Length(v_rot) > min_roll_vel) {
-                    m_roll1 = muRoll_eff * eff_radius[index] *
-                              RotateT(Cross(forceN_mag * normal[index], v_rot), rot[body1]) / Length(v_rot);
-                    m_roll2 = muRoll_eff * eff_radius[index] *
-                              RotateT(Cross(forceN_mag * normal[index], v_rot), rot[body2]) / Length(v_rot);
+                if (Length(rel_o) > min_roll_vel && Length(v_rot) > min_roll_vel) {
+                    m_roll1 = muRoll_eff * Cross(forceN_mag * pt1_loc, RotateT(v_rot, rot[body1])) / Length(v_rot);
+                    m_roll2 = muRoll_eff * Cross(forceN_mag * pt2_loc, RotateT(v_rot, rot[body2])) / Length(v_rot);
                 }
 
                 // Calculate spinning friction torque as M_spin = -�_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
-                // r_c is the radius of the circle resulting from the intersecting body surfaces
+                // r_c is the radius of the circle resulting from the intersecting body surfaces (Schwartz et al. 2012)
                 real3 m_spin1 = real3(0);
                 real3 m_spin2 = real3(0);
 
-                real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
-
                 if (Length(rel_o) > min_spin_vel) {
-                    double r1 = Length(pt1_loc);
-                    double r2 = Length(pt2_loc);
+                    double r1 = Length(pt1_loc);  // r1 = eff_radius[index];
+                    double r2 = Length(pt2_loc);  // r2 = r1;
                     double xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
                     double rc = sqrt(pow(r1, 2) - pow(xc, 2));
+
                     m_spin1 = muSpin_eff * rc *
                               RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body1]) /
                               Length(rel_o);
                     m_spin2 = muSpin_eff * rc *
                               RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body2]) /
                               Length(rel_o);
-                }
+				}
 
                 // Include adhesion as part of the total force calculation rather than part of
                 // the the forceN_max calculation to prevent its effects from canceling out
@@ -474,7 +494,7 @@ void function_CalcContactForces(
                 ext_body_id[2 * index + 1] = body2;
                 ext_body_force[2 * index] = -force;
                 ext_body_force[2 * index + 1] = force;
-                ext_body_torque[2 * index] = -torque1_loc - m_roll1 - m_spin1;
+                ext_body_torque[2 * index] = -torque1_loc + m_roll1 + m_spin1;
                 ext_body_torque[2 * index + 1] = torque2_loc - m_roll2 - m_spin2;
 
                 // Print collision metadata to chronodat.txt
@@ -493,9 +513,9 @@ void function_CalcContactForces(
     real3 forceT_stiff = kt * delta_t;
     real3 forceT_damp = gt * relvel_t;
 
-    /*// If the resulting normal force is negative, then the two shapes are
+    // If the resulting normal force is negative, then the two shapes are
     // moving away from each other so fast that no contact force is generated.
-    if (forceN_mag < 0) {
+    /*if (forceN_mag < 0) {
         forceN_mag = 0;
         forceT_stiff.x = 0;
         forceT_stiff.y = 0;
@@ -570,10 +590,6 @@ void function_CalcContactForces(
     }
 
     // Accumulate normal and tangential forces
-    // real3 force = forceN_mag * normal[index];
-    // force -= forceT_stiff;
-    // force -= forceT_damp;
-
 	real3 forceT = forceT_stiff + forceT_damp;
     real3 force = forceN_mag * normal[index] - forceT;
 
@@ -585,49 +601,31 @@ void function_CalcContactForces(
     real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
     real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
-	// Calculate the t_overlap and determine if this is a new or a persistant contact.
-    // This is a temporary hack only for the Hertz model. If this is not a persitant
-    // contact, set rolling and spinning friction equal to zero
-    real Snb = 2 * E_eff * Sqrt(eff_radius[index]);
-    real logeb = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
-    real betab = logeb / Sqrt(logeb * logeb + CH_C_PI * CH_C_PI);
+	// Compute some vales needed for rolling and twisting friction calculations.
+	// If the duration of the current contact is less than the durration of a typical collision, 
+	// do not apply friction. To avoid high torques, friction should only be applied to persistant contacts.
+    double dcoeff = (gn_simple / (2 * m_eff)) / Sqrt(kn_simple / m_eff);
+    t_overlap = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - Pow(dcoeff, 2.0))));
 
-    double kn_hertz = (4.0 / 3.0) * E_eff * Sqrt(eff_radius[index]);
-    double kt_hertz = 8.0 * G_eff * Sqrt(eff_radius[index]);
-    double gn_hertz = -2 * Sqrt(5.0 / 6) * betab * Sqrt(Snb * m_eff);
-    double dcoeff = (gn_hertz / (2 * m_eff)) / Sqrt(kn_hertz / m_eff);
-    double t_overlap = CH_C_PI * Sqrt(m_eff / (kn_hertz * (1 - Pow(dcoeff, 2))));
-
-    //GetLog() << "\n" << kn_hertz << "\t" << gn_hertz << "\t" << t_contact << "\t" << t_overlap;
-
-    if (t_contact <= t_overlap) {
+    if (t_current_contact <= t_overlap) {
         muRoll_eff = 0.0;
         muSpin_eff = 0.0;
     }
 
-    // Calculate rolling friction torque as M_roll = �_r * R * (F_N x v_rot) / |v_rot|
-    // Calculate v_rot and m_roll exactly as steve does, but note that in the m_roll calc,
-    // eff_radius[index] is temporarily substituted for Length(pt1_loc) and Length(pt2_loc) due to
-    // maybe unrealistic issues that happen when the particles interact with the walls
-    real3 m_roll1 = real3(0);
-    real3 m_roll2 = real3(0);
-
-    //real3 v_rot = Length(pt2_loc) * Cross(Rotate(o_body2, rot[body2]), normal[index]) -
-    //              Length(pt1_loc) * Cross(Rotate(o_body1, rot[body1]), normal[index]);
-
 	real3 v_rot = Rotate(Cross(o_body2, pt2_loc), rot[body2]) - Rotate(Cross(o_body1, pt1_loc), rot[body1]);
     real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
 
-    if (Length(rel_o) > min_roll_vel && Length(v_rot) > min_roll_vel) {
-        //m_roll1 = RotateT(muRoll_eff * Length(pt1_loc) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot), rot[body1]);
-		//m_roll2 = RotateT(muRoll_eff * Length(pt2_loc) * Cross(forceN_mag * normal[index], v_rot) / Length(v_rot), rot[body2]);
+    // Calculate rolling friction torque as M_roll = �_r * R * (F_N x v_rot) / |v_rot| (Schwartz et al. 2012)
+    real3 m_roll1 = real3(0);
+    real3 m_roll2 = real3(0);
 
+    if (Length(rel_o) > min_roll_vel && Length(v_rot) > min_roll_vel) {
         m_roll1 = muRoll_eff * Cross(forceN_mag * pt1_loc, RotateT(v_rot, rot[body1])) / Length(v_rot);
         m_roll2 = muRoll_eff * Cross(forceN_mag * pt2_loc, RotateT(v_rot, rot[body2])) / Length(v_rot);
     }
 
     // Calculate spinning friction torque as M_spin = -�_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
-    // r_c is the radius of the circle resulting from the intersecting body surfaces
+    // r_c is the radius of the circle resulting from the intersecting body surfaces (Schwartz et al. 2012)
     real3 m_spin1 = real3(0);
     real3 m_spin2 = real3(0);
 

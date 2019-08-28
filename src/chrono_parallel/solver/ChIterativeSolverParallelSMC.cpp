@@ -525,7 +525,7 @@ void function_CalcContactForces(
         forceT_damp.z = 0;
     }*/
 
-    /*// Apply Coulomb friction law.
+    // Apply Coulomb friction law.
     // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
     // If force_T_mag > mu_eff * |forceN_mag| and there is shear displacement
     // due to contact history, then the shear displacement is scaled so that
@@ -554,43 +554,6 @@ void function_CalcContactForces(
     }
 
     // Accumulate normal and tangential forces
-    real3 force = forceN_mag * normal[index] - forceT;*/
-
-    // Apply Coulomb friction law.
-    // We must enforce force_T_mag <= mu_eff * |forceN_mag|.
-    // If force_T_mag > mu_eff * |forceN_mag| and there is shear displacement
-    // due to contact history, then the shear displacement is scaled so that
-    // the tangential force will be correct if force_T_mag subsequently drops
-    // below the Coulomb limit.  Also, if there is sliding, then there is no
-    // viscous damping in the tangential direction (to keep the Coulomb limit
-    // strict, and independent of velocity).
-    //  real forceT_mag = Length(forceT_stiff + forceT_damp);  // This seems correct
-    real forceT_stiff_mag = Length(forceT_stiff);  // This is what LAMMPS/LIGGGHTS does
-    real delta_t_mag = Length(delta_t);
-    real forceT_slide = mu_eff * Abs(forceN_mag);
-    if (forceT_stiff_mag > forceT_slide) {
-        if (delta_t_mag > eps) {
-            real ratio = forceT_slide / forceT_stiff_mag;
-            forceT_stiff *= ratio;
-            if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
-                if (shear_body1 == body1) {
-                    shear_disp[max_shear * shear_body1 + contact_id] = forceT_stiff / kt;
-                } else {
-                    shear_disp[max_shear * shear_body1 + contact_id] = -forceT_stiff / kt;
-                }
-            }
-        } else {
-            forceT_stiff.x = 0.0;
-            forceT_stiff.y = 0.0;
-            forceT_stiff.z = 0.0;
-        }
-        forceT_damp.x = 0.0;
-        forceT_damp.y = 0.0;
-        forceT_damp.z = 0.0;
-    }
-
-    // Accumulate normal and tangential forces
-	real3 forceT = forceT_stiff + forceT_damp;
     real3 force = forceN_mag * normal[index] - forceT;
 
     // Body forces (in global frame) & torques (in local frame)

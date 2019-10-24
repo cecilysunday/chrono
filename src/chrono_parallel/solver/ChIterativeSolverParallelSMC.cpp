@@ -191,7 +191,7 @@ void function_CalcContactForces(
     // ---------------------------------------
 
     real m_eff = mass[body1] * mass[body2] / (mass[body1] + mass[body2]);
-    real mu_eff = strategy->CombineFriction(mu[body1], mu[body2]);
+    real mu_eff = std::max(mu[body1], mu[body2]); // strategy->CombineFriction(mu[body1], mu[body2]);
     real muRoll_eff = strategy->CombineFriction(muRoll[body1], muRoll[body2]);
     real muSpin_eff = strategy->CombineFriction(muSpin[body1], muSpin[body2]);
     real adhesion_eff = strategy->CombineCohesion(adhesion[body1], adhesion[body2]);

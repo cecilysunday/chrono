@@ -33,7 +33,7 @@ namespace hmmwv {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double HMMWV_Pac89Tire::m_normalDamping = 350;
+const double HMMWV_Pac89Tire::m_normalDamping = 3500;
 
 const double HMMWV_Pac89Tire::m_mass = 37.6;
 const ChVector<> HMMWV_Pac89Tire::m_inertia(3.84, 6.69, 3.84);
@@ -103,9 +103,23 @@ void HMMWV_Pac89Tire::SetPac89Params() {
     m_PacCoeff.C15 = 0.0;
     m_PacCoeff.C16 = 0.0;
     m_PacCoeff.C17 = 0.0;
+
+    // load the vertical stiffness table
+    m_vert_map.AddPoint(0.00, 0);
+    m_vert_map.AddPoint(0.01, 2830.0);
+    m_vert_map.AddPoint(0.02, 6212.0);
+    m_vert_map.AddPoint(0.03, 10146.0);
+    m_vert_map.AddPoint(0.04, 14632.0);
+    m_vert_map.AddPoint(0.05, 19670.0);
+    m_vert_map.AddPoint(0.06, 25260.0);
+    m_vert_map.AddPoint(0.07, 31402.0);
+    m_vert_map.AddPoint(0.08, 38096.0);
+    m_vert_map.AddPoint(0.09, 45342.0);
+    m_vert_map.AddPoint(0.10, 53140.0);
 }
 
 double HMMWV_Pac89Tire::GetNormalStiffnessForce(double depth) const {
+    /* original method
     // corresponding depths = 0 : 0.01 : 0.03
     // double normalforcetabel[11] = {0.0, 2300.0, 5000.0, 8100.0};
     // modified for tire format "37x12.5x16.5 50 psi"
@@ -126,6 +140,8 @@ double HMMWV_Pac89Tire::GetNormalStiffnessForce(double depth) const {
         return (normalforcetabel[int(std::floor(position))] * (1 - scale) +
                 normalforcetabel[int(std::floor(position) + 1)] * scale);
     }
+    */
+    return m_vert_map.Get_y(depth);
 }
 
 // -----------------------------------------------------------------------------
@@ -134,11 +150,12 @@ void HMMWV_Pac89Tire::AddVisualizationAssets(VisualizationType vis) {
     if (vis == VisualizationType::MESH) {
         auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
         trimesh->LoadWavefrontMesh(vehicle::GetDataFile(m_meshFile), false, false);
+        trimesh->Transform(ChVector<>(0, GetOffset(), 0), ChMatrix33<>(1));
         m_trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
         m_trimesh_shape->SetMesh(trimesh);
         m_trimesh_shape->SetName(m_meshName);
         m_trimesh_shape->SetStatic(true);
-        m_wheel->AddAsset(m_trimesh_shape);
+        m_wheel->GetSpindle()->AddAsset(m_trimesh_shape);
     } else {
         ChPac89Tire::AddVisualizationAssets(vis);
     }
@@ -147,12 +164,13 @@ void HMMWV_Pac89Tire::AddVisualizationAssets(VisualizationType vis) {
 void HMMWV_Pac89Tire::RemoveVisualizationAssets() {
     ChPac89Tire::RemoveVisualizationAssets();
 
-    // Make sure we only remove the assets added by HMMWV_FialaTire::AddVisualizationAssets.
+    // Make sure we only remove the assets added by HMMWV_Pac89Tire::AddVisualizationAssets.
     // This is important for the ChTire object because a wheel may add its own assets
     // to the same body (the spindle/wheel).
-    auto it = std::find(m_wheel->GetAssets().begin(), m_wheel->GetAssets().end(), m_trimesh_shape);
-    if (it != m_wheel->GetAssets().end())
-        m_wheel->GetAssets().erase(it);
+    auto& assets = m_wheel->GetSpindle()->GetAssets();
+    auto it = std::find(assets.begin(), assets.end(), m_trimesh_shape);
+    if (it != assets.end())
+        assets.erase(it);
 }
 
 }  // end namespace hmmwv

@@ -29,17 +29,19 @@ namespace vehicle {
 // ChShaftsBody could transfer rolling torque to the chassis.
 // -----------------------------------------------------------------------------
 ChShaftsPowertrain::ChShaftsPowertrain(const std::string& name, const ChVector<>& dir_motor_block)
-    : ChPowertrain(name), m_dir_motor_block(dir_motor_block), m_last_time_gearshift(0), m_gear_shift_latency(0.5) {
-}
+    : ChPowertrain(name), m_dir_motor_block(dir_motor_block), m_last_time_gearshift(0), m_gear_shift_latency(0.5) {}
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void ChShaftsPowertrain::Initialize(std::shared_ptr<ChBody> chassis, std::shared_ptr<ChShaft> driveshaft) {
-    assert(chassis);
-    assert(driveshaft);
-    assert(chassis->GetSystem());
+void ChShaftsPowertrain::Initialize(std::shared_ptr<ChChassis> chassis, std::shared_ptr<ChDriveline> driveline) {
+    ChPowertrain::Initialize(chassis, driveline);
 
-    ChSystem* my_system = chassis->GetSystem();
+    assert(chassis->GetBody()->GetSystem());
+    ChSystem* my_system = chassis->GetBody()->GetSystem();
+
+    // Cache the upshift and downshift speeds (in rad/s)
+    m_upshift_speed = GetUpshiftRPM() * CH_C_2PI / 60.0;
+    m_downshift_speed = GetDownshiftRPM() * CH_C_2PI / 60.0;
 
     // Let the derived class specify the gear ratios
     SetGearRatios(m_gear_ratios);
@@ -61,7 +63,7 @@ void ChShaftsPowertrain::Initialize(std::shared_ptr<ChBody> chassis, std::shared
     // represents the chassis. This allows to get the effect of the car 'rolling'
     // when the longitudinal engine accelerates suddenly.
     m_motorblock_to_body = chrono_types::make_shared<ChShaftsBody>();
-    m_motorblock_to_body->Initialize(m_motorblock, chassis, m_dir_motor_block);
+    m_motorblock_to_body->Initialize(m_motorblock, chassis->GetBody(), m_dir_motor_block);
     my_system->Add(m_motorblock_to_body);
 
     // CREATE  a 1 d.o.f. object: a 'shaft' with rotational inertia.
@@ -116,7 +118,7 @@ void ChShaftsPowertrain::Initialize(std::shared_ptr<ChBody> chassis, std::shared
     // shafts. Note that differently from the basic ChShaftsGear, this also provides
     // the possibility of transmitting a reaction torque to the box (the truss).
     m_gears = chrono_types::make_shared<ChShaftsGearbox>();
-    m_gears->Initialize(m_shaft_ingear, driveshaft, chassis, m_dir_motor_block);
+    m_gears->Initialize(m_shaft_ingear, driveline->GetDriveshaft(), chassis->GetBody(), m_dir_motor_block);
     m_gears->SetTransmissionRatio(m_gear_ratios[m_current_gear]);
     my_system->Add(m_gears);
 
@@ -163,7 +165,9 @@ void ChShaftsPowertrain::SetDriveMode(ChPowertrain::DriveMode mmode) {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void ChShaftsPowertrain::Synchronize(double time, double throttle, double shaft_speed) {
+void ChShaftsPowertrain::Synchronize(double time, double throttle) {
+    double shaft_speed = m_driveline->GetDriveshaftSpeed();
+
     // Just update the throttle level in the thermal engine
     m_engine->SetThrottle(throttle);
 
@@ -179,13 +183,13 @@ void ChShaftsPowertrain::Synchronize(double time, double throttle, double shaft_
 
     double gearshaft_speed = m_shaft_ingear->GetPos_dt();
 
-    if (gearshaft_speed > 2500 * CH_C_2PI / 60.0) {
+    if (gearshaft_speed > m_upshift_speed) {
         // upshift if possible
         if (m_current_gear + 1 < m_gear_ratios.size()) {
             SetSelectedGear(m_current_gear + 1);
             m_last_time_gearshift = time;
         }
-    } else if (gearshaft_speed < 1500 * CH_C_2PI / 60.0) {
+    } else if (gearshaft_speed < m_downshift_speed) {
         // downshift if possible
         if (m_current_gear - 1 > 0) {
             SetSelectedGear(m_current_gear - 1);

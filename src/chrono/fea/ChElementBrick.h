@@ -17,8 +17,8 @@
 #define CHELEMENTBRICK_H
 
 #include "chrono/core/ChQuadrature.h"
-#include "chrono/physics/ChContinuumMaterial.h"
 #include "chrono/physics/ChLoadable.h"
+#include "chrono/fea/ChContinuumMaterial.h"
 #include "chrono/fea/ChElementGeneric.h"
 #include "chrono/fea/ChNodeFEAxyz.h"
 
@@ -204,8 +204,7 @@ class ChApi ChElementBrick : public ChElementGeneric, public ChLoadableUVW {
     void ComputeMassMatrix();
     /// Compute the gravitational forces.
     void ComputeGravityForce(const ChVector<>& g_acc);
-    /// Setup. Precompute mass and matrices that do not change during the
-    /// simulation, ex. the mass matrix in ANCF is constant
+    /// Initial setup. Precompute mass and matrices that do not change during the simulation.
     virtual void SetupInitial(ChSystem* system) override;
     /// Sets M as the global mass matrix.
     virtual void ComputeMmatrixGlobal(ChMatrixRef M) override { M = m_MassMatrix; }

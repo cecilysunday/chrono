@@ -19,8 +19,7 @@
 #include "chrono/core/ChGlobal.h"
 
 #include "chrono_vehicle/powertrain/ShaftsPowertrain.h"
-
-#include "chrono_thirdparty/rapidjson/filereadstream.h"
+#include "chrono_vehicle/utils/ChUtilsJSON.h"
 
 using namespace rapidjson;
 
@@ -31,15 +30,9 @@ namespace vehicle {
 // Constructor a shafts powertrain using data from the specified JSON file.
 // -----------------------------------------------------------------------------
 ShaftsPowertrain::ShaftsPowertrain(const std::string& filename) : ChShaftsPowertrain("") {
-    FILE* fp = fopen(filename.c_str(), "r");
-
-    char readBuffer[65536];
-    FileReadStream is(fp, readBuffer, sizeof(readBuffer));
-
-    fclose(fp);
-
-    Document d;
-    d.ParseStream<ParseFlag::kParseCommentsFlag>(is);
+    Document d = ReadFileJSON(filename);
+    if (d.IsNull())
+        return;
 
     Create(d);
 
@@ -75,6 +68,13 @@ void ShaftsPowertrain::Create(const rapidjson::Document& d) {
     m_fwd_gear.resize(np);
     for (unsigned int i = 0; i < np; i++)
         m_fwd_gear[i] = d["Transmission"]["Forward Gear Ratios"][i].GetDouble();
+
+    m_upshift_RPM = d["Transmission"]["Upshift RPM"].GetDouble();
+    m_downshift_RPM = d["Transmission"]["Downshift RPM"].GetDouble();
+
+    if (d["Transmission"].HasMember("Shift Latency")) {
+        SetGearShiftLatency(d["Transmission"]["Shift Latency"].GetDouble());
+    }
 
     // Read torque converter data
     assert(d.HasMember("Torque Converter"));

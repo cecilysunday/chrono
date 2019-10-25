@@ -21,7 +21,8 @@
 #include "chrono_models/vehicle/sedan/Sedan.h"
 #include "chrono_models/vehicle/sedan/Sedan_Vehicle.h"
 
-
+#include "chrono_models/vehicle/citybus/CityBus.h"
+#include "chrono_models/vehicle/citybus/CityBus_Vehicle.h"
 %}
 
 
@@ -37,10 +38,13 @@
 %shared_ptr(chrono::vehicle::sedan::Sedan)
 %shared_ptr(chrono::vehicle::sedan::Sedan_Vehicle)
 
+%shared_ptr(chrono::vehicle::citybus::CityBus)
+%shared_ptr(chrono::vehicle::citybus::CityBus_Vehicle)
+
 
 %import(module = "pychrono.core") "ChMaterialSurface.i"
 %import "ChSuspension.i"
-%import "ChDriveline.i"
+%import "ChDrivelineWV.i"
 %import "ChSteering.i"
 %import "ChPowertrain.i"
 %import "ChChassis.i"
@@ -60,3 +64,6 @@
 
 %include "../chrono_models/vehicle/sedan/Sedan.h"
 %include "../chrono_models/vehicle/sedan/Sedan_Vehicle.h"
+
+%include "../chrono_models/vehicle/citybus/CityBus.h"
+%include "../chrono_models/vehicle/citybus/CityBus_Vehicle.h"

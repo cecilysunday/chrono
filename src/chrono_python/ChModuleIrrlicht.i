@@ -135,6 +135,7 @@ using namespace gui;
 %import(module = "pychrono.core")  "ChSystem.i"
 %import(module = "pychrono.core")  "ChAsset.i"
 %import(module = "pychrono.core")  "ChVector.i"
+%import(module = "pychrono.core")  "ChCoordsys.i"
 
 %include "IReferenceCounted.h"
 %include "IImage.h"
@@ -150,6 +151,8 @@ using namespace gui;
 %template(vector3di) irr::core::vector3d<irr::s32>;
 %include "SColor.h"
 %include "IVideoDriver.h"
+%include "ISceneNode.h"
+%include "ICameraSceneNode.h"
 %include "IrrlichtDevice.h"
 %include "ISceneNode.h"
 %include "ISceneManager.h"

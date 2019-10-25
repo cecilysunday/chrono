@@ -102,6 +102,11 @@ std::string GetChronoDataFile(const std::string& filename) {
 
 static std::string chrono_out_path("DEMO_OUTPUT/");
 
+// Set the path to the Chrono output directory (ATTENTION: not thread safe)
+void SetChronoOutputPath(const std::string& path) {
+    chrono_out_path = path;
+}
+
 const std::string& GetChronoOutputPath() {
     // If the directory does not yet exists, create it.
     auto out_path = filesystem::path(chrono_out_path);
@@ -110,5 +115,25 @@ const std::string& GetChronoOutputPath() {
 
     return chrono_out_path;
 }
+
+
+
+// -----------------------------------------------------------------------------
+// ADDITION FOR DEBUGGING. DELETE LATER. - CS
+// -----------------------------------------------------------------------------
+
+static bool print_smc_data(false);
+
+/// Set a switch to print or not print from ChIterativeSolverParallelSMC
+void SetPrint(bool print) {
+    print_smc_data = print;
+}
+
+/// Get the switch to print or not print from ChIterativeSolverParallelSMC
+bool GetPrint() {
+    return print_smc_data;
+}
+
+
 
 }  // end namespace chrono

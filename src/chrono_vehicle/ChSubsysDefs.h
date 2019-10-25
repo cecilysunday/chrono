@@ -44,37 +44,12 @@ enum VehicleSide {
     RIGHT = 1  ///< right side of vehicle is always 1
 };
 
-/// Class to encode the ID of a vehicle wheel.
-/// By convention, wheels are counted front to rear and left to right. In other
-/// words, for a vehicle with 2 axles, the order is: front-left, front-right,
-/// rear-left, rear-right.
-class WheelID {
-  public:
-    WheelID(int id) : m_id(id), m_axle(id / 2), m_side(VehicleSide(id % 2)) {}
-    WheelID(int axle, VehicleSide side) : m_id(2 * axle + side), m_axle(axle), m_side(side) {}
-
-    /// Return the wheel ID.
-    int id() const { return m_id; }
-
-    /// Return the axle index for this wheel ID.
-    /// Axles are counted from the front of the vehicle.
-    int axle() const { return m_axle; }
-
-    /// Return the side for this wheel ID.
-    /// By convention, left is 0 and right is 1.
-    VehicleSide side() const { return m_side; }
-
-  private:
-    int m_id;            ///< wheel ID
-    int m_axle;          ///< axle index (counted from the front)
-    VehicleSide m_side;  ///< vehicle side (LEFT: 0, RIGHT: 1)
+/// Enum for wheel location on spindle.
+enum WheelLocation {
+    SINGLE = 0,  ///< wheel on one side of a single-wheel axle
+    INNER = 1,   ///< inner wheel on one side of a double-wheel axle
+    OUTER = 2    ///< outer wheel on one side of a double-wheel axle
 };
-
-/// Global constant wheel IDs for the common topology of a 2-axle vehicle.
-CH_VEHICLE_API extern const WheelID FRONT_LEFT;
-CH_VEHICLE_API extern const WheelID FRONT_RIGHT;
-CH_VEHICLE_API extern const WheelID REAR_LEFT;
-CH_VEHICLE_API extern const WheelID REAR_RIGHT;
 
 /// Structure to communicate a full body state.
 struct BodyState {
@@ -202,6 +177,75 @@ class MapSpringForce : public ChLinkSpringCB::ForceFunctor {
 
   private:
     ChFunction_Recorder m_map;
+};
+
+/// Utility class for specifying a map translational spring force with bump and rebound stop.
+class MapSpringBistopForce : public ChLinkSpringCB::ForceFunctor {
+  public:
+    MapSpringBistopForce(double spring_min_length, double spring_max_length)
+        : m_min_length(spring_min_length), m_max_length(spring_max_length) {
+        setup_stop_maps();
+    }
+    MapSpringBistopForce(const std::vector<std::pair<double, double>>& data,
+                         double spring_min_length,
+                         double spring_max_length)
+        : m_min_length(spring_min_length), m_max_length(spring_max_length) {
+        setup_stop_maps();
+        for (unsigned int i = 0; i < data.size(); ++i) {
+            m_map.AddPoint(data[i].first, data[i].second);
+        }
+    }
+    void add_point(double x, double y) { m_map.AddPoint(x, y); }
+    virtual double operator()(double time,
+                              double rest_length,
+                              double length,
+                              double vel,
+                              ChLinkSpringCB* link) override {
+        double defl_bump = 0.0;
+        double defl_rebound = 0.0;
+
+        if (length < m_min_length) {
+            defl_bump = m_min_length - length;
+        }
+
+        if (length > m_max_length) {
+            defl_rebound = length - m_max_length;
+        }
+
+        return -m_map.Get_y(length - rest_length) + m_bump.Get_y(defl_bump) - m_rebound.Get_y(defl_rebound);
+    }
+
+  private:
+    void setup_stop_maps() {
+        m_bump.AddPoint(0.0, 0.0);
+        m_bump.AddPoint(2.0e-3, 200.0);
+        m_bump.AddPoint(4.0e-3, 400.0);
+        m_bump.AddPoint(6.0e-3, 600.0);
+        m_bump.AddPoint(8.0e-3, 800.0);
+        m_bump.AddPoint(10.0e-3, 1000.0);
+        m_bump.AddPoint(20.0e-3, 2500.0);
+        m_bump.AddPoint(30.0e-3, 4500.0);
+        m_bump.AddPoint(40.0e-3, 7500.0);
+        m_bump.AddPoint(50.0e-3, 12500.0);
+        m_bump.AddPoint(60.0e-3, 125000.0);
+
+        m_rebound.AddPoint(0.0, 0.0);
+        m_rebound.AddPoint(2.0e-3, 200.0);
+        m_rebound.AddPoint(4.0e-3, 400.0);
+        m_rebound.AddPoint(6.0e-3, 600.0);
+        m_rebound.AddPoint(8.0e-3, 800.0);
+        m_rebound.AddPoint(10.0e-3, 1000.0);
+        m_rebound.AddPoint(20.0e-3, 2500.0);
+        m_rebound.AddPoint(30.0e-3, 4500.0);
+        m_rebound.AddPoint(40.0e-3, 7500.0);
+        m_rebound.AddPoint(50.0e-3, 12500.0);
+        m_rebound.AddPoint(60.0e-3, 125000.0);
+    }
+    ChFunction_Recorder m_map;
+    ChFunction_Recorder m_bump;
+    ChFunction_Recorder m_rebound;
+    double m_min_length;
+    double m_max_length;
 };
 
 /// Utility class for specifying a linear translational spring force with bump and rebound stop.
@@ -481,7 +525,8 @@ enum class TireModelType {
     REISSNER,    ///< Reissner 6-field shell element-based tire
     FEA,         ///< FEA co-rotational tire
     PAC89,       ///< Pacejka 89 (magic formula) tire
-    TMEASY       ///< Tire Model Made Easy tire (G. Rill)
+    TMEASY,      ///< Tire Model Made Easy tire (G. Rill)
+    PAC02        ///< Pacejka 02 (magic formula) tire, redesign of PACEJKA
 };
 
 /// Enum for available powertrain model templates.

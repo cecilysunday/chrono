@@ -84,6 +84,7 @@
 #include "chrono_vehicle/ChTerrain.h"
 #include "chrono_vehicle/wheeled_vehicle/ChWheel.h"
 #include "chrono_vehicle/wheeled_vehicle/wheel/Wheel.h"
+#include "chrono_vehicle/wheeled_vehicle/ChAxle.h"
 
 #include "chrono_vehicle/wheeled_vehicle/ChBrake.h"
 #include "chrono_vehicle/wheeled_vehicle/brake/ChBrakeSimple.h"
@@ -94,7 +95,7 @@
 
 #include "chrono_thirdparty/rapidjson/document.h"
 #include "Eigen/src/Core/util/Memory.h"
-
+#include "chrono_models/vehicle/citybus/CityBus.h"
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -102,6 +103,7 @@ using namespace chrono::vehicle;
 using namespace chrono::vehicle::generic;
 using namespace chrono::vehicle::hmmwv;
 using namespace chrono::vehicle::sedan;
+using namespace chrono::vehicle::citybus;
 
 
 %}
@@ -138,6 +140,8 @@ using namespace chrono::vehicle::sedan;
 %template(vector_int) std::vector< int >;
 %template(TerrainForces) std::vector< chrono::vehicle::TerrainForce >;
 %template(WheelStates) std::vector< chrono::vehicle::WheelState >;
+%template(ChWheelList) std::vector<std::shared_ptr<chrono::vehicle::ChWheel> > ;
+%template(ChAxleList) std::vector<std::shared_ptr<chrono::vehicle::ChAxle> > ;
 
 //
 // For each class, keep updated the  A, B, C sections: 
@@ -180,6 +184,7 @@ Before adding a shared_ptr, mark as shared ptr all its inheritance tree in the m
 %shared_ptr(chrono::vehicle::ChBrake)
 %shared_ptr(chrono::vehicle::BrakeSimple)
 %shared_ptr(chrono::vehicle::ChVehicle)
+%shared_ptr(chrono::vehicle::ChAxle)
 %shared_ptr(chrono::vehicle::ChWheeledVehicle)
 %shared_ptr(chrono::vehicle::WheeledVehicle)
 
@@ -230,7 +235,7 @@ Before adding a shared_ptr, mark as shared ptr all its inheritance tree in the m
 %import(module = "pychrono.core")  "ChVisualization.i"
 %import(module = "pychrono.core") "../chrono/motion_functions/ChFunction_Base.h"
 %import(module = "pychrono.core")  "ChMaterialSurface.i"
-%import(module = "pychrono.core") "../chrono/physics/ChContinuumMaterial.h"
+%import(module = "pychrono.core") "../chrono/fea/ChContinuumMaterial.h"
 %import(module = "pychrono.core") "../chrono/physics/ChPhysicsItem.h"
 //%import(module = "pychrono.core") "../chrono/physics/ChLoadable.h" // disable because strange error in cxx
 
@@ -263,10 +268,8 @@ Before adding a shared_ptr, mark as shared ptr all its inheritance tree in the m
 
 
 // Wheeled parts
-%include "../chrono_vehicle/wheeled_vehicle/ChWheeledVehicle.h"
-%include "../chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 %include "ChSuspension.i"
-%include "ChDriveline.i"
+%include "ChDrivelineWV.i"
 %include "ChSteering.i"
 
 %include "../chrono_vehicle/wheeled_vehicle/ChWheel.h"
@@ -280,13 +283,14 @@ Before adding a shared_ptr, mark as shared ptr all its inheritance tree in the m
 
 %include "ChTire.i"
 
+%include "../chrono_vehicle/wheeled_vehicle/ChAxle.h"
+
 %include "../chrono_vehicle/wheeled_vehicle/ChWheeledVehicle.h"
 %include "../chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 %include "models/VehicleModels.i"
 
-/*
-Tracked vehicles are not going to be wrapped in the short term
-*/
+// Tracked vehicles are not going to be wrapped in the short term
+
 
 //
 // C- DOWNCASTING OF SHARED POINTERS

@@ -57,7 +57,6 @@
 #include "chrono/physics/ChNodeXYZ.h"
 #include "chrono/physics/ChLoadsXYZnode.h"
 #include "chrono/physics/ChTensors.h"
-#include "chrono/physics/ChContinuumMaterial.h"
 #include "chrono/physics/ChIndexedNodes.h"
 #include "chrono/assets/ChLineShape.h"
 #include "chrono/assets/ChPathShape.h"
@@ -65,12 +64,15 @@
 #include "chrono/assets/ChSurfaceShape.h"
 #include "chrono/assets/ChTriangleMeshShape.h"
 #include "chrono/assets/ChEllipsoidShape.h"
+#include "chrono/assets/ChGlyphs.h"
 #include "chrono/collision/ChCCollisionUtils.h"
+#include "chrono/collision/ChCCollisionSystem.h"
 #include "chrono/geometry/ChTriangleMesh.h"
 #include "chrono/geometry/ChTriangleMeshConnected.h"
 #include "chrono/geometry/ChTriangleMeshSoup.h"
 #include "chrono/core/ChBezierCurve.h"
 #include "Eigen/src/Core/util/Memory.h"
+#include "chrono/utils/ChUtilsInputOutput.h"
 using namespace chrono;
 using namespace chrono::collision;
 using namespace chrono::geometry;
@@ -135,6 +137,7 @@ using namespace chrono::fea;
 %shared_ptr(chrono::ChPointPointSpring)
 %shared_ptr(chrono::ChTriangleMeshShape)
 %shared_ptr(chrono::ChBezierCurve)
+%shared_ptr(chrono::ChGlyphs)
 
 %shared_ptr(chrono::ChFunction)  
 %shared_ptr(chrono::ChFunction_Const)
@@ -163,11 +166,6 @@ using namespace chrono::fea;
 %shared_ptr(chrono::ChMaterialSurfaceNSC)
 %shared_ptr(chrono::ChMaterialSurfaceSMC)
 %shared_ptr(chrono::ChMaterialSurface)
-%shared_ptr(chrono::ChContinuumMaterial)
-%shared_ptr(chrono::ChContinuumElastic)
-%shared_ptr(chrono::ChContinuumElastoplastic)
-%shared_ptr(chrono::ChContinuumPlasticVonMises)
-%shared_ptr(chrono::ChContinuumDruckerPrager)
 %shared_ptr(chrono::ChNodeBase)
 %shared_ptr(chrono::ChNodeXYZ)
 %shared_ptr(chrono::ChMarker)
@@ -302,6 +300,7 @@ using namespace chrono::fea;
 
 %include "ChCollisionModel.i"
 %include "../chrono/collision/ChCCollisionUtils.h"
+%include "../chrono/collision/ChCCollisionSystem.h"
 
 // assets
 %include "ChAsset.i"
@@ -321,6 +320,8 @@ using namespace chrono::fea;
 %include "../chrono/assets/ChSurfaceShape.h"
 %include "../chrono/assets/ChTriangleMeshShape.h"
 %include "../chrono/assets/ChEllipsoidShape.h"
+%include "../chrono/assets/ChGlyphs.h"
+
 
 // physics/  classes
 //%include "../chrono/physics/ChTensors.h"
@@ -328,7 +329,6 @@ using namespace chrono::fea;
 //%template(ChStressTensorD) chrono::fea::ChStressTensor<double>;
 //%template(ChStrainTensorD) chrono::fea::ChStrainTensor<double>;
 %include "ChLoadable.i"
-%include "../chrono/physics/ChContinuumMaterial.h"
 %include "ChObject.i"
 %include "ChPhysicsItem.i"
 %include "../chrono/physics/ChIndexedNodes.h"
@@ -378,6 +378,10 @@ using namespace chrono::fea;
 %include "ChShaft.i"
 %include "ChShaftMotor.i"
 %include "ChLinkMotor.i"
+
+// Utils
+
+%include "../chrono/utils/ChUtilsInputOutput.h"
 
 //
 // C- DOWNCASTING OF SHARED POINTERS

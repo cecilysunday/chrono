@@ -567,7 +567,7 @@ void function_CalcContactForces(
 	// Compute some vales needed for rolling and twisting friction calculations.
 	// If the duration of the current contact is less than the durration of a typical collision, 
 	// do not apply friction. To avoid high torques, friction should only be applied to persistant contacts.
-    double dcoeff = (gn_simple / (2 * m_eff)) / Sqrt(kn_simple / m_eff);
+    double dcoeff = gn_simple / (2 * m_eff * Sqrt(kn_simple / m_eff));
     t_overlap = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - Pow(dcoeff, 2.0))));
 
     if (t_current_contact <= t_overlap) {
@@ -583,8 +583,8 @@ void function_CalcContactForces(
     real3 m_roll2 = real3(0);
 
     if (Length(v_rot) > min_roll_vel) {
-        m_roll1 = muRoll_eff * Cross(forceN_mag * pt1_loc, RotateT(v_rot, rot[body1])); // / Length(v_rot);
-        m_roll2 = muRoll_eff * Cross(forceN_mag * pt2_loc, RotateT(v_rot, rot[body2])); // / Length(v_rot);
+        m_roll1 = muRoll_eff * Cross(forceN_mag * pt1_loc, RotateT(v_rot, rot[body1])) / Length(v_rot);
+        m_roll2 = muRoll_eff * Cross(forceN_mag * pt2_loc, RotateT(v_rot, rot[body2])) / Length(v_rot);
     }
 
     // Calculate spinning friction torque as M_spin = -�_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n

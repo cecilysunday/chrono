@@ -65,7 +65,7 @@ class ChMaterialCompositionStrategy {
   public:
     virtual ~ChMaterialCompositionStrategy() {}
 
-    virtual T CombineFriction(T a1, T a2) const { return std::min<T>(a1, a2); }
+    virtual T CombineFriction(T a1, T a2) const { return std::max<T>(a1, a2); }
     virtual T CombineCohesion(T a1, T a2) const { return std::min<T>(a1, a2); }
     virtual T CombineRestitution(T a1, T a2) const { return std::min<T>(a1, a2); }
     virtual T CombineDamping(T a1, T a2) const { return std::min<T>(a1, a2); }

@@ -191,7 +191,7 @@ void function_CalcContactForces(
     // ---------------------------------------
 
     real m_eff = mass[body1] * mass[body2] / (mass[body1] + mass[body2]);
-    real mu_eff = std::max(mu[body1], mu[body2]); // strategy->CombineFriction(mu[body1], mu[body2]);
+    real mu_eff = strategy->CombineFriction(mu[body1], mu[body2]);
     real muRoll_eff = strategy->CombineFriction(muRoll[body1], muRoll[body2]);
     real muSpin_eff = strategy->CombineFriction(muSpin[body1], muSpin[body2]);
     real adhesion_eff = strategy->CombineCohesion(adhesion[body1], adhesion[body2]);
@@ -436,7 +436,7 @@ void function_CalcContactForces(
 				// Compute some vales needed for rolling and twisting friction calculations.
                 // If the duration of the current contact is less than the durration of a typical collision,
                 // do not apply friction. To avoid high torques, friction should only be applied to persistant contacts.
-                double dcoeff = gn_simple / (2 * m_eff * Sqrt(kn_simple / m_eff));
+                double dcoeff = gn_simple / (2.0 * m_eff * Sqrt(kn_simple / m_eff));
                 t_overlap = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - Pow(dcoeff, 2.0))));
 
                 if (t_current_contact <= t_overlap) {
@@ -567,7 +567,7 @@ void function_CalcContactForces(
 	// Compute some vales needed for rolling and twisting friction calculations.
 	// If the duration of the current contact is less than the durration of a typical collision, 
 	// do not apply friction. To avoid high torques, friction should only be applied to persistant contacts.
-    double dcoeff = gn_simple / (2 * m_eff * Sqrt(kn_simple / m_eff));
+    double dcoeff = gn_simple / (2.0 * m_eff * Sqrt(kn_simple / m_eff));
     t_overlap = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - Pow(dcoeff, 2.0))));
 
     if (t_current_contact <= t_overlap) {

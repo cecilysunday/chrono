@@ -88,7 +88,7 @@ void function_CalcContactForces(
     real3* ext_body_torque      // [output] body torque (two per contact)
 ) {
     // Format header and output file for debugging lines. Delete this after completing simple sphere validation tests
-    real p1;  // relvel_n_mag (signed)
+    /*real p1;  // relvel_n_mag (signed)
     real p2;  // relvel_t_mag (always positive)
 
     bool print_data = GetPrint();
@@ -138,7 +138,7 @@ void function_CalcContactForces(
     } else if (print_data) {
         datao.open(GetChronoOutputPath() + "/chronodat.txt", std::ios::app);
         runs++;
-    }
+    }*/
     
     // Identify the two bodies in contact.
     int body1 = body_id[index].x;
@@ -152,7 +152,7 @@ void function_CalcContactForces(
         ext_body_force[2 * index + 1] = real3(0);
         ext_body_torque[2 * index] = real3(0);
         ext_body_torque[2 * index + 1] = real3(0);
-        chrono::GetLog() << "\nWARNING: Exited function_CalcContactForce() at contact step " << runs;
+        //chrono::GetLog() << "\nWARNING: Exited function_CalcContactForce() at contact step " << runs;
         return;
     }
 
@@ -184,8 +184,8 @@ void function_CalcContactForces(
     real3 relvel_t = relvel - relvel_n;
     real relvel_t_mag = Length(relvel_t);
 
-    p1 = relvel_n_mag;
-    p2 = relvel_t_mag;
+    //p1 = relvel_n_mag;
+    //p2 = relvel_t_mag;
 
     // Calculate composite material properties
     // ---------------------------------------
@@ -628,7 +628,7 @@ void function_CalcContactForces(
     ext_body_torque[2 * index + 1] = torque2_loc - m_roll2 - m_spin2;
 
     // Print collision metadata to tab chronodat.txt file. Delete this after completing simple sphere validation tests
-    if (print_data) {
+    /* if (print_data) {
         datao << runs << "\t" 
 			  << body1 << "\t" 
 			  << body2 << "\t" 
@@ -667,7 +667,7 @@ void function_CalcContactForces(
               << Rotate(m_spin2, rot[body2]).y << "\t"
               << Rotate(m_spin2, rot[body2]).z << "\n";
         datao.close();
-    }
+    }*/
 }
 
 // -----------------------------------------------------------------------------

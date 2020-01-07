@@ -419,8 +419,6 @@ void function_CalcContactForces(
 
             {
                 real forceN_mag = kn * delta_n - gn * relvel_n_mag;
-                // if (forceN_mag < 0)
-                //     forceN_mag = 0;
                 real forceT_mag = mu_eff * Tanh(5.0 * relvel_t_mag) * forceN_mag;
 
                 // Accumulate normal and tangential forces
@@ -496,8 +494,6 @@ void function_CalcContactForces(
                 ext_body_force[2 * index + 1] = force;
                 ext_body_torque[2 * index] = -torque1_loc + m_roll1 + m_spin1;
                 ext_body_torque[2 * index + 1] = torque2_loc - m_roll2 - m_spin2;
-
-                // Print collision metadata to chronodat.txt
             }
 
             return;
@@ -512,18 +508,6 @@ void function_CalcContactForces(
     real forceN_mag = kn * delta_n - gn * relvel_n_mag;
     real3 forceT_stiff = kt * delta_t;
     real3 forceT_damp = gt * relvel_t;
-
-    // If the resulting normal force is negative, then the two shapes are
-    // moving away from each other so fast that no contact force is generated.
-    /*if (forceN_mag < 0) {
-        forceN_mag = 0;
-        forceT_stiff.x = 0;
-        forceT_stiff.y = 0;
-        forceT_stiff.z = 0;
-        forceT_damp.x = 0;
-        forceT_damp.y = 0;
-        forceT_damp.z = 0;
-    }*/
 
     // Apply Coulomb friction law.
     // We must enforce force_T_mag <= mu_eff * |forceN_mag|.

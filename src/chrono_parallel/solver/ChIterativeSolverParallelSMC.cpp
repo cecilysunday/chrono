@@ -432,9 +432,8 @@ void function_CalcContactForces(
                 real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
                 real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
-				// Compute some vales needed for rolling and twisting friction calculations.
                 // If the duration of the current contact is less than the durration of a typical collision,
-                // do not apply friction. To avoid high torques, friction should only be applied to persistant contacts.
+                // do not apply friction. Rolling and spinning friction should only be applied to persistant contacts
                 real d_coeff = gn_simple / (2.0 * m_eff * Sqrt(kn_simple / m_eff));
                 real t_collision = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - d_coeff * d_coeff)));
 
@@ -443,29 +442,29 @@ void function_CalcContactForces(
                     muSpin_eff = 0.0;
                 }
 
+				// Compute some additional vales needed for the rolling and twisting friction calculations
                 real3 v_rot = Rotate(Cross(o_body2, pt2_loc), rot[body2]) - Rotate(Cross(o_body1, pt1_loc), rot[body1]);
                 real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
 
-                // Calculate rolling friction torque as M_roll = �_r * R * (F_N x v_rot) / |v_rot| (Schwartz et al. 2012)
+                // Calculate rolling friction torque as M_roll = mu_r * R * (F_N x v_rot) / |v_rot| (Schwartz et al. 2012)
                 real3 m_roll1 = real3(0);
                 real3 m_roll2 = real3(0);
 
-                if (Length(rel_o) > min_roll_vel && Length(v_rot) > min_roll_vel) {
+                if (Length(v_rot) > min_roll_vel) {
                     m_roll1 = muRoll_eff * Cross(forceN_mag * pt1_loc, RotateT(v_rot, rot[body1])) / Length(v_rot);
                     m_roll2 = muRoll_eff * Cross(forceN_mag * pt2_loc, RotateT(v_rot, rot[body2])) / Length(v_rot);
                 }
 
-                // Calculate spinning friction torque as M_spin = -�_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
+                // Calculate spinning friction torque as M_spin = -mu_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
                 // r_c is the radius of the circle resulting from the intersecting body surfaces (Schwartz et al. 2012)
                 real3 m_spin1 = real3(0);
                 real3 m_spin2 = real3(0);
 
                 if (Length(rel_o) > min_spin_vel) {
-                    double r1 = Length(pt1_loc);  // r1 = eff_radius[index];
-                    double r2 = Length(pt2_loc);  // r2 = r1;
-                    double xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
-
-                    double rc = r1 * r1 - xc * xc;
+                    real r1 = Length(pt1_loc);  // r1 = eff_radius[index];
+                    real r2 = Length(pt2_loc);  // r2 = r1;
+                    real xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
+                    real rc = r1 * r1 - xc * xc;
                     rc = (rc < eps) ? eps : sqrt(rc);
 
                     m_spin1 = muSpin_eff * rc *
@@ -564,9 +563,8 @@ void function_CalcContactForces(
     real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
     real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
-	// Compute some vales needed for rolling and twisting friction calculations.
 	// If the duration of the current contact is less than the durration of a typical collision, 
-	// do not apply friction. To avoid high torques, friction should only be applied to persistant contacts.
+	// do not apply friction. Rolling and spinning friction should only be applied to persistant contacts
     real d_coeff = gn_simple / (2.0 * m_eff * Sqrt(kn_simple / m_eff));
     real t_collision = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - d_coeff * d_coeff)));
 
@@ -575,10 +573,11 @@ void function_CalcContactForces(
         muSpin_eff = 0.0;
     }
 
+	// Compute some additional vales needed for the rolling and twisting friction calculations
 	real3 v_rot = Rotate(Cross(o_body2, pt2_loc), rot[body2]) - Rotate(Cross(o_body1, pt1_loc), rot[body1]);
     real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
 
-    // Calculate rolling friction torque as M_roll = �_r * R * (F_N x v_rot) / |v_rot| (Schwartz et al. 2012)
+    // Calculate rolling friction torque as M_roll = mu_r * R * (F_N x v_rot) / |v_rot| (Schwartz et al. 2012)
     real3 m_roll1 = real3(0);
     real3 m_roll2 = real3(0);
 
@@ -587,16 +586,16 @@ void function_CalcContactForces(
         m_roll2 = muRoll_eff * Cross(forceN_mag * pt2_loc, RotateT(v_rot, rot[body2])) / Length(v_rot);
     }
 
-    // Calculate spinning friction torque as M_spin = -�_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
+    // Calculate spinning friction torque as M_spin = -mu_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
     // r_c is the radius of the circle resulting from the intersecting body surfaces (Schwartz et al. 2012)
     real3 m_spin1 = real3(0);
     real3 m_spin2 = real3(0);
 
     if (Length(rel_o) > min_spin_vel) {
-        double r1 = Length(pt1_loc); // r1 = eff_radius[index]; 
-        double r2 = Length(pt2_loc); // r2 = r1;
-        double xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
-        double rc = r1 * r1 - xc * xc;
+        real r1 = Length(pt1_loc); // r1 = eff_radius[index]; 
+        real r2 = Length(pt2_loc); // r2 = r1;
+        real xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
+        real rc = r1 * r1 - xc * xc;
 		rc = (rc < eps) ? eps : sqrt(rc);
 
         m_spin1 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body1]) /

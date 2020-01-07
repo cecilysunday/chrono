@@ -465,7 +465,9 @@ void function_CalcContactForces(
                     double r1 = Length(pt1_loc);  // r1 = eff_radius[index];
                     double r2 = Length(pt2_loc);  // r2 = r1;
                     double xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
-                    double rc = sqrt(pow(r1, 2) - pow(xc, 2));
+
+                    double rc = r1 * r1 - xc * xc;
+                    rc = (rc < eps) ? eps : sqrt(rc);
 
                     m_spin1 = muSpin_eff * rc *
                               RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body1]) /
@@ -533,10 +535,9 @@ void function_CalcContactForces(
     // below the Coulomb limit.
     real3 forceT = forceT_stiff + forceT_damp;
     real forceT_mag = Length(forceT);
-    real delta_t_mag = Length(delta_t);
     real forceT_slide = mu_eff * forceN_mag;
     if (forceT_mag > abs(forceT_slide)) {
-        if (delta_t_mag > eps) {
+        if (forceT_mag > eps && kt > eps) {
             real3 forceT_dir = forceT / forceT_mag;
             forceT_mag = forceT_slide;
             forceT = forceT_mag * forceT_dir;
@@ -596,7 +597,8 @@ void function_CalcContactForces(
         double r1 = Length(pt1_loc); // r1 = eff_radius[index]; 
         double r2 = Length(pt2_loc); // r2 = r1;
         double xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
-        double rc = sqrt(pow(r1, 2) - pow(xc, 2));
+        double rc = r1 * r1 - xc * xc;
+		rc = (rc < eps) ? eps : sqrt(rc);
 
         m_spin1 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body1]) /
                   Length(rel_o);

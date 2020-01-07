@@ -28,7 +28,7 @@
 #include <algorithm>
 
 #include "chrono/physics/ChSystemNSC.h"
-#include "chrono/solver/ChSolverMINRES.h"
+#include "chrono/solver/ChIterativeSolverLS.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
 #include "chrono/fea/ChElementBar.h"
@@ -236,17 +236,18 @@ int main(int argc, char* argv[]) {
     // Setup solver
     if (use_mkl) {
 #ifdef CHRONO_MKL
-        auto mkl_solver = chrono_types::make_shared<ChSolverMKL<>>();
-        mkl_solver->SetSparsityPatternLock(true);
+        auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
+        mkl_solver->LockSparsityPattern(true);
         mkl_solver->SetVerbose(true);
         my_system.SetSolver(mkl_solver);
 #endif
     } else {
-        my_system.SetSolverType(ChSolver::Type::MINRES);
-        auto msolver = std::static_pointer_cast<ChSolverMINRES>(my_system.GetSolver());
-        msolver->SetDiagonalPreconditioning(true);
-        my_system.SetMaxItersSolverSpeed(10000);
-        my_system.SetTolForce(1e-09);
+        auto solver = chrono_types::make_shared<ChSolverMINRES>();
+        my_system.SetSolver(solver);
+        solver->SetMaxIterations(200);
+        solver->SetTolerance(1e-10);
+        solver->EnableDiagonalPreconditioner(true);
+        solver->SetVerbose(false);
     }
 
     // Setup integrator

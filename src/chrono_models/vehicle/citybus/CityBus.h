@@ -30,11 +30,18 @@
 #include "chrono_models/vehicle/citybus/CityBus_SimpleMapPowertrain.h"
 #include "chrono_models/vehicle/citybus/CityBus_RigidTire.h"
 #include "chrono_models/vehicle/citybus/CityBus_TMeasyTire.h"
+#include "chrono_models/vehicle/citybus/CityBus_Pac02Tire.h"
 
 namespace chrono {
 namespace vehicle {
 namespace citybus {
 
+/// @addtogroup vehicle_models_citybus
+/// @{
+
+/// Definition of the city bus assembly.
+/// This class encapsulates a concrete wheeled vehicle model with parameters corresponding to
+/// a city bus, the powertrain model, and the tires.
 class CH_MODELS_API CityBus {
   public:
     CityBus();
@@ -101,6 +108,8 @@ class CH_MODELS_API CityBus {
 
     double m_tire_mass;
 };
+
+/// @} vehicle_models_citybus
 
 }  // end namespace citybus
 }  // end namespace vehicle

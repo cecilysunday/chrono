@@ -319,6 +319,8 @@ set(CV_WV_DRIVELINE_FILES
     wheeled_vehicle/driveline/ChShaftsDriveline2WD.cpp
     wheeled_vehicle/driveline/ChShaftsDriveline4WD.h
     wheeled_vehicle/driveline/ChShaftsDriveline4WD.cpp
+    wheeled_vehicle/driveline/ChSimpleDrivelineXWD.h
+    wheeled_vehicle/driveline/ChSimpleDrivelineXWD.cpp
     wheeled_vehicle/driveline/ChSimpleDriveline.h
     wheeled_vehicle/driveline/ChSimpleDriveline.cpp
 
@@ -328,6 +330,8 @@ set(CV_WV_DRIVELINE_FILES
     wheeled_vehicle/driveline/ShaftsDriveline4WD.cpp
     wheeled_vehicle/driveline/SimpleDriveline.h
     wheeled_vehicle/driveline/SimpleDriveline.cpp
+    wheeled_vehicle/driveline/SimpleDrivelineXWD.h
+    wheeled_vehicle/driveline/SimpleDrivelineXWD.cpp
 )
 source_group("wheeled_vehicle\\driveline" FILES ${CV_WV_DRIVELINE_FILES})
 
@@ -373,6 +377,10 @@ set(CV_WV_SUSPENSION_FILES
     wheeled_vehicle/suspension/ChRigidPinnedAxle.cpp
     wheeled_vehicle/suspension/ChLeafspringAxle.h
     wheeled_vehicle/suspension/ChLeafspringAxle.cpp
+    wheeled_vehicle/suspension/ChSolidBellcrankThreeLinkAxle.h
+    wheeled_vehicle/suspension/ChSolidBellcrankThreeLinkAxle.cpp
+    wheeled_vehicle/suspension/ChSolidThreeLinkAxle.h
+    wheeled_vehicle/suspension/ChSolidThreeLinkAxle.cpp
     wheeled_vehicle/suspension/ChToeBarLeafspringAxle.h
     wheeled_vehicle/suspension/ChToeBarLeafspringAxle.cpp
 
@@ -394,6 +402,10 @@ set(CV_WV_SUSPENSION_FILES
     wheeled_vehicle/suspension/ThreeLinkIRS.cpp
     wheeled_vehicle/suspension/LeafspringAxle.h
     wheeled_vehicle/suspension/LeafspringAxle.cpp
+    wheeled_vehicle/suspension/SolidBellcrankThreeLinkAxle.h
+    wheeled_vehicle/suspension/SolidBellcrankThreeLinkAxle.cpp
+    wheeled_vehicle/suspension/SolidThreeLinkAxle.h
+    wheeled_vehicle/suspension/SolidThreeLinkAxle.cpp
     wheeled_vehicle/suspension/ToeBarLeafspringAxle.h
     wheeled_vehicle/suspension/ToeBarLeafspringAxle.cpp
 )
@@ -809,8 +821,13 @@ add_library(ChronoEngine_vehicle SHARED
 
 set_target_properties(ChronoEngine_vehicle PROPERTIES
                       COMPILE_FLAGS "${CXX_FLAGS}"
-                      LINK_FLAGS "${CH_LINKERFLAG_SHARED}"
-                      COMPILE_DEFINITIONS "CH_API_COMPILE_VEHICLE")
+                      LINK_FLAGS "${CH_LINKERFLAG_SHARED}")
+
+target_compile_definitions(ChronoEngine_vehicle PRIVATE "CH_API_COMPILE_VEHICLE")
+target_compile_definitions(ChronoEngine_vehicle PRIVATE "CH_IGNORE_DEPRECATED")
+if(HDF5_FOUND)
+target_compile_definitions(ChronoEngine_vehicle PRIVATE ${HDF5_COMPILE_DEFS})
+endif()
 
 target_link_libraries(ChronoEngine_vehicle ${LIBRARIES})
 

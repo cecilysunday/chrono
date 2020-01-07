@@ -22,7 +22,6 @@
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChLinkMotorRotationSpeed.h"
 #include "chrono/timestepper/ChTimestepper.h"
-#include "chrono/solver/ChSolverMINRES.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/collision/ChCCollisionSystemBullet.h"
 
@@ -274,21 +273,10 @@ int main(int argc, char* argv[]) {
     application.AssetUpdateAll();
 
 
+    // SIMULATION LOOP
 
-    //
-    // THE SOFT-REAL-TIME CYCLE
-    //
-
-    my_system.SetSolverType(ChSolver::Type::MINRES);
-    my_system.SetSolverWarmStarting(true);  // this helps a lot to speedup convergence in this class of problems
-    my_system.SetMaxItersSolverSpeed(460);
-    my_system.SetMaxItersSolverStab(460);
-    my_system.SetTolForce(1e-13);
-    auto msolver = std::static_pointer_cast<ChSolverMINRES>(my_system.GetSolver());
-    msolver->SetVerbose(false);
-    msolver->SetDiagonalPreconditioning(true);
-
-    auto mkl_solver = chrono_types::make_shared<ChSolverMKL<>>();
+    auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
+    mkl_solver->LockSparsityPattern(true);
     my_system.SetSolver(mkl_solver);
             
     application.SetTimestep(0.0002);
@@ -301,7 +289,12 @@ int main(int argc, char* argv[]) {
 
         application.DoStep();
 
-        extruder->Update();    //***REMEMBER*** to do this to update the extrusion
+        bool modified = extruder->Update();    //***REMEMBER*** to do this to update the extrusion
+        if (modified) {
+            // A system change occurred: if using a sparse direct linear solver and if using the sparsity pattern
+            // learner (enabled by default), then we must force a re-evaluation of system matrix sparsity pattern!
+            mkl_solver->ForceSparsityPatternUpdate();
+        }
 
         application.EndScene();
     }

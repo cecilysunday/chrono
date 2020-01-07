@@ -47,9 +47,6 @@
 
 %{
 #include "chrono/solver/ChSolver.h"
-#include "chrono/solver/ChIterativeSolver.h"
-#include "chrono/solver/ChSolverMINRES.h"
-
 #include "chrono_postprocess/ChPostProcessBase.h"
 #include "chrono_postprocess/ChPovRay.h"
 #include "chrono_postprocess/ChPovRayAssetCustom.h"
@@ -67,6 +64,7 @@ using namespace chrono::postprocess;
 #define ChApiPostProcess 
 #define ChApi 
 #define EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#define CH_DEPRECATED(msg)
 
 // Include other .i configuration files for SWIG. 
 // These are divided in many .i files, each per a

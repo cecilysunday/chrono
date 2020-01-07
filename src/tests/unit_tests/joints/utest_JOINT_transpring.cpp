@@ -12,7 +12,7 @@
 // Authors: Mike Taylor, Radu Serban
 // =============================================================================
 //
-// Test for the translational spring damper (ChLinkSpring)
+// Test for the translational spring damper (ChLinkTSDA)
 //
 // =============================================================================
 
@@ -144,11 +144,9 @@ bool TestTranSpring(
     my_system.Set_G_acc(ChVector<>(0.0, 0.0, -g));
 
     my_system.SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED);
-    my_system.SetMaxItersSolverSpeed(100);
-    my_system.SetMaxItersSolverStab(100);  // Tasora stepper uses this, Anitescu does not
-    my_system.SetSolverType(ChSolver::Type::SOR);
-    my_system.SetTol(1e-6);
-    my_system.SetTolForce(1e-4);
+    my_system.SetSolverType(ChSolver::Type::PSOR);
+    my_system.SetSolverMaxIterations(100);
+    my_system.SetSolverForceTolerance(1e-4);
 
     // Create the ground body
 
@@ -173,10 +171,10 @@ bool TestTranSpring(
     // The free length is set equal to the inital distance between
     // "jointLocPend" and "jointLocGnd".
 
-    auto spring = chrono_types::make_shared<ChLinkSpring>();
+    auto spring = chrono_types::make_shared<ChLinkTSDA>();
     spring->Initialize(pendulum, ground, false, jointLocPend, jointLocGnd, true);
-    spring->Set_SpringK(spring_coef);
-    spring->Set_SpringR(damping_coef);
+    spring->SetSpringCoefficient(spring_coef);
+    spring->SetDampingCoefficient(damping_coef);
     my_system.AddLink(spring);
 
     // Perform the simulation (record results option)
@@ -275,9 +273,9 @@ bool TestTranSpring(
             // Force is given as a scalar and is then transformed into a vector in global coordiantes
             // Torques are expressed in the link coordinate system. We convert them to
             // the coordinate system of Body2 (in our case this is the ground).
-            ChVector<> springVector = spring->GetEndPoint2Abs() - spring->GetEndPoint1Abs();
+            ChVector<> springVector = spring->GetPoint2Abs() - spring->GetPoint1Abs();
             springVector.Normalize();
-            double springForce = spring->Get_SpringReact();
+            double springForce = spring->GetForce();
             ChVector<> springForceGlobal = springForce * springVector;
             out_rfrc << simTime << springForceGlobal << std::endl;
 

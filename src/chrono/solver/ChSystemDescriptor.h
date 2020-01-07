@@ -77,8 +77,6 @@ class ChApi ChSystemDescriptor {
     std::vector<ChVariables*> vvariables;     ///< list of pointers to all the ChVariables in the current Chrono system
     std::vector<ChKblock*> vstiffness;        ///< list of pointers to all the ChKblock in the current Chrono system
 
-    int num_threads;
-
     ChSpinlock* spinlocktable;
 
     double c_a;  // coefficient form M mass matrices in vvariables
@@ -122,7 +120,8 @@ class ChApi ChSystemDescriptor {
     /// Insert reference to a ChKblock object (a piece of matrix)
     virtual void InsertKblock(ChKblock* mk) { vstiffness.push_back(mk); }
 
-    /// End insertion of items
+    /// End insertion of items.
+    /// A derived class should always call UpdateCountsAndOffsets.
     virtual void EndInsertion() { UpdateCountsAndOffsets(); }
 
     /// Count & returns the scalar variables in the system (excluding ChVariable objects
@@ -301,14 +300,6 @@ class ChApi ChSystemDescriptor {
         double& resulting_feasability    ///< gets the max feasability as max |l*c| , for unilateral only
     );
 
-    // MISC
-
-    /// Set the number of threads (some operations like ShurComplementProduct
-    /// are CPU intensive, so they can be run in parallel threads).
-    /// By default, the number of threads is the same of max.available OpenMP cores
-    virtual void SetNumThreads(int nthreads);
-    virtual int GetNumThreads() { return this->num_threads; }
-
     // LOGGING/OUTPUT/ETC.
 
     /// The following function may be used to create the Jacobian and the
@@ -356,7 +347,6 @@ class ChApi ChSystemDescriptor {
         marchive.VersionWrite<ChSystemDescriptor>();
         // serialize parent class
         // serialize all member data:
-        marchive << CHNVP(num_threads);
     }
 
     /// Method to allow de-serialization of transient data from archives.
@@ -365,7 +355,6 @@ class ChApi ChSystemDescriptor {
         int version = marchive.VersionRead<ChSystemDescriptor>();
         // deserialize parent class
         // stream in all member data:
-        marchive >> CHNVP(num_threads);
     }
 };
 

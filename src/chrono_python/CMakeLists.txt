@@ -25,6 +25,26 @@ if(DEFINED CH_INSTALL_PYTHON_PACKAGE)
 endif()
 
 #-----------------------------------------------------------------------------
+# CMake policy settings
+# TODO: switch to new behavior
+#-----------------------------------------------------------------------------
+
+# this to fix warnings about the use of LOCATION with CMake version >= 3.0
+if(POLICY CMP0026)
+    cmake_policy(SET CMP0026 OLD)
+endif()
+
+# this to fix warnings about the use of SWIG_MODULE_${mymodulename}_REAL_NAME with CMake version >= 3.13
+if(POLICY CMP0078)
+    cmake_policy(SET CMP0078 OLD)
+endif()
+
+# UseSWIG honors SWIG_MODULE_NAME via -module flag.
+if(POLICY CMP0086)
+	cmake_policy(SET CMP0086 OLD)
+endif()
+
+#-----------------------------------------------------------------------------
 # Enable debugging CMake output
 #-----------------------------------------------------------------------------
 
@@ -55,14 +75,31 @@ set(CH_PYTHONDIR  "${CH_PYTHONDIR}"  PARENT_SCOPE)
 set(CH_PYTHONINC  "${CH_PYTHONINC}"  PARENT_SCOPE)
 set(CH_PYTHONLIB  "${CH_PYTHONLIB}"  PARENT_SCOPE)
 
-# this to fix warnings about the use of LOCATION with CMake version >= 3.0
-if(POLICY CMP0026)
-    cmake_policy(SET CMP0026 OLD)
+#-----------------------------------------------------------------------------
+# Find SWIG
+#-----------------------------------------------------------------------------
+
+message(STATUS "...find SWIG")
+
+find_package(SWIG REQUIRED)
+include(${SWIG_USE_FILE})
+
+# The generated .cxx wrapper can be so huge that the /bigobj flag is required in VC++
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   /bigobj")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /bigobj")
 endif()
 
-# this to fix warnings about the use of SWIG_MODULE_${mymodulename}_REAL_NAME with CMake version >= 3.13
-if(POLICY CMP0078)
-    cmake_policy(SET CMP0078 OLD)
+# Set location of SWIG-generated files.
+# Note that *.py files are also generated in this location.
+set(CMAKE_SWIG_OUTDIR "${PROJECT_BINARY_DIR}/swig")
+SET(CMAKE_SWIG_FLAGS "-c++")
+
+if(DBG_SCRIPT)
+  message("SWIG_USE_FILE:      ${SWIG_USE_FILE}")
+  message("CMAKE_SWIG_OUTDIR:  ${CMAKE_SWIG_OUTDIR}")
+  message("Installation path:  ${CMAKE_INSTALL_PREFIX}/${CH_INSTALL_PYTHON}")
+  message("Installation prefix path:  ${CMAKE_INSTALL_PREFIX}")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -90,9 +127,11 @@ add_library(ChronoEngine_pyparser SHARED
             ${ChronoEngine_PYPARSER_HEADERS})
 
 set_target_properties(ChronoEngine_pyparser PROPERTIES 
-                      LINK_FLAGS "${CH_LINKERFLAG_SHARED}" 
-                      COMPILE_DEFINITIONS "CH_API_COMPILE_PYPARSER")
+                      LINK_FLAGS "${CH_LINKERFLAG_SHARED}")
                           
+target_compile_definitions(ChronoEngine_pyparser PRIVATE "CH_API_COMPILE_PYPARSER")
+target_compile_definitions(ChronoEngine_pyparser PRIVATE "CH_IGNORE_DEPRECATED")
+
 target_link_libraries(ChronoEngine_pyparser ${CH_PYTHONLIB} ChronoEngine)
 
 ADD_DEPENDENCIES(ChronoEngine_pyparser ChronoEngine)
@@ -101,33 +140,6 @@ install(TARGETS ChronoEngine_pyparser
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
-
-#-----------------------------------------------------------------------------
-# Find SWIG
-#-----------------------------------------------------------------------------
-
-message(STATUS "...find SWIG")
-
-find_package(SWIG REQUIRED)
-include(${SWIG_USE_FILE})
-
-# The generated .cxx wrapper can be so huge that the /bigobj flag is required in VC++
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   /bigobj")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /bigobj")
-endif()
-
-# Set location of SWIG-generated files.
-# Note that *.py files are also generated in this location.
-set(CMAKE_SWIG_OUTDIR "${PROJECT_BINARY_DIR}/swig")
-SET(CMAKE_SWIG_FLAGS "-c++")
-
-if(DBG_SCRIPT)
-  message("SWIG_USE_FILE:      ${SWIG_USE_FILE}")
-  message("CMAKE_SWIG_OUTDIR:  ${CMAKE_SWIG_OUTDIR}")
-  message("Installation path:  ${CMAKE_INSTALL_PREFIX}/${CH_INSTALL_PYTHON}")
-  message("Installation prefix path:  ${CMAKE_INSTALL_PREFIX}")
-endif()
 
 #-----------------------------------------------------------------------------
 # MODULE for the core wrapper, including most of the C::E
@@ -170,6 +182,8 @@ set_target_properties(${SWIG_MODULE_${CHPY_CORE}_REAL_NAME} PROPERTIES
                       OUTPUT_NAME   "${SWIG_MODULE_${CHPY_CORE}_REAL_NAME}"
                       LIBRARY_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}"
                       )
+
+target_compile_definitions(${SWIG_MODULE_${CHPY_CORE}_REAL_NAME} PRIVATE "CH_IGNORE_DEPRECATED")
 
 ADD_DEPENDENCIES (${SWIG_MODULE_${CHPY_CORE}_REAL_NAME} ChronoEngine)
 
@@ -247,6 +261,8 @@ if(ENABLE_MODULE_POSTPROCESS)
                         LIBRARY_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}"
                         )
 
+  target_compile_definitions(${SWIG_MODULE_${CHPY_POSTPROCESS}_REAL_NAME} PRIVATE "CH_IGNORE_DEPRECATED")
+
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_POSTPROCESS}_REAL_NAME} ChronoEngine)
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_POSTPROCESS}_REAL_NAME} ChronoEngine_postprocess)
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_POSTPROCESS}_REAL_NAME} ${SWIG_MODULE_${CHPY_CORE}_REAL_NAME})
@@ -314,6 +330,8 @@ SWIG_LINK_LIBRARIES(${CHPY_FEA} ${PYTHON_LIBRARY} ChronoEngine)
                         LIBRARY_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}"
                         )
 
+  target_compile_definitions(${SWIG_MODULE_${CHPY_FEA}_REAL_NAME} PRIVATE "CH_IGNORE_DEPRECATED")
+
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_FEA}_REAL_NAME} ChronoEngine)
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_FEA}_REAL_NAME} ${SWIG_MODULE_${CHPY_CORE}_REAL_NAME})
 
@@ -364,6 +382,9 @@ if(ENABLE_MODULE_IRRLICHT)
 
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set_source_files_properties(${CHPY_IRRLICHT_MODULE_FILE} PROPERTIES COMPILE_FLAGS "-D_WIN32")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+      add_compile_options(/wd4275)
+    endif()
   endif()
   set_source_files_properties(${CHPY_IRRLICHT_MODULE_FILE} PROPERTIES CPLUSPLUS ON)
 
@@ -381,6 +402,9 @@ if(ENABLE_MODULE_IRRLICHT)
                         OUTPUT_NAME   "${SWIG_MODULE_${CHPY_IRRLICHT}_REAL_NAME}"
                         LIBRARY_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}"
                         )
+
+  target_compile_definitions(${SWIG_MODULE_${CHPY_IRRLICHT}_REAL_NAME} PRIVATE "CH_IGNORE_DEPRECATED")
+  target_compile_definitions(${SWIG_MODULE_${CHPY_IRRLICHT}_REAL_NAME} PRIVATE "IGNORE_DEPRECATED_WARNING")
 
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_IRRLICHT}_REAL_NAME} ChronoEngine)
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_IRRLICHT}_REAL_NAME} ChronoEngine_irrlicht)
@@ -454,6 +478,8 @@ if(ENABLE_MODULE_MKL)
                         LIBRARY_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}"
                         )
 
+  target_compile_definitions(${SWIG_MODULE_${CHPY_MKL}_REAL_NAME} PRIVATE "CH_IGNORE_DEPRECATED")
+
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_MKL}_REAL_NAME} ChronoEngine)
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_MKL}_REAL_NAME} ChronoEngine_mkl)
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_MKL}_REAL_NAME} ${SWIG_MODULE_${CHPY_CORE}_REAL_NAME})
@@ -526,6 +552,8 @@ if(ENABLE_MODULE_CASCADE)
                         LIBRARY_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}"
                         )
 
+  target_compile_definitions(${SWIG_MODULE_${CHPY_CASCADE}_REAL_NAME} PRIVATE "CH_IGNORE_DEPRECATED")
+
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_CASCADE}_REAL_NAME} ChronoEngine)
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_CASCADE}_REAL_NAME} ChronoEngine_cascade)
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_CASCADE}_REAL_NAME} ${SWIG_MODULE_${CHPY_CORE}_REAL_NAME})
@@ -573,6 +601,12 @@ if(ENABLE_MODULE_VEHICLE)
   set_source_files_properties(${CHPY_VEHICLE_MODULE_FILE} PROPERTIES CPLUSPLUS ON)
 
   # Create the SWIG module.
+
+  # Make sure CHRONO_IRRLICHT is defined for the SWIG processor
+  if (ENABLE_MODULE_IRRLICHT)
+    set(CMAKE_SWIG_FLAGS -DCHRONO_IRRLICHT)
+  endif()
+
   if(${CMAKE_VERSION} VERSION_LESS "3.8.0")
     SWIG_ADD_MODULE(${CHPY_VEHICLE} python ${CHPY_VEHICLE_MODULE_FILE})
   else()
@@ -598,6 +632,8 @@ if(ENABLE_MODULE_VEHICLE)
                         OUTPUT_NAME   "${SWIG_MODULE_${CHPY_VEHICLE}_REAL_NAME}"
                         LIBRARY_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}"
                         )
+
+  target_compile_definitions(${SWIG_MODULE_${CHPY_VEHICLE}_REAL_NAME} PRIVATE "CH_IGNORE_DEPRECATED")
 
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_VEHICLE}_REAL_NAME} ChronoEngine)
   ADD_DEPENDENCIES(${SWIG_MODULE_${CHPY_VEHICLE}_REAL_NAME} ChronoEngine_vehicle)

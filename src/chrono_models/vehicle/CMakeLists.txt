@@ -96,6 +96,8 @@ set(CVM_UAZ_FILES
     uaz/UAZBUS_SimpleMapPowertrain.h
     uaz/UAZBUS_TMeasyTire.cpp
     uaz/UAZBUS_TMeasyTire.h
+    uaz/UAZBUS_Pac02Tire.cpp
+    uaz/UAZBUS_Pac02Tire.h
     uaz/UAZBUS_ToeBarLeafspringAxle.cpp
     uaz/UAZBUS_ToeBarLeafspringAxle.h
     uaz/UAZBUS_Vehicle.cpp
@@ -104,6 +106,64 @@ set(CVM_UAZ_FILES
     uaz/UAZBUS_Wheel.h
 )
 source_group("uaz" FILES ${CVM_UAZ_FILES})
+
+set(CVM_MAN_FILES
+    man/MAN_5t_BellcrankSolid3LinkAxle.cpp
+    man/MAN_5t_BellcrankSolid3LinkAxle.h
+    man/MAN_5t_BrakeSimple.cpp
+    man/MAN_5t_BrakeSimple.h
+    man/MAN_5t_Chassis.cpp
+    man/MAN_5t_Chassis.h
+    man/MAN_5t_Driveline4WD.cpp
+    man/MAN_5t_Driveline4WD.h
+    man/MAN_5t_RotaryArm.cpp
+    man/MAN_5t_RotaryArm.h
+    man/MAN_5t_SimpleDriveline.cpp
+    man/MAN_5t_SimpleDriveline.h
+    man/MAN_5t_SimpleDrivelineXWD.cpp
+    man/MAN_5t_SimpleDrivelineXWD.h
+    man/MAN_5t_SimpleCVTPowertrain.cpp
+    man/MAN_5t_SimpleCVTPowertrain.h
+    man/MAN_5t_SimpleMapPowertrain.cpp
+    man/MAN_5t_SimpleMapPowertrain.h
+    man/MAN_5t_Solid3LinkAxle.cpp
+    man/MAN_5t_Solid3LinkAxle.h
+    man/MAN_5t_TMeasyTire.cpp
+    man/MAN_5t_TMeasyTire.h
+    man/MAN_5t_Wheel.cpp
+    man/MAN_5t_Wheel.h
+    man/MAN_5t_Vehicle.cpp
+    man/MAN_5t_Vehicle.h
+    man/MAN_5t.cpp
+    man/MAN_5t.h
+
+    man/MAN_7t_Chassis.cpp
+    man/MAN_7t_Chassis.h
+    man/MAN_7t_SimpleCVTPowertrain.cpp
+    man/MAN_7t_SimpleCVTPowertrain.h
+    man/MAN_7t_SimpleMapPowertrain.cpp
+    man/MAN_7t_SimpleMapPowertrain.h
+    man/MAN_7t_Solid3LinkAxle.cpp
+    man/MAN_7t_Solid3LinkAxle.h
+    man/MAN_7t_Vehicle.cpp
+    man/MAN_7t_Vehicle.h
+    man/MAN_7t.cpp
+    man/MAN_7t.h
+
+    man/MAN_10t_Chassis.cpp
+    man/MAN_10t_Chassis.h
+    man/MAN_10t_Front1Axle.cpp
+    man/MAN_10t_Front1Axle.h
+    man/MAN_10t_Front2Axle.cpp
+    man/MAN_10t_Front2Axle.h
+    man/MAN_10t_RotaryArm2.cpp
+    man/MAN_10t_RotaryArm2.h
+    man/MAN_10t_Vehicle.cpp
+    man/MAN_10t_Vehicle.h
+    man/MAN_10t.cpp
+    man/MAN_10t.h
+)
+source_group("man" FILES ${CVM_MAN_FILES})
 
 set(CVM_GENERIC_FILES
     generic/Generic_AntirollBarRSD.h
@@ -167,6 +227,8 @@ set(CVM_SEDAN_FILES
     sedan/Sedan_RigidTire.h
     sedan/Sedan_TMeasyTire.cpp
     sedan/Sedan_TMeasyTire.h
+    sedan/Sedan_Pac02Tire.cpp
+    sedan/Sedan_Pac02Tire.h
     sedan/Sedan_RackPinion.cpp
     sedan/Sedan_RackPinion.h
     sedan/Sedan_SimpleMapPowertrain.cpp
@@ -199,6 +261,8 @@ set(CVM_CITYBUS_FILES
     citybus/CityBus_RigidTire.h
     citybus/CityBus_TMeasyTire.cpp
     citybus/CityBus_TMeasyTire.h
+    citybus/CityBus_Pac02Tire.cpp
+    citybus/CityBus_Pac02Tire.h
     citybus/CityBus_RackPinion.cpp
     citybus/CityBus_RackPinion.h
     citybus/CityBus_SimpleMapPowertrain.cpp
@@ -307,12 +371,15 @@ add_library(ChronoModels_vehicle SHARED
     ${CVM_CITYBUS_FILES}
     ${CVM_M113_FILES}
     ${CVM_M113_A_FILES}
+    ${CVM_MAN_FILES}
  )
 
 set_target_properties(ChronoModels_vehicle PROPERTIES
                       COMPILE_FLAGS "${CXX_FLAGS}"
-                      LINK_FLAGS "${CH_LINKERFLAG_SHARED}"
-                      COMPILE_DEFINITIONS "CH_API_COMPILE_MODELS")
+                      LINK_FLAGS "${CH_LINKERFLAG_SHARED}")
+
+target_compile_definitions(ChronoModels_vehicle PRIVATE "CH_API_COMPILE_MODELS")
+target_compile_definitions(ChronoModels_vehicle PRIVATE "CH_IGNORE_DEPRECATED")
 
 target_link_libraries(ChronoModels_vehicle ${LIBRARIES})
 

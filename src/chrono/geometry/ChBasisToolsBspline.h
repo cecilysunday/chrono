@@ -36,7 +36,7 @@ class ChApi ChBasisToolsBspline {
     ) {
         int n = (int)knotU.size() - 2 - p;
 
-        // assuming (p+1)-multiple end knots
+        // safeguards, and shortcut (p+1)-multiple end knots
         if (u >= knotU(n + 1))
             return n;
         if (u <= knotU(p))
@@ -61,8 +61,9 @@ class ChApi ChBasisToolsBspline {
     /// made multiple.
     static void ComputeKnotUniformMultipleEnds(ChVectorDynamic<>& knotU,  ///< knot vector
                                                const int p,               ///< order
-                                               double kstart = 0.0,
-                                               double kend = 1.0) {
+                                               double kstart = 0.0,       ///< range start
+                                               double kend = 1.0          ///< range end
+    ) {
         if (knotU.size() < 2 * (p + 1))
             throw ChException("ComputeKnotUniformMultipleEnds: knots must have size>=2*(order+1)");
 
@@ -76,6 +77,25 @@ class ChApi ChBasisToolsBspline {
         for (int i = 0; i < p; ++i) {
             knotU(i) = kstart;
             knotU(k - i - 1) = kend;
+        }
+    }
+
+    /// Compute uniformly-spaced k knots (in range [kstart, kend]) for Bsplines, with order p.
+    /// If you need that the spline starts and ends exactly at the 1st and last control point,
+    /// use ComputeKnotUniformMultipleEnds instead.
+    /// This is often used when creating closed splines, where the last and first p control points will overlap.
+    static void ComputeKnotUniform(ChVectorDynamic<>& knotU,  ///< knot vector
+                                   const int p,               ///< order
+                                   double kstart = 0.0,       ///< range start
+                                   double kend = 1.0          ///< range end
+    ) {
+        if (knotU.size() < 2 * (p + 1))
+            throw ChException("ComputeKnotUniform: knots must have size>=2*(order+1)");
+
+        int nk = (int)knotU.size();
+        // intermediate knots:
+        for (int i = 0; i < nk; ++i) {
+            knotU(i) = kstart + (double(i) / double(nk - 1)) * (kend - kstart);
         }
     }
 

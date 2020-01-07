@@ -27,6 +27,8 @@ namespace chrono {
 namespace vehicle {
 namespace citybus {
 
+/// @addtogroup vehicle_models_citybus
+/// @{
 
 class CH_MODELS_API CityBus_ToeBarLeafspringAxle : public ChToeBarLeafspringAxle {
   public:
@@ -62,13 +64,13 @@ class CH_MODELS_API CityBus_ToeBarLeafspringAxle : public ChToeBarLeafspringAxle
     
     virtual double getSpringRestLength() const override { return m_springRestLength; }
     /// Return the functor object for spring force.
-    virtual ChLinkSpringCB::ForceFunctor* getSpringForceFunctor() const override { return m_springForceCB; }
+    virtual ChLinkTSDA::ForceFunctor* getSpringForceFunctor() const override { return m_springForceCB; }
     /// Return the functor object for shock force.
-    virtual ChLinkSpringCB::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
+    virtual ChLinkTSDA::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
 
   private:
-    ChLinkSpringCB::ForceFunctor* m_springForceCB;
-    ChLinkSpringCB::ForceFunctor* m_shockForceCB;
+    ChLinkTSDA::ForceFunctor* m_springForceCB;
+    ChLinkTSDA::ForceFunctor* m_shockForceCB;
 
     static const double m_axleShaftInertia;
     
@@ -101,6 +103,8 @@ class CH_MODELS_API CityBus_ToeBarLeafspringAxle : public ChToeBarLeafspringAxle
     static const double m_damperDegressivityExpansion;
     static const double m_damperDegressivityCompression;
 };
+
+/// @} vehicle_models_citybus
 
 }  // end namespace citybus
 }  // end namespace vehicle

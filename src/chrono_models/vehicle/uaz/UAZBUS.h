@@ -30,6 +30,7 @@
 #include "chrono_models/vehicle/uaz/UAZBUS_SimpleMapPowertrain.h"
 #include "chrono_models/vehicle/uaz/UAZBUS_RigidTire.h"
 #include "chrono_models/vehicle/uaz/UAZBUS_TMeasyTire.h"
+#include "chrono_models/vehicle/uaz/UAZBUS_Pac02Tire.h"
 
 namespace chrono {
 namespace vehicle {
@@ -38,6 +39,9 @@ namespace uaz {
 /// @addtogroup vehicle_models_uaz
 /// @{
 
+/// Definition of the UAZ assembly.
+/// This class encapsulates a concrete wheeled vehicle model with parameters corresponding to
+/// a UAZ vehicle, the powertrain model, and the 4 tires.
 class CH_MODELS_API UAZBUS {
   public:
     UAZBUS();
@@ -52,7 +56,7 @@ class CH_MODELS_API UAZBUS {
 
     void SetTireType(TireModelType val) { m_tireType = val; }
 
-    //void setSteeringType(SteeringType val) { m_steeringType = val; }
+    // void setSteeringType(SteeringType val) { m_steeringType = val; }
 
     void SetInitPosition(const ChCoordsys<>& pos) { m_initPos = pos; }
     void SetInitFwdVel(double fwdVel) { m_initFwdVel = fwdVel; }
@@ -92,7 +96,7 @@ class CH_MODELS_API UAZBUS {
     bool m_fixed;
 
     TireModelType m_tireType;
- 
+
     double m_tire_step_size;
 
     SteeringType m_steeringType;

@@ -27,6 +27,7 @@
 #include "chrono_vehicle/wheeled_vehicle/driveline/ShaftsDriveline2WD.h"
 #include "chrono_vehicle/wheeled_vehicle/driveline/ShaftsDriveline4WD.h"
 #include "chrono_vehicle/wheeled_vehicle/driveline/SimpleDriveline.h"
+#include "chrono_vehicle/wheeled_vehicle/driveline/SimpleDrivelineXWD.h"
 #include "chrono_vehicle/wheeled_vehicle/steering/PitmanArm.h"
 #include "chrono_vehicle/wheeled_vehicle/steering/RackPinion.h"
 #include "chrono_vehicle/wheeled_vehicle/steering/RotaryArm.h"
@@ -37,6 +38,8 @@
 #include "chrono_vehicle/wheeled_vehicle/suspension/MultiLink.h"
 #include "chrono_vehicle/wheeled_vehicle/suspension/SemiTrailingArm.h"
 #include "chrono_vehicle/wheeled_vehicle/suspension/SolidAxle.h"
+#include "chrono_vehicle/wheeled_vehicle/suspension/SolidBellcrankThreeLinkAxle.h"
+#include "chrono_vehicle/wheeled_vehicle/suspension/SolidThreeLinkAxle.h"
 #include "chrono_vehicle/wheeled_vehicle/suspension/ThreeLinkIRS.h"
 #include "chrono_vehicle/wheeled_vehicle/suspension/ToeBarLeafspringAxle.h"
 #include "chrono_vehicle/wheeled_vehicle/tire/ANCFTire.h"
@@ -84,6 +87,9 @@ Document ReadFileJSON(const std::string& filename) {
     } else {
         IStreamWrapper isw(ifs);
         d.ParseStream<ParseFlag::kParseCommentsFlag>(isw);
+        if (d.IsNull()) {
+            GetLog() << "ERROR: Invalid JSON file: " << filename << "\n";
+        }
     }
     return d;
 }
@@ -171,6 +177,10 @@ std::shared_ptr<ChSuspension> ReadSuspensionJSON(const std::string& filename) {
         suspension = chrono_types::make_shared<ToeBarLeafspringAxle>(d);
     } else if (subtype.compare("LeafspringAxle") == 0) {
         suspension = chrono_types::make_shared<LeafspringAxle>(d);
+    } else if (subtype.compare("SolidThreeLinkAxle") == 0) {
+        suspension = chrono_types::make_shared<SolidThreeLinkAxle>(d);
+    } else if (subtype.compare("SolidBellcrankThreeLinkAxle") == 0) {
+        suspension = chrono_types::make_shared<SolidBellcrankThreeLinkAxle>(d);
     } else {
         throw ChException("Suspension type not supported in ReadSuspensionJSON.");
     }
@@ -231,6 +241,8 @@ std::shared_ptr<ChDrivelineWV> ReadDrivelineWVJSON(const std::string& filename) 
         driveline = chrono_types::make_shared<ShaftsDriveline4WD>(d);
     } else if (subtype.compare("SimpleDriveline") == 0) {
         driveline = chrono_types::make_shared<SimpleDriveline>(d);
+    } else if (subtype.compare("SimpleDrivelineXWD") == 0) {
+        driveline = chrono_types::make_shared<SimpleDrivelineXWD>(d);
     } else {
         throw ChException("Driveline type not supported in ReadDrivelineWVJSON.");
     }
@@ -387,8 +399,7 @@ std::shared_ptr<ChTrackAssembly> ReadTrackAssemblySON(const std::string& filenam
         track = chrono_types::make_shared<TrackAssemblyBandBushing>(d);
     } else if (subtype.compare("TrackAssemblyBandANCF") == 0) {
         track = chrono_types::make_shared<TrackAssemblyBandANCF>(d);
-    }
-    else {
+    } else {
         throw ChException("TrackAssembly type not supported in ReadTrackAssemblySON.");
     }
 

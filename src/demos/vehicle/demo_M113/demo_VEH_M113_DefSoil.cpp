@@ -103,8 +103,8 @@ int main(int argc, char* argv[]) {
     if (use_mkl) {
 #ifdef CHRONO_MKL
         GetLog() << "Using MKL solver\n";
-        auto mkl_solver = chrono_types::make_shared<ChSolverMKL<>>();
-        mkl_solver->SetSparsityPatternLock(true);
+        auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
+        mkl_solver->LockSparsityPattern(true);
         vehicle.GetSystem()->SetSolver(mkl_solver);
 
         vehicle.GetSystem()->SetTimestepperType(ChTimestepper::Type::HHT);
@@ -118,8 +118,7 @@ int main(int argc, char* argv[]) {
         integrator->SetVerbose(true);
 #endif
     } else {
-        vehicle.GetSystem()->SetMaxItersSolverSpeed(50);
-        vehicle.GetSystem()->SetMaxItersSolverStab(50);
+        vehicle.GetSystem()->SetSolverMaxIterations(50);
     }
 
     // Control steering type (enable crossdrive capability)

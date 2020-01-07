@@ -26,8 +26,11 @@
 #include "chrono_models/vehicle/m113/M113_SimplePowertrain.h"
 #include "chrono_models/vehicle/m113/M113_Vehicle.h"
 
+#ifdef CHRONO_IRRLICHT
 #include "chrono_vehicle/driver/ChIrrGuiDriver.h"
 #include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#define USE_IRRLICHT
+#endif
 
 #ifdef CHRONO_MUMPS
 #include "chrono_mumps/ChSolverMumps.h"
@@ -38,8 +41,6 @@
 #endif
 
 #include "chrono_thirdparty/filesystem/path.h"
-
-#define USE_IRRLICHT
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -291,7 +292,7 @@ int main(int argc, char* argv[]) {
 #ifdef CHRONO_MUMPS
         case MUMPS: {
             auto mumps_solver = chrono_types::make_shared<ChSolverMumps>();
-            mumps_solver->SetSparsityPatternLock(true);
+            mumps_solver->LockSparsityPattern(true);
             mumps_solver->SetVerbose(verbose_solver);
             vehicle.GetSystem()->SetSolver(mumps_solver);
             break;
@@ -299,8 +300,8 @@ int main(int argc, char* argv[]) {
 #endif
 #ifdef CHRONO_MKL
         case MKL: {
-            auto mkl_solver = chrono_types::make_shared<ChSolverMKL<>>();
-            mkl_solver->SetSparsityPatternLock(true);
+            auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
+            mkl_solver->LockSparsityPattern(true);
             mkl_solver->SetVerbose(verbose_solver);
             vehicle.GetSystem()->SetSolver(mkl_solver);
             break;

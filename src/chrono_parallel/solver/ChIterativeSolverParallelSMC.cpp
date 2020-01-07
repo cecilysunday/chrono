@@ -233,9 +233,8 @@ void function_CalcContactForces(
     real gt;
     real kn_simple;
     real gn_simple;
-    real t_overlap;
 
-	real t_current_contact = 0;
+	real t_contact = 0;
     real relvel_init = abs(relvel_n_mag);
     real delta_n = -depth[index];
     real3 delta_t = real3(0);    
@@ -317,7 +316,7 @@ void function_CalcContactForces(
 
         // Load the charecteristic velocity and contact_duration from the contact history
         relvel_init = contact_relvel_init[ctSaveId];
-        t_current_contact = contact_duration[ctSaveId];
+        t_contact = contact_duration[ctSaveId];
     }
 
     double eps = std::numeric_limits<double>::epsilon();
@@ -436,10 +435,10 @@ void function_CalcContactForces(
 				// Compute some vales needed for rolling and twisting friction calculations.
                 // If the duration of the current contact is less than the durration of a typical collision,
                 // do not apply friction. To avoid high torques, friction should only be applied to persistant contacts.
-                double dcoeff = gn_simple / (2.0 * m_eff * Sqrt(kn_simple / m_eff));
-                t_overlap = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - Pow(dcoeff, 2.0))));
+                real d_coeff = gn_simple / (2.0 * m_eff * Sqrt(kn_simple / m_eff));
+                real t_collision = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - d_coeff * d_coeff)));
 
-                if (t_current_contact <= t_overlap) {
+                if (t_contact <= t_collision) {
                     muRoll_eff = 0.0;
                     muSpin_eff = 0.0;
                 }
@@ -568,10 +567,10 @@ void function_CalcContactForces(
 	// Compute some vales needed for rolling and twisting friction calculations.
 	// If the duration of the current contact is less than the durration of a typical collision, 
 	// do not apply friction. To avoid high torques, friction should only be applied to persistant contacts.
-    double dcoeff = gn_simple / (2.0 * m_eff * Sqrt(kn_simple / m_eff));
-    t_overlap = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - Pow(dcoeff, 2.0))));
+    real d_coeff = gn_simple / (2.0 * m_eff * Sqrt(kn_simple / m_eff));
+    real t_collision = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - d_coeff * d_coeff)));
 
-    if (t_current_contact <= t_overlap) {
+    if (t_contact <= t_collision) {
         muRoll_eff = 0.0;
         muSpin_eff = 0.0;
     }

@@ -120,8 +120,8 @@ class solver_settings {
         use_material_properties = true;
         characteristic_vel = 1;
         min_slip_vel = 1e-4;
-        min_roll_vel = 1e-5;
-        min_spin_vel = 1e-5;
+        min_roll_vel = 1e-4;
+        min_spin_vel = 1e-4;
         cache_step_length = false;
         precondition = false;
         use_power_iteration = false;

@@ -31,7 +31,7 @@ class ChApi ChMaterialSurfaceSMC : public ChMaterialSurface {
     float sliding_friction;   ///< Kinetic coefficient of friction
     float rolling_friction;   ///< Rolling coefficient of friction
     float spinning_friction;  ///< Spinning coefficient of friction
-	float restitution;        ///< Coefficient of restitution
+    float restitution;        ///< Coefficient of restitution
     float constant_adhesion;  ///< Constant adhesion force, when constant adhesion model is used
     float adhesionMultDMT;    ///< Adhesion multiplier used in DMT model.
     float adhesionSPerko;	  ///< Adhesion multiplier used in Perko model.
@@ -96,7 +96,7 @@ class ChApi ChMaterialSurfaceSMC : public ChMaterialSurface {
     float GetAdhesion() const { return constant_adhesion; }
     void SetAdhesion(float val) { constant_adhesion = val; }
 
-    /// Adhesion multiplier for DMT adhesion model
+    /// Adhesion multiplier
     float GetAdhesionMultDMT() const { return adhesionMultDMT; }
     void SetAdhesionMultDMT(float val) { adhesionMultDMT = val; }
 

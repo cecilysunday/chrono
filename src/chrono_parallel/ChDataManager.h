@@ -295,7 +295,6 @@ struct host_container {
     // Contact shear history (SMC)
     custom_vector<vec3> shear_neigh;			///< Neighbor list of contacting bodies and shapes
     custom_vector<real3> shear_disp;			///< Accumulated shear displacement for each neighbor
-    custom_vector<real4> contact_coeff;			///< Stiffness and damping coefficients per contact pair, calculated at first contact
     custom_vector<real> contact_relvel_init;	///< Initial relative normal velocity manitude per contact pair, calculated at first contact (max_shear per body)
     custom_vector<real> contact_duration;       ///< Running duration of contact, per contact pair
 

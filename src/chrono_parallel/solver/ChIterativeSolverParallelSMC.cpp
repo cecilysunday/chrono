@@ -191,7 +191,8 @@ void function_CalcContactForces(
     // ---------------------------------------
 
     real m_eff = mass[body1] * mass[body2] / (mass[body1] + mass[body2]);
-    real mu_eff = std::max(mu[body1], mu[body2]);  // strategy->CombineFriction(mu[body1], mu[body2]);
+    
+	real mu_eff = std::max(mu[body1], mu[body2]);  // strategy->CombineFriction(mu[body1], mu[body2]);
     real muRoll_eff = strategy->CombineFriction(muRoll[body1], muRoll[body2]);
     real muSpin_eff = strategy->CombineFriction(muSpin[body1], muSpin[body2]);
     real adhesion_eff = strategy->CombineCohesion(adhesion[body1], adhesion[body2]);
@@ -234,7 +235,7 @@ void function_CalcContactForces(
     real kn_simple;
     real gn_simple;
 
-	real t_contact = 0;
+    real t_contact = 0;
     real relvel_init = abs(relvel_n_mag);
     real delta_n = -depth[index];
     real3 delta_t = real3(0);
@@ -278,7 +279,6 @@ void function_CalcContactForces(
                 break;
             }
         }
-
         if (newcontact == true) {
             for (i = 0; i < max_shear; i++) {
                 int ctIdUnrolled = max_shear * shear_body1 + i;
@@ -303,6 +303,7 @@ void function_CalcContactForces(
 
         // Increment stored contact history tangential (shear) displacement vector
         // and project it onto the <current> contact plane.
+
         if (shear_body1 == body1) {
             shear_disp[ctSaveId] += delta_t;
             shear_disp[ctSaveId] -= Dot(shear_disp[ctSaveId], normal[index]) * normal[index];
@@ -473,9 +474,7 @@ void function_CalcContactForces(
                               Length(rel_o);
 				}
 
-                // Include adhesion as part of the total force calculation rather than part of
-                // the the forceN_max calculation to prevent its effects from canceling out
-                // in the normal force calculation
+                // Account for adhesion
                 switch (adhesion_model) {
                     case ChSystemSMC::AdhesionForceModel::Constant:
                         force -= adhesion_eff * normal[index];
@@ -588,9 +587,7 @@ void function_CalcContactForces(
                   Length(rel_o);
     }
 
-    // Include adhesion as part of the total force calculation rather than part of
-    // the the forceN_max calculation to prevent its effects from canceling out
-    // in the normal force calculation
+    // Account for adhesion
     switch (adhesion_model) {
         case ChSystemSMC::AdhesionForceModel::Constant:
             force -= adhesion_eff * normal[index];

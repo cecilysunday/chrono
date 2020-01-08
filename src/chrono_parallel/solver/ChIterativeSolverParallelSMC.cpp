@@ -191,8 +191,8 @@ void function_CalcContactForces(
     // ---------------------------------------
 
     real m_eff = mass[body1] * mass[body2] / (mass[body1] + mass[body2]);
-    
-	real mu_eff = std::max(mu[body1], mu[body2]);  // strategy->CombineFriction(mu[body1], mu[body2]);
+
+    real mu_eff = std::max(mu[body1], mu[body2]);  // strategy->CombineFriction(mu[body1], mu[body2]);
     real muRoll_eff = strategy->CombineFriction(muRoll[body1], muRoll[body2]);
     real muSpin_eff = strategy->CombineFriction(muSpin[body1], muSpin[body2]);
     real adhesion_eff = strategy->CombineCohesion(adhesion[body1], adhesion[body2]);
@@ -378,7 +378,7 @@ void function_CalcContactForces(
                 real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                 real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                 real cr = (cr_eff < eps) ? 0.01 : cr_eff;
-                cr = (cr_eff > 1 - eps) ? 1 - eps : cr;
+                cr = (cr_eff > 1.0 - eps) ? 1.0 - eps : cr;
                 char_vel = (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) ? relvel_init : char_vel;
                 kn = (2.0 / 3.0) * Sn;
                 kt = (2.0 / 3.0) * St;
@@ -579,7 +579,7 @@ void function_CalcContactForces(
         real r2 = Length(pt2_loc); // r2 = r1;
         real xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
         real rc = r1 * r1 - xc * xc;
-		rc = (rc < eps) ? eps : Sqrt(rc);
+        rc = (rc < eps) ? eps : Sqrt(rc);
 
         m_spin1 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body1]) /
                   Length(rel_o);
@@ -675,13 +675,12 @@ void ChIterativeSolverParallelSMC::host_CalcContactForces(custom_vector<int>& ex
             data_manager->host_data.mu.data(), data_manager->host_data.muRoll.data(),
             data_manager->host_data.muSpin.data(), data_manager->host_data.cohesion_data.data(),
             data_manager->host_data.adhesionMultDMT_data.data(), data_manager->host_data.adhesionSPerko_data.data(),
-            data_manager->host_data.bids_rigid_rigid.data(), shape_pairs.data(),
-            data_manager->host_data.cpta_rigid_rigid.data(), data_manager->host_data.cptb_rigid_rigid.data(),
-            data_manager->host_data.norm_rigid_rigid.data(), data_manager->host_data.dpth_rigid_rigid.data(),
-            data_manager->host_data.erad_rigid_rigid.data(), data_manager->host_data.shear_neigh.data(),
-            shear_touch.data(), data_manager->host_data.shear_disp.data(),
-            data_manager->host_data.contact_relvel_init.data(), data_manager->host_data.contact_duration.data(),
-            ext_body_id.data(), ext_body_force.data(), ext_body_torque.data());
+            data_manager->host_data.bids_rigid_rigid.data(), shape_pairs.data(), data_manager->host_data.cpta_rigid_rigid.data(), 
+            data_manager->host_data.cptb_rigid_rigid.data(), data_manager->host_data.norm_rigid_rigid.data(), 
+            data_manager->host_data.dpth_rigid_rigid.data(), data_manager->host_data.erad_rigid_rigid.data(),
+            data_manager->host_data.shear_neigh.data(), shear_touch.data(), data_manager->host_data.shear_disp.data(),
+            data_manager->host_data.contact_relvel_init.data(), data_manager->host_data.contact_duration.data(), ext_body_id.data(), 
+            ext_body_force.data(), ext_body_torque.data());
     }
 }
 

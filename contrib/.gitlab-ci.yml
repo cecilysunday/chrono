@@ -67,7 +67,7 @@ linux:arch-gcc:test:
 
 linux:arch-gcc:deploy:
   stage: deploy
-  needs: ["linux:arch-gcc:test"]
+  needs: []
   extends: .archlinux
   script:
 # Clean up the docker image because it is very large and pychrono won't fit
@@ -90,6 +90,7 @@ linux:arch-gcc:deploy:
     - conda config --add channels https://conda.anaconda.org/intel
     - conda install -c conda-forge -c dlr-sc -c pythonocc -c oce -c 3dhubs oce=0.18.2 --yes
     - conda install -c intel mkl-devel --yes
+    - conda build purge-all
     - conda build ./contrib/packaging-python/conda --no-remove-work-dir --dirty --python=3.7
     - anaconda -t $ANACONDA_TOKEN upload $HOME/miniconda3/conda-bld/linux-64/pychrono*.bz2 -l develop --force
   environment:
@@ -292,7 +293,7 @@ linux:ubuntu1804:test:
 
 linux:ubuntu1804:deploy:
   stage: deploy
-  needs: ["linux:ubuntu1804:test"]
+  needs: []
   extends: .ubuntu
   script:
     - echo "Build PyChrono and deploy via Anaconda..."
@@ -311,8 +312,12 @@ linux:ubuntu1804:deploy:
     - conda config --add channels https://conda.anaconda.org/intel
     - conda install -c conda-forge -c dlr-sc -c pythonocc -c oce -c 3dhubs oce=0.18.2 --yes
     - conda install -c intel mkl-devel --yes
+    - conda build purge-all
     - conda build ./contrib/packaging-python/conda --no-remove-work-dir --dirty --python=3.6
     - anaconda -t $ANACONDA_TOKEN upload $HOME/miniconda3/conda-bld/linux-64/pychrono*.bz2 -l develop --force
+    #- conda build purge-all
+    #- conda build ./contrib/packaging-python/conda --no-remove-work-dir --dirty --python=3.8
+    #- anaconda -t $ANACONDA_TOKEN upload $HOME/miniconda3/conda-bld/linux-64/pychrono*.bz2 -l develop --force
   environment:
     name: pychrono-ubuntu1804
     url: https://anaconda.org/projectchrono/pychrono
@@ -345,7 +350,7 @@ linux:ubuntu1804:deploy:
   - $CHRONO_W64_LIBRARIES = @(
     "-DBLAZE_DIR=C:/Users/builder/Documents/blaze-3.6",
     "-DSWIG_EXECUTABLE=C:/Users/builder/Documents/swigwin-4.0.1/swig.exe",
-    "-DPYTHON_EXECUTABLE=C:/Users/builder/AppData/Local/Programs/Python/Python37/python.exe",
+    "-DPYTHON_EXECUTABLE=C:/Users/builder/Anaconda3/python.exe",
     "-DBOOST_ROOT=C:/Users/builder/Documents/boost_1_71_0",
     "-DGLM_INCLUDE_DIR=C:/Users/builder/Documents/glm-0.9.9.6",
     "-DGLEW_DLL=C:/Users/builder/Documents/glew-2.1.0/bin/Release/x64/glew32.dll",
@@ -372,7 +377,8 @@ windows:vs2019:build:
     @CHRONO_W64_SHARED 
     @CHRONO_W64_LIBRARIES 
     -DUSE_PARALLEL_CUDA=OFF
-  #-DENABLE_MODULE_FSI=TRUE
+    -DENABLE_MODULE_GRANULAR=TRUE
+    -DENABLE_MODULE_FSI=TRUE
   #- Invoke-Expression "& `'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.com`' Chrono.sln -Build `"Release|x64`" -log buildlog.txt"
   - '& "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe" Chrono.sln -maxcpucount:8 -property:Configuration=Release'
   artifacts:
@@ -393,21 +399,32 @@ windows:vs2019:test:
 
 windows:vs2019:deploy:
   stage: deploy
-  needs: ["windows:vs2019:test"]
+  needs: []
   extends: .windows
   script:
     - rm -r build
-    - conda install --yes conda
-    - conda install --yes conda-build anaconda-client
-    - conda install --yes -c conda-forge -c dlr-sc -c pythonocc -c oce -c 3dhubs oce=0.18
-    - conda install --yes -c intel mkl-devel=2018.0.3
-    - conda build ./contrib/packaging-python --python=3.6 --no-remove-work-dir --dirty
-    - anaconda --token $env:ANACONDA_TOKEN upload C:\Users\buildbot\Miniconda3\envs\base\win-64\pychrono-4.0.0*.bz2
+    # get libiomp5md.lib
+    - $libiomppth=Join-Path -Path $Env:CONDA_INSTALL_LOCN -ChildPath "\Library\lib\libiomp5md.lib"
+    - Invoke-WebRequest -Uri http://www.projectchrono.org/assets/downloads/libiomp5md.lib  -OutFile $libiomppth
+    - mkdir ./logs
+    - $Env:LOG_DIR=Join-Path -Path $pwd -ChildPath "\logs"
+    # Uncomment the following lines to get a fresh install of Miniconda
+    #- $Env:CONDA_INSTALL_LOCN= "C:\Users\builder\Miniconda3"
+    #- Invoke-WebRequest -Uri https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe  -OutFile ./Miniconda3-latest-Windows-x86_64.exe >temp.txt
+    #- Start-Process -Wait  "Miniconda3-latest-Windows-x86_64.exe" -ArgumentList "/InstallationType=JustMe /RegisterPython=0 /S /D=$env:CONDA_INSTALL_LOCN"
+    # Initializing the PowerShell would require to restart it. Since it isn't possible, we use the cmd instead.
+    - Start-Process "cmd.exe" "/c .\contrib\packaging-python\gitlab\build_pychrono.bat >outputfile.txt" -Wait
+    - get-content outputfile.txt
+    - Copy-Item "./outputfile.txt" -Destination "./logs/"
+
   environment:
     name: pychrono-win64
     url: https://anaconda.org/projectchrono/pychrono
   when: manual
-
+  artifacts:
+    expire_in: 60m
+    paths:
+      - ./logs/
 
 windows:vs2017:build:
   stage: build
@@ -418,7 +435,6 @@ windows:vs2017:build:
     @CHRONO_W64_SHARED
     @CHRONO_W64_LIBRARIES
     -DUSE_PARALLEL_CUDA=OFF
-  #-DENABLE_MODULE_FSI=TRUE
   #- Invoke-Expression "& `'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.com`' Chrono.sln -Build `"Release|x64`" -log buildlog.txt"
   - '& "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe" Chrono.sln -maxcpucount:8 -property:Configuration=Release'
   artifacts:
@@ -435,7 +451,6 @@ windows:vs2017:build:
     @CHRONO_W64_SHARED
     @CHRONO_W64_LIBRARIES
     -DUSE_PARALLEL_CUDA=OFF 
-  #-DENABLE_MODULE_FSI=TRUE
   #- Invoke-Expression "& `'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.com`' Chrono.sln -Build `"Release|x64`" -log buildlog.txt"
   - '& "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe" Chrono.sln -maxcpucount:8 -property:Configuration=Release'
   artifacts:

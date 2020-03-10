@@ -70,7 +70,7 @@ void function_CalcContactForces(
     real* muSpin,                                         // coefficient of spinning friction (per body)
     real* adhesion,                                       // constant force (per body)
     real* adhesionMultDMT,                                // Adhesion force multiplier (per body), in DMT model.
-    real* adhesionSPerko,                                 // Cleanliness factor (per body), in Perko model.
+    real* adhesionSPerko,                                 // Cleanliness factor (per body), in Perko model
     vec2* body_id,                                        // body IDs (per contact)
     vec2* shape_id,                                       // shape IDs (per contact)
     real3* pt1,                                           // point on shape 1 (per contact)
@@ -78,68 +78,15 @@ void function_CalcContactForces(
     real3* normal,                                        // contact normal (per contact)
     real* depth,                                          // penetration depth (per contact)
     real* eff_radius,                                     // effective contact radius (per contact)
-    vec3* shear_neigh,          // neighbor list of contacting bodies and shapes (max_shear per body)
-    char* shear_touch,          // flag if contact in neighbor list is persistent (max_shear per body)
-    real3* shear_disp,          // accumulated shear displacement for each neighbor (max_shear per body)
-    real* contact_relvel_init,  // initial relative normal velocity manitude per contact pair
-    real* contact_duration,     // running duration of persistant contact between contact pairs
-    int* ext_body_id,           // [output] body IDs (two per contact)
-    real3* ext_body_force,      // [output] body force (two per contact)
-    real3* ext_body_torque      // [output] body torque (two per contact)
+    vec3* shear_neigh,       // neighbor list of contacting bodies and shapes (max_shear per body)
+    char* shear_touch,       // flag if contact in neighbor list is persistent (max_shear per body)
+    real3* shear_disp,       // accumulated shear displacement for each neighbor (max_shear per body)
+    real* contact_relvel_init, // initial relative normal velocity manitude per contact pair
+    real* contact_duration,  // accumulates duration of persistant contact between contact pairs
+    int* ext_body_id,        // [output] body IDs (two per contact)
+    real3* ext_body_force,   // [output] body force (two per contact)
+    real3* ext_body_torque   // [output] body torque (two per contact)
 ) {
-    // Format header and output file for debugging lines. Delete this after completing simple sphere validation tests
-    /*real p1;  // relvel_n_mag (signed)
-    real p2;  // relvel_t_mag (always positive)
-
-    bool print_data = GetPrint();
-    std::ofstream datao;
-    static int runs = 0;
-    
-    if (runs == 0 && print_data) {
-        datao.open(GetChronoOutputPath() + "/chronodat.txt");
-        datao << "stp\t"
-              << "body1\t"
-              << "body2\t"
-              << "v_rot_x\t"
-              << "v_rot_y\t"
-              << "v_rot_z\t"
-              << "delta_n\t"
-              << "delta_t\t"
-              << "relvel_n\t"
-              << "relvel_t\t"
-              << "force_n_mag\t"
-              << "force_t_stiff\t"
-              << "force_t_damp\t"
-              << "force_t_x\t"
-              << "force_t_y\t"
-              << "force_t_z\t"
-              << "force_x\t"
-              << "force_y\t"
-              << "force_z\t"
-              << "torque1_x\t"
-              << "torque1_y\t"
-              << "torque1_z\t"
-              << "torque2_x\t"
-              << "torque2_y\t"
-              << "torque2_z\t"
-              << "m_roll1_x\t"
-              << "m_roll1_y\t"
-              << "m_roll1_z\t"
-              << "m_roll2_x\t"
-              << "m_roll2_y\t"
-              << "m_roll2_z\t"
-              << "m_spin1_x\t"
-              << "m_spin1_y\t"
-              << "m_spin1_z\t"
-              << "m_spin2_x\t"
-              << "m_spin2_y\t"
-              << "m_spin2_z\n";
-        runs++;
-    } else if (print_data) {
-        datao.open(GetChronoOutputPath() + "/chronodat.txt", std::ios::app);
-        runs++;
-    }*/
-    
     // Identify the two bodies in contact.
     int body1 = body_id[index].x;
     int body2 = body_id[index].y;
@@ -152,7 +99,7 @@ void function_CalcContactForces(
         ext_body_force[2 * index + 1] = real3(0);
         ext_body_torque[2 * index] = real3(0);
         ext_body_torque[2 * index + 1] = real3(0);
-        //chrono::GetLog() << "\nWARNING: Exited function_CalcContactForce() at contact step " << runs;
+
         return;
     }
 
@@ -184,15 +131,12 @@ void function_CalcContactForces(
     real3 relvel_t = relvel - relvel_n;
     real relvel_t_mag = Length(relvel_t);
 
-    //p1 = relvel_n_mag;
-    //p2 = relvel_t_mag;
-
     // Calculate composite material properties
     // ---------------------------------------
 
     real m_eff = mass[body1] * mass[body2] / (mass[body1] + mass[body2]);
 
-    real mu_eff = std::max(mu[body1], mu[body2]);  // strategy->CombineFriction(mu[body1], mu[body2]);
+    real mu_eff = strategy->CombineFriction(mu[body1], mu[body2]);
     real muRoll_eff = strategy->CombineFriction(muRoll[body1], muRoll[body2]);
     real muSpin_eff = strategy->CombineFriction(muSpin[body1], muSpin[body2]);
     real adhesion_eff = strategy->CombineCohesion(adhesion[body1], adhesion[body2]);
@@ -314,8 +258,8 @@ void function_CalcContactForces(
             delta_t = -shear_disp[ctSaveId];
         }
 
-        // Load the charecteristic velocity and contact_duration from the contact history
-        relvel_init = contact_relvel_init[ctSaveId];
+        // Load the initial collision velocity and accumulated contact duration from the contact history
+        relvel_init = (contact_relvel_init[ctSaveId] < char_vel) ? char_vel : contact_relvel_init[ctSaveId];
         t_contact = contact_duration[ctSaveId];
     }
 
@@ -375,14 +319,14 @@ void function_CalcContactForces(
                 real sqrt_Rd = Sqrt(eff_radius[index] * delta_n);
                 real Sn = 2 * E_eff * sqrt_Rd;
                 real St = 8 * G_eff * sqrt_Rd;
-                real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
+                cr_eff = (cr_eff < 0.01) ? 0.01 : cr_eff;
+                cr_eff = (cr_eff > 1.0 - eps) ? 1.0 - eps : cr_eff;
+                real loge = Log(cr_eff);
                 real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
-                real cr = (cr_eff < eps) ? 0.01 : cr_eff;
-                cr = (cr_eff > 1.0 - eps) ? 1.0 - eps : cr;
                 char_vel = (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) ? relvel_init : char_vel;
                 kn = (2.0 / 3.0) * Sn;
                 kt = (2.0 / 3.0) * St;
-                gn = 8.0 * (1.0 - cr) * kn * delta_n / (5.0 * cr * char_vel);
+                gn = 8.0 * (1.0 - cr_eff) * kn * delta_n / (5.0 * cr_eff * char_vel);
                 gt = -2 * Sqrt(5.0 / 6) * beta * Sqrt(St * m_eff);  // Need to multiply St by 2/3 here as well ?
             } else {
                 real tmp = eff_radius[index] * Sqrt(delta_n);
@@ -433,35 +377,42 @@ void function_CalcContactForces(
 
                 // If the duration of the current contact is less than the durration of a typical collision,
                 // do not apply friction. Rolling and spinning friction should only be applied to persistant contacts
+                // Rolling and spinning friction are applied right away for critically damped or over-damped systems
                 real d_coeff = gn_simple / (2.0 * m_eff * Sqrt(kn_simple / m_eff));
-                real t_collision = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - d_coeff * d_coeff)));
-
-                if (t_contact <= t_collision) {
-                    muRoll_eff = 0.0;
-                    muSpin_eff = 0.0;
+                if (d_coeff < 1.0) {
+                    real t_collision = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - d_coeff * d_coeff)));
+                    if (t_contact <= t_collision) {
+                        muRoll_eff = 0.0;
+                        muSpin_eff = 0.0;
+                    }
                 }
 
-				// Compute some additional vales needed for the rolling and twisting friction calculations
+                // Compute some additional vales needed for the rolling and spinning friction calculations
                 real3 v_rot = Rotate(Cross(o_body2, pt2_loc), rot[body2]) - Rotate(Cross(o_body1, pt1_loc), rot[body1]);
                 real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
 
-                // Calculate rolling friction torque as M_roll = mu_r * R * (F_N x v_rot) / |v_rot| (Schwartz et al. 2012)
+                // Calculate rolling friction torque as M_roll = mu_r * R * (F_N x v_rot) / |v_rot| (Schwartz et al.
+                // 2012)
                 real3 m_roll1 = real3(0);
                 real3 m_roll2 = real3(0);
 
-                if (Length(v_rot) > min_roll_vel) {
+                if (Length(v_rot) > min_roll_vel && muRoll_eff > eps) {
                     m_roll1 = muRoll_eff * Cross(forceN_mag * pt1_loc, RotateT(v_rot, rot[body1])) / Length(v_rot);
                     m_roll2 = muRoll_eff * Cross(forceN_mag * pt2_loc, RotateT(v_rot, rot[body2])) / Length(v_rot);
                 }
 
                 // Calculate spinning friction torque as M_spin = -mu_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
                 // r_c is the radius of the circle resulting from the intersecting body surfaces (Schwartz et al. 2012)
+				//
+				// TODO: The spinning moment calculation is only valid for sphere-sphere collisions because of the 
+				// r1 and r2 terms. In order for the calculation to be valid for sphere-wall collisions, the wall
+				// must be ~100x particle diameters in thickness
                 real3 m_spin1 = real3(0);
                 real3 m_spin2 = real3(0);
 
-                if (Length(rel_o) > min_spin_vel) {
-                    real r1 = Length(pt1_loc);  // r1 = eff_radius[index];
-                    real r2 = Length(pt2_loc);  // r2 = r1;
+                if (Length(rel_o) > min_spin_vel && muSpin_eff > eps) {
+                    real r1 = Length(pt1_loc);
+                    real r2 = Length(pt2_loc);
                     real xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
                     real rc = r1 * r1 - xc * xc;
                     rc = (rc < eps) ? eps : Sqrt(rc);
@@ -472,7 +423,7 @@ void function_CalcContactForces(
                     m_spin2 = muSpin_eff * rc *
                               RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body2]) /
                               Length(rel_o);
-				}
+                }
 
                 // Account for adhesion
                 switch (adhesion_model) {
@@ -483,7 +434,7 @@ void function_CalcContactForces(
                         force -= adhesionMultDMT_eff * Sqrt(eff_radius[index]) * normal[index];
                         break;
                     case ChSystemSMC::AdhesionForceModel::Perko:
-                        force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
+                        force -= adhesionSPerko_eff * eff_radius[index] * normal[index];
                         break;
                 }
 
@@ -514,14 +465,16 @@ void function_CalcContactForces(
     // due to contact history, then the shear displacement is scaled so that
     // the tangential force will be correct if force_T_mag subsequently drops
     // below the Coulomb limit.
+	//
+	// TODO: This implementation currently assumes that mu_slip and mu_k are equal
     real3 forceT = forceT_stiff + forceT_damp;
     real forceT_mag = Length(forceT);
-    real forceT_slide = mu_eff * forceN_mag;
-    if (forceT_mag > abs(forceT_slide)) {
-        if (forceT_mag > eps && kt > eps) {
-            real3 forceT_dir = forceT / forceT_mag;
-            forceT_mag = forceT_slide;
-            forceT = forceT_mag * forceT_dir;
+    real delta_t_mag = Length(delta_t);
+    real forceT_slide = mu_eff * Abs(forceN_mag);
+    if (forceT_mag > forceT_slide) {
+        if (delta_t_mag > eps) {
+            real ratio = forceT_slide / forceT_mag;
+            forceT *= ratio;
             if (displ_mode == ChSystemSMC::TangentialDisplacementModel::MultiStep) {
                 delta_t = (forceT - forceT_damp) / kt;
                 if (shear_body1 == body1) {
@@ -533,7 +486,7 @@ void function_CalcContactForces(
         } else {
             forceT = real3(0);
         }
-    }
+    } 
 
     // Accumulate normal and tangential forces
     real3 force = forceN_mag * normal[index] - forceT;
@@ -546,17 +499,19 @@ void function_CalcContactForces(
     real3 torque1_loc = Cross(pt1_loc, RotateT(force, rot[body1]));
     real3 torque2_loc = Cross(pt2_loc, RotateT(force, rot[body2]));
 
-    // If the duration of the current contact is less than the durration of a typical collision, 
-    // do not apply friction. Rolling and spinning friction should only be applied to persistant contacts
+    // If the duration of the current contact is less than the durration of a typical collision,
+    // do not apply friction. Rolling and spinning friction should only be applied to persistant contacts.
+    // Rolling and spinning friction are applied right away for critically damped or over-damped systems.
     real d_coeff = gn_simple / (2.0 * m_eff * Sqrt(kn_simple / m_eff));
-    real t_collision = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - d_coeff * d_coeff)));
+    if (d_coeff < 1.0) {
+		real t_collision = CH_C_PI * Sqrt(m_eff / (kn_simple * (1 - d_coeff * d_coeff)));
+		if (t_contact <= t_collision) {
+			muRoll_eff = 0.0;
+			muSpin_eff = 0.0;
+		}
+	}
 
-    if (t_contact <= t_collision) {
-        muRoll_eff = 0.0;
-        muSpin_eff = 0.0;
-    }
-
-    // Compute some additional vales needed for the rolling and twisting friction calculations
+    // Compute some additional vales needed for the rolling and spinning friction calculations
     real3 v_rot = Rotate(Cross(o_body2, pt2_loc), rot[body2]) - Rotate(Cross(o_body1, pt1_loc), rot[body1]);
     real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
 
@@ -564,19 +519,23 @@ void function_CalcContactForces(
     real3 m_roll1 = real3(0);
     real3 m_roll2 = real3(0);
 
-    if (Length(v_rot) > min_roll_vel) {
+    if (Length(v_rot) > min_roll_vel && muRoll_eff > eps) {
         m_roll1 = muRoll_eff * Cross(forceN_mag * pt1_loc, RotateT(v_rot, rot[body1])) / Length(v_rot);
         m_roll2 = muRoll_eff * Cross(forceN_mag * pt2_loc, RotateT(v_rot, rot[body2])) / Length(v_rot);
     }
 
     // Calculate spinning friction torque as M_spin = -mu_t * r_c * ((w_n - w_p) . F_n / |w_n - w_p|) * n
     // r_c is the radius of the circle resulting from the intersecting body surfaces (Schwartz et al. 2012)
+	//
+    // TODO: The spinning moment calculation is only valid for sphere-sphere collisions because of the
+    // r1 and r2 terms. In order for the calculation to be valid for sphere-wall collisions, the wall
+    // must be ~100x particle diameters in thickness
     real3 m_spin1 = real3(0);
     real3 m_spin2 = real3(0);
 
-    if (Length(rel_o) > min_spin_vel) {
-        real r1 = Length(pt1_loc); // r1 = eff_radius[index]; 
-        real r2 = Length(pt2_loc); // r2 = r1;
+    if (Length(rel_o) > min_spin_vel && muSpin_eff > eps) {
+        real r1 = Length(pt1_loc);
+        real r2 = Length(pt2_loc);
         real xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
         real rc = r1 * r1 - xc * xc;
         rc = (rc < eps) ? eps : Sqrt(rc);
@@ -596,7 +555,7 @@ void function_CalcContactForces(
             force -= adhesionMultDMT_eff * Sqrt(eff_radius[index]) * normal[index];
             break;
         case ChSystemSMC::AdhesionForceModel::Perko:
-            force -= adhesionSPerko_eff * adhesionSPerko_eff * 3.6E-2 * eff_radius[index] * normal[index];
+            force -= adhesionSPerko_eff * eff_radius[index] * normal[index];
             break;
     }
 
@@ -607,48 +566,6 @@ void function_CalcContactForces(
     ext_body_force[2 * index + 1] = force;
     ext_body_torque[2 * index] = -torque1_loc + m_roll1 + m_spin1;
     ext_body_torque[2 * index + 1] = torque2_loc - m_roll2 - m_spin2;
-
-    // Print collision metadata to tab chronodat.txt file. Delete this after completing simple sphere validation tests
-    /* if (print_data) {
-        datao << runs << "\t" 
-			  << body1 << "\t" 
-			  << body2 << "\t" 
-              << v_rot.x << "\t"
-              << v_rot.y << "\t"
-              << v_rot.z << "\t"
-              << delta_n << "\t"
-              << Length(delta_t) << "\t"
-              << p1 << "\t"
-              << p2 << "\t"
-              << forceN_mag << "\t"
-              << Length(forceT_stiff) << "\t"
-              << Length(forceT_damp) << "\t"
-              << forceT.x << "\t"
-              << forceT.y << "\t"
-              << forceT.z << "\t"
-              << force.x << "\t"
-              << force.y << "\t"
-              << force.z << "\t"
-              << Rotate(torque1_loc, rot[body1]).x << "\t"
-              << Rotate(torque1_loc, rot[body1]).y << "\t"
-              << Rotate(torque1_loc, rot[body1]).z << "\t"
-              << Rotate(torque2_loc, rot[body2]).x << "\t"
-              << Rotate(torque2_loc, rot[body2]).y << "\t"
-              << Rotate(torque2_loc, rot[body2]).z << "\t"
-              << Rotate(m_roll1, rot[body1]).x << "\t"
-              << Rotate(m_roll1, rot[body1]).y << "\t"
-              << Rotate(m_roll1, rot[body1]).z << "\t"
-              << Rotate(m_roll2, rot[body2]).x << "\t"
-              << Rotate(m_roll2, rot[body2]).y << "\t"
-              << Rotate(m_roll2, rot[body2]).z << "\t"
-              << Rotate(m_spin1, rot[body1]).x << "\t"
-              << Rotate(m_spin1, rot[body1]).y << "\t"
-              << Rotate(m_spin1, rot[body1]).z << "\t"
-              << Rotate(m_spin2, rot[body2]).x << "\t"
-              << Rotate(m_spin2, rot[body2]).y << "\t"
-              << Rotate(m_spin2, rot[body2]).z << "\n";
-        datao.close();
-    }*/
 }
 
 // -----------------------------------------------------------------------------
@@ -675,10 +592,10 @@ void ChIterativeSolverParallelSMC::host_CalcContactForces(custom_vector<int>& ex
             data_manager->host_data.mu.data(), data_manager->host_data.muRoll.data(),
             data_manager->host_data.muSpin.data(), data_manager->host_data.cohesion_data.data(),
             data_manager->host_data.adhesionMultDMT_data.data(), data_manager->host_data.adhesionSPerko_data.data(),
-            data_manager->host_data.bids_rigid_rigid.data(), shape_pairs.data(), data_manager->host_data.cpta_rigid_rigid.data(), 
-            data_manager->host_data.cptb_rigid_rigid.data(), data_manager->host_data.norm_rigid_rigid.data(), 
-            data_manager->host_data.dpth_rigid_rigid.data(), data_manager->host_data.erad_rigid_rigid.data(),
-            data_manager->host_data.shear_neigh.data(), shear_touch.data(), data_manager->host_data.shear_disp.data(),
+            data_manager->host_data.bids_rigid_rigid.data(), shape_pairs.data(), data_manager->host_data.cpta_rigid_rigid.data(),
+            data_manager->host_data.cptb_rigid_rigid.data(), data_manager->host_data.norm_rigid_rigid.data(),
+            data_manager->host_data.dpth_rigid_rigid.data(), data_manager->host_data.erad_rigid_rigid.data(), 
+            data_manager->host_data.shear_neigh.data(), shear_touch.data(), data_manager->host_data.shear_disp.data(), 
             data_manager->host_data.contact_relvel_init.data(), data_manager->host_data.contact_duration.data(), ext_body_id.data(), 
             ext_body_force.data(), ext_body_torque.data());
     }

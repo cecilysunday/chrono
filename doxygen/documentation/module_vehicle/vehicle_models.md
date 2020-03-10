@@ -69,10 +69,15 @@ The UAZ 469 jeep-like vehicle has been used since 1965 in the Soviet Army. It sh
 
 ### Generic wheeld vehicle {#vehicle_models_generic}
 
+The generic wheeld vehicle model is a sandbox for testing various templates and settings. It does not represent any particular vehicle and not all concrete subsystems provided for this model are necessarily consistent with each other.
 
 ## Tracked vehicle models {#vehicle_models_tracked}
 
 ### M113 {#vehicle_models_m113}
+
+The M113 is a light tank with aluminium alloy hull and a running gear of Christie type. The first M113 went in service 1960. It is used in many armies of the world and a lot of configurations have been derived from the basic vehicle. The Chrono M113 model shows a troup carrier (2+11 occupants).
+
+The running gear consists of ten road wheels, two sprockets and two idler wheels. The model can be configured whith a single pin track or a double pin track. A third alternative - a rubber band track - is under development. The track tension can be set by means of the special tensioning suspension of the idler wheels. The road wheels are suspended by a bogie/torsion bar system. The drivetrain is modelled as three gear automatic gear box with torque converter in combination of a combustion engine.
 
 <img src="http://www.projectchrono.org/assets/manual/vehicle/models/M113.png" width="600" />
 

@@ -295,8 +295,8 @@ struct host_container {
     // Contact shear history (SMC)
     custom_vector<vec3> shear_neigh;  ///< Neighbor list of contacting bodies and shapes
     custom_vector<real3> shear_disp;  ///< Accumulated shear displacement for each neighbor
-    custom_vector<real> contact_relvel_init;  ///< Initial relative normal velocity manitude per contact pair, calculated at first contact (max_shear per body)
-    custom_vector<real> contact_duration;  ///< Running duration of contact, per contact pair
+    custom_vector<real> contact_relvel_init;  ///< Initial relative normal velocity manitude per contact pair
+    custom_vector<real> contact_duration;  ///< Accumulated contact duration, per contact pair
 
     /// Mapping from all bodies in the system to bodies involved in a contact.
     /// For bodies that are currently not in contact, the mapping entry is -1.
@@ -370,10 +370,10 @@ struct host_container {
     //    adhesionMult = 2 * CH_C_PI * w * Sqrt(R_eff).
     // Given the equilibrium penetration distance, y_eq,
     //    adhesionMult = 4.0 / 3.0 * E_eff * powf(y_eq, 1.5)
-	// Perko et al. (2001) (Perko) model:
-	//    adhesion = 3.6E-2 * S^2 * R_eff
-	//    with S being the measurement of cleanliness
-	//    adhesionSPerko = S
+    // Perko et al. (2001) (Perko) model:
+    //    adhesion = adhesionSPerko * R_eff
+    // with adhesionSPerko depending on the Hamaker constant A and a measure of cleanliness S.
+    // For lunar regolith, adhesionSPerko = 3.6E-2 * S^2
 
     /// This matrix, if used will hold D^TxM^-1xD in sparse form.
     CompressedMatrix<real> Nshur;

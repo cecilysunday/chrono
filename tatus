@@ -1,0 +1,73 @@
+diff --git a/src/chrono/physics/ChBody.cpp b/src/chrono/physics/ChBody.cpp
+index 19656f9..9de972b 100644
+--- a/src/chrono/physics/ChBody.cpp
++++ b/src/chrono/physics/ChBody.cpp
+@@ -344,6 +344,22 @@ void ChBody::VariablesQbIncrementPosition(double dt_step) {
+     mdeltarot.Q_from_AngAxis(mangle, newwel_abs);
+     ChQuaternion<> mnewrot = mdeltarot % moldrot;
+     this->SetRot(mnewrot);
++
++
++
++
++    /*if (std::isnan(mnewrot.Length())) {
++        GetLog() << "\n" << this->GetIdentifier()
++		 << "\t" << this->GetSystem()->GetChTime()
++		 << "\t" << newwel.Length()
++		 << "\t" << newwel_abs.Length()
++                 << "\t" << mangle;
++        exit(EXIT_FAILURE);
++    }*/
++
++
++
++
+ }
+ 
+ void ChBody::SetNoSpeedNoAcceleration() {
+diff --git a/src/chrono_parallel/solver/ChIterativeSolverParallelSMC.cpp b/src/chrono_parallel/solver/ChIterativeSolverParallelSMC.cpp
+index d3a4a22..9b5c2ff 100644
+--- a/src/chrono_parallel/solver/ChIterativeSolverParallelSMC.cpp
++++ b/src/chrono_parallel/solver/ChIterativeSolverParallelSMC.cpp
+@@ -533,10 +533,10 @@ void function_CalcContactForces(
+     // below the Coulomb limit.
+     real3 forceT = forceT_stiff + forceT_damp;
+     real forceT_mag = Length(forceT);
+-    real delta_t_mag = Length(delta_t);
++    //real delta_t_mag = Length(delta_t);
+     real forceT_slide = mu_eff * forceN_mag;
+     if (forceT_mag > abs(forceT_slide)) {
+-        if (delta_t_mag > eps) {
++        if (kt > eps && forceT_mag > eps) {
+             real3 forceT_dir = forceT / forceT_mag;
+             forceT_mag = forceT_slide;
+             forceT = forceT_mag * forceT_dir;
+@@ -575,7 +575,7 @@ void function_CalcContactForces(
+         muSpin_eff = 0.0;
+     }
+ 
+-	real3 v_rot = Rotate(Cross(o_body2, pt2_loc), rot[body2]) - Rotate(Cross(o_body1, pt1_loc), rot[body1]);
++    real3 v_rot = Rotate(Cross(o_body2, pt2_loc), rot[body2]) - Rotate(Cross(o_body1, pt1_loc), rot[body1]);
+     real3 rel_o = Rotate(o_body2, rot[body2]) - Rotate(o_body1, rot[body1]);
+ 
+     // Calculate rolling friction torque as M_roll = �_r * R * (F_N x v_rot) / |v_rot| (Schwartz et al. 2012)
+@@ -596,8 +596,8 @@ void function_CalcContactForces(
+         double r1 = Length(pt1_loc); // r1 = eff_radius[index]; 
+         double r2 = Length(pt2_loc); // r2 = r1;
+         double xc = (r1 * r1 - r2 * r2) / (2 * (r1 + r2 - delta_n)) + 0.5 * (r1 + r2 - delta_n);
+-        double rc = sqrt(pow(r1, 2) - pow(xc, 2));
+-
++        double rc = (pow(r1, 2) - pow(xc, 2) < eps) ? sqrt(eps) : sqrt(pow(r1, 2) - pow(xc, 2));
++	
+         m_spin1 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body1]) /
+                   Length(rel_o);
+         m_spin2 = muSpin_eff * rc * RotateT(Dot(rel_o, forceN_mag * normal[index]) * normal[index], rot[body2]) /
+@@ -626,7 +626,7 @@ void function_CalcContactForces(
+     ext_body_force[2 * index + 1] = force;
+     ext_body_torque[2 * index] = -torque1_loc + m_roll1 + m_spin1;
+     ext_body_torque[2 * index + 1] = torque2_loc - m_roll2 - m_spin2;
+-
++    
+     // Print collision metadata to tab chronodat.txt file. Delete this after completing simple sphere validation tests
+     /* if (print_data) {
+         datao << runs << "\t" 

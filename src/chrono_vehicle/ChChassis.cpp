@@ -18,6 +18,7 @@
 
 #include "chrono/assets/ChSphereShape.h"
 
+#include "chrono_vehicle/ChWorldFrame.h"
 #include "chrono_vehicle/ChChassis.h"
 
 namespace chrono {
@@ -29,6 +30,14 @@ ChChassis::ChChassis(const std::string& name, bool fixed) : ChPart(name), m_fixe
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
+ChQuaternion<> ChChassis::GetRot() const {
+    return m_body->GetFrame_REF_to_abs().GetRot() * ChWorldFrame::Quaternion();
+}
+
+ChQuaternion<> ChChassis::GetCOMRot() const {
+    return m_body->GetRot() * ChWorldFrame::Quaternion();
+}
+
 ChVector<> ChChassis::GetPointLocation(const ChVector<>& locpos) const {
     return m_body->GetFrame_REF_to_abs().TransformPointLocalToParent(locpos);
 }
@@ -55,6 +64,9 @@ void ChChassis::Initialize(ChSystem* system,
                            const ChCoordsys<>& chassisPos,
                            double chassisFwdVel,
                            int collision_family) {
+    // Initial pose and velocity assumed to be given in current WorldFrame
+    ChFrame<> chassis_pos(chassisPos.pos, ChMatrix33<>(chassisPos.rot) * ChWorldFrame::Rotation().transpose());
+
     m_body = std::shared_ptr<ChBodyAuxRef>(system->NewBodyAuxRef());
     m_body->SetIdentifier(0);
     m_body->SetNameString(m_name + " body");
@@ -63,8 +75,8 @@ void ChChassis::Initialize(ChSystem* system,
     m_body->SetInertia(GetInertia());
     m_body->SetBodyFixed(m_fixed);
 
-    m_body->SetFrame_REF_to_abs(ChFrame<>(chassisPos));
-    m_body->SetPos_dt(chassisFwdVel * chassisPos.TransformDirectionLocalToParent(ChVector<>(1, 0, 0)));
+    m_body->SetFrame_REF_to_abs(chassis_pos);
+    m_body->SetPos_dt(chassisFwdVel * chassis_pos.TransformDirectionLocalToParent(ChVector<>(1, 0, 0)));
 
     system->Add(m_body);
 

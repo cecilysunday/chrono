@@ -71,7 +71,7 @@ class CH_VEHICLE_API ChChassis : public ChPart {
     /// Get the orientation of the chassis reference frame.
     /// The chassis orientation is returned as a quaternion representing a
     /// rotation with respect to the global reference frame.
-    const ChQuaternion<>& GetRot() const { return m_body->GetFrame_REF_to_abs().GetRot(); }
+    ChQuaternion<> GetRot() const;
 
     /// Get the global location of the chassis center of mass.
     const ChVector<>& GetCOMPos() const { return m_body->GetPos(); }
@@ -79,7 +79,7 @@ class CH_VEHICLE_API ChChassis : public ChPart {
     /// Get the orientation of the chassis centroidal frame.
     /// The chassis orientation is returned as a quaternion representing a
     /// rotation with respect to the global reference frame.
-    const ChQuaternion<>& GetCOMRot() const { return m_body->GetRot(); }
+    ChQuaternion<> GetCOMRot() const;
 
     /// Get the global location of the driver.
     ChVector<> GetDriverPos() const;
@@ -108,6 +108,7 @@ class CH_VEHICLE_API ChChassis : public ChPart {
     ChVector<> GetPointAcceleration(const ChVector<>& locpos) const;
 
     /// Initialize the chassis at the specified global position and orientation.
+    /// The initial position and forward velocity are assumed to be given in the current world frame.
     virtual void Initialize(ChSystem* system,                ///< [in] containing system
                             const ChCoordsys<>& chassisPos,  ///< [in] absolute chassis position
                             double chassisFwdVel,            ///< [in] initial chassis forward velocity

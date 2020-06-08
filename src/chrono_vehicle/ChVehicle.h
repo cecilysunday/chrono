@@ -82,7 +82,7 @@ class CH_VEHICLE_API ChVehicle {
     /// Get the vehicle orientation.
     /// This is the chassis orientation, returned as a quaternion representing a
     /// rotation with respect to the global reference frame.
-    const ChQuaternion<>& GetVehicleRot() const { return m_chassis->GetRot(); }
+    ChQuaternion<> GetVehicleRot() const { return m_chassis->GetRot(); }
 
     /// Get the vehicle speed.
     /// Return the speed measured at the origin of the chassis reference frame.
@@ -166,9 +166,9 @@ class CH_VEHICLE_API ChVehicle {
 
   protected:
     /// Construct a vehicle system with an underlying ChSystem.
-    ChVehicle(const std::string& name,                                                  ///< [in] vehicle name
-              ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC  ///< [in] contact method
-              );
+    ChVehicle(const std::string& name,                               ///< [in] vehicle name
+              ChContactMethod contact_method = ChContactMethod::NSC  ///< [in] contact method
+    );
 
     /// Construct a vehicle system using the specified ChSystem.
     /// All physical components of the vehicle will be added to that system.

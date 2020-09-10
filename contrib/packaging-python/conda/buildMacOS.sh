@@ -1,8 +1,10 @@
 
-mkdir ./build
+mkdir -p ./build
 cd ./build
+
 # in py <= 3.7, headers are in $PREFIX/include/python3.xm/, while since python 3.8 they are in $PREFIX/include/python3.8/ go figure.
 if [ "$PY3K" == "1" ] && [ "$PY_VER" != "3.8" ] ; then
+
     MY_PY_VER="${PY_VER}m"
 else
     MY_PY_VER="${PY_VER}"
@@ -17,9 +19,17 @@ fi
 # set MKL vars
 export MKL_INTERFACE_LAYER=LP64
 export MKL_THREADING_LAYER=INTEL
+
+if [ `uname` == Darwin ]; then
+    sed -i '' 's/${PYTHON_LIBRARY}//g' $SRC_DIR/src/chrono_python/CMakeLists.txt
+fi
+export LDFLAGS="-Wl,-undefined,dynamic_lookup $LDFLAGS"
+
 CONFIGURATION=Release
 # Configure step
 cmake -DCMAKE_INSTALL_PREFIX=$PREFIX \
+ -DCMAKE_C_COMPILER=$(which clang) \
+ -DCMAKE_CXX_COMPILER=$(which clang++) \
  -DCMAKE_PREFIX_PATH=$PREFIX \
  -DCMAKE_SYSTEM_PREFIX_PATH=$PREFIX \
  -DCH_INSTALL_PYTHON_PACKAGE=$SP_DIR \
@@ -35,14 +45,14 @@ cmake -DCMAKE_INSTALL_PREFIX=$PREFIX \
  -DBUILD_TESTING=OFF \
  -DBUILD_BENCHMARKING=OFF \
  -DBUILD_GMOCK=OFF \
- -DENABLE_MODULE_CASCADE=ON \
- -DCASCADE_INCLUDE_DIR=$HOME/miniconda3/include/opencascade \
- -DCASCADE_LIBDIR=$HOME/miniconda3/lib \
+ -DENABLE_MODULE_CASCADE=OFF \
+ -DCASCADE_INCLUDE_DIR=$HOME/miniconda/include/opencascade \
+ -DCASCADE_LIBDIR=$HOME/miniconda/lib \
  -DENABLE_MODULE_MKL=ON \
- -DMKL_INCLUDE_DIR=$HOME/miniconda3/include \
- -DMKL_RT_LIBRARY=$HOME/miniconda3/lib/libmkl_rt.so \
- -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3 \
- -DPYCHRONO_DATA_PATH=../../../../../../share/chrono/data \
+ -DMKL_INCLUDE_DIR=$HOME/miniconda/include \
+ -DMKL_RT_LIBRARY=$HOME/miniconda/lib/libmkl_rt.dylib \
+ -DEIGEN3_INCLUDE_DIR="/usr/local/include/eigen3" "$HOME/miniconda/include" \
+ -DPYCHRONO_DATA_PATH=../../../../../../share/chrono/data/ \
  ./..
 # Build step
 # on linux travis, limit the number of concurrent jobs otherwise

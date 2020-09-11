@@ -429,6 +429,16 @@ set(CVM_M113_FILES
 )
 source_group("m113" FILES ${CVM_M113_FILES})
 
+set(CVM_MMX_FILES
+    mmx/MMX_PaddleTire.h
+    mmx/MMX_PaddleTire.cpp
+    mmx/MMX_SimpleTire.h
+    mmx/MMX_SimpleTire.cpp
+    mmx/MMX_Wheel.h
+    mmx/MMX_Wheel.cpp
+)
+source_group("mmx" FILES ${CVM_MMX_FILES})
+
 # ----------------------------------------------------------------------------
 # Add the Chrono_vehicle_models library
 # ----------------------------------------------------------------------------
@@ -447,6 +457,7 @@ add_library(ChronoModels_vehicle SHARED
     ${CVM_GATOR_FILES}
     ${CVM_M113_FILES}
     ${CVM_MAN_FILES}
+    ${CVM_MMX_FILES}
  )
 
 set_target_properties(ChronoModels_vehicle PROPERTIES

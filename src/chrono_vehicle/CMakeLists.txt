@@ -235,6 +235,8 @@ set(CV_TERRAIN_FILES
     terrain/GranularTerrain.cpp
     terrain/FEADeformableTerrain.h
     terrain/FEADeformableTerrain.cpp
+    terrain/MMXTerrain.h
+    terrain/MMXTerrain.cpp
 )
 if(HAVE_OPENCRG)
     set(CV_OPENCRG_FILES
@@ -462,6 +464,8 @@ set(CV_WV_TEST_RIG_FILES
     wheeled_vehicle/test_rig/ChDataDriverSTR.cpp
     wheeled_vehicle/test_rig/ChTireTestRig.h
     wheeled_vehicle/test_rig/ChTireTestRig.cpp
+    wheeled_vehicle/test_rig/MMXTireTestRig.h
+    wheeled_vehicle/test_rig/MMXTireTestRig.cpp
 )
 if(ENABLE_MODULE_IRRLICHT)
     set(CVIRR_WV_TEST_RIG_FILES
@@ -521,6 +525,8 @@ set(CV_WV_TIRE_FILES
     wheeled_vehicle/tire/ANCFToroidalTire.cpp
     wheeled_vehicle/tire/ReissnerToroidalTire.h
     wheeled_vehicle/tire/ReissnerToroidalTire.cpp
+    wheeled_vehicle/tire/MMXPaddleTire.h
+    wheeled_vehicle/tire/MMXPaddleTire.cpp
 )
 source_group("wheeled_vehicle\\tire" FILES ${CV_WV_TIRE_FILES})
 

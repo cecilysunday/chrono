@@ -78,13 +78,12 @@ class CH_VEHICLE_API MMXTireTestRig {
     /// The terrain subsystem consists of identical spherical particles initialized in layers.
     /// A moving-patch option is used, with the patch dimensions set based on the tire dimensions.
     void SetTerrainMMX(std::shared_ptr<ChMaterialSurfaceSMC> mat_g,
-							std::shared_ptr<ChMaterialSurfaceSMC> mat_w,
-							double radius,            ///< particle radius [m]
-                            unsigned int num_layers,  ///< number of layers for initial particle creation
-                            double density,           ///< particle material density [kg/m3]
-                            double friction,          ///< inter-particle coefficient of friction
-                            double cohesion,          ///< inter-particle cohesion pressure [Pa]
-                            double Young_modulus      ///< particle contact material Young's modulus [Pa]
+                       std::shared_ptr<ChMaterialSurfaceSMC> mat_w,
+                       double length,
+                       double width,
+					   double height,
+					   double radius,        
+                       double density
     );
 
     /// Set time delay before releasing the wheel (default: 0s).
@@ -128,15 +127,11 @@ class CH_VEHICLE_API MMXTireTestRig {
 	struct TerrainParamsMMX {
         std::shared_ptr<ChMaterialSurfaceSMC> mat_g;
         std::shared_ptr<ChMaterialSurfaceSMC> mat_w;
-        double radius;            ///< particle radius
-        unsigned int num_layers;  ///< number of layers for initial particle creation
-        double density;           ///< particle material density (kg/m3)
-        double friction;          ///< inter-particle coefficient of friction
-        double cohesion;          ///< inter-particle cohesion pressure (Pa)
-        double Young_modulus;     ///< particle contact material Young's modulus (Pa)
         double length;
-        double width;
-        double thickness;
+        double width;        
+        double height; 
+        double radius;
+        double density;
     };
 
     void CreateMechanism();
@@ -158,7 +153,7 @@ class CH_VEHICLE_API MMXTireTestRig {
     double m_total_mass;    ///< total sprung mass
     double m_time_delay;    ///< time delay before applying external load 
 
-    TerrainType m_terrain_type;               ///< terrain type
+    TerrainType m_terrain_type;     ///< terrain type
     TerrainParamsMMX m_params_mmx;  ///< granular terrain parameters
 
     double m_terrain_offset;  ///< Y coordinate of tire center

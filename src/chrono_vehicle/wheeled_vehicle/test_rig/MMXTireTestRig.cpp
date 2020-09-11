@@ -73,28 +73,22 @@ void MMXTireTestRig::SetTireCollisionType(ChTire::CollisionType coll_type) {
 // -----------------------------------------------------------------------------
 
 void MMXTireTestRig::SetTerrainMMX(std::shared_ptr<ChMaterialSurfaceSMC> mat_g,
-									   std::shared_ptr<ChMaterialSurfaceSMC> mat_w,
-									   double radius,
-                                       unsigned int num_layers,
-                                       double density,
-                                       double friction,
-                                       double cohesion,
-                                       double Young_modulus) {
+                                   std::shared_ptr<ChMaterialSurfaceSMC> mat_w,
+                                   double length,
+								   double width,
+								   double height,
+								   double radius,
+                                   double density) {
+
     m_terrain_type = TerrainType::MMX;
 
-    m_params_mmx.radius = radius;
-    m_params_mmx.num_layers = num_layers;
-    m_params_mmx.density = density;
-
 	m_params_mmx.mat_g = mat_g;
-
-    m_params_mmx.friction = friction;
-    m_params_mmx.cohesion = cohesion;
-    m_params_mmx.Young_modulus = Young_modulus;
-
-    m_params_mmx.length = 800.0;  // 5.0 * m_tire->GetRadius();
-    m_params_mmx.width = 150.0;   // 2.0 * m_tire->GetRadius();  //// TODO: m_tire->GetWidth();
-    m_params_mmx.thickness = 10.0;  //// TODO: get thickness
+    m_params_mmx.mat_w = mat_w;
+    m_params_mmx.length = length;
+    m_params_mmx.width = width;
+    m_params_mmx.height = height;
+    m_params_mmx.radius = radius;
+    m_params_mmx.density = density;
 }
 
 // -----------------------------------------------------------------------------
@@ -206,7 +200,7 @@ void MMXTireTestRig::Advance(double step) {
 
 void MMXTireTestRig::CreateMechanism() {
     // Create rig bodies
-    const double dim = m_tire->GetRadius() / 10.0; // m_params_mmx.thickness;
+    const double dim = m_tire->GetRadius() / 10.0;
     const double max_length = m_params_mmx.length;
 
     m_ground_body = std::shared_ptr<ChBody>(m_system->NewBody());
@@ -366,7 +360,8 @@ void MMXTireTestRig::CreateTerrain() {
 }
 
 void MMXTireTestRig::CreateTerrainMMX() {
-    double vertical_offset = m_params_mmx.num_layers * 2.0 * m_params_mmx.radius + 6.0 * m_params_mmx.radius;
+    //double vertical_offset = m_params_mmx.num_layers * 2.0 * m_params_mmx.radius + 6.0 * m_params_mmx.radius;
+    double vertical_offset = 6.0 * m_params_mmx.radius;
     ChVector<> location(0, m_terrain_offset, m_terrain_height - vertical_offset);
 
     auto terrain = chrono_types::make_shared<vehicle::MMXTerrain>(m_system);
@@ -376,7 +371,9 @@ void MMXTireTestRig::CreateTerrainMMX() {
     terrain->EnableRoughSurface(true);
     terrain->EnableVisualization(false);
     terrain->EnableVerbose(true);
-    terrain->Initialize(location, m_params_mmx.length, m_params_mmx.width, m_params_mmx.thickness, m_params_mmx.num_layers,
+    //terrain->Initialize(location, m_params_mmx.length, m_params_mmx.width, m_params_mmx.thickness, m_params_mmx.num_layers,
+    //                    m_params_mmx.radius, m_params_mmx.density);
+    terrain->Initialize(location, m_params_mmx.length, m_params_mmx.width, m_params_mmx.height,
                         m_params_mmx.radius, m_params_mmx.density);
 
     m_terrain = terrain;

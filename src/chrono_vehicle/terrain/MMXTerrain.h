@@ -62,14 +62,6 @@ class CH_VEHICLE_API MMXTerrain : public ChTerrain {
     /// Get the current contact material.
     std::shared_ptr<ChMaterialSurface> GetContactMaterial() const { return m_material; }
 
-    /// Set outward collision envelope.
-    /// This value is used for the internal custom collision detection for imposing
-    /// boundary conditions.  Note that if the underlying system is of SMC type (i.e.,
-    /// using a penalty-based contact method), the envelope is automatically set to 0.
-    /// For NSC systems (i.e., when using a complementarity-based contact method), if
-    /// the envelope is not specified, the default value is 5% of the particle radius.
-    void SetCollisionEnvelope(double envelope) { m_envelope = envelope; }
-
     /// Set the minimum number of particles to be generated (default: 0).
     void SetMinNumParticles(unsigned int min_num_particles) { m_min_num_particles = min_num_particles; }
 
@@ -78,13 +70,6 @@ class CH_VEHICLE_API MMXTerrain : public ChTerrain {
 
     /// Enable creation of particles fixed to bottom container.
     void EnableRoughSurface(bool val) { m_rough_surface = val; }
-
-    /// Enable moving patch and set parameters.
-    /* void EnableMovingPatch(std::shared_ptr<ChBody> body,              ///< monitored body
-                           double buffer_distance,                    ///< look-ahead distance
-                           double shift_distance,                     ///< chunk size of relocated particles
-                           const ChVector<>& init_vel = ChVector<>()  ///< initial particle velocity
-                           );*/
 
     /// Set start value for body identifiers of generated particles (default: 1000000).
     /// It is assumed that all bodies with a larger identifier are granular material particles.
@@ -106,29 +91,28 @@ class CH_VEHICLE_API MMXTerrain : public ChTerrain {
     /// minimum value (see SetMinNumParticles).
     /// The initial particle locations are obtained with Poisson Disk sampling, using the
     /// given minimum separation distance.
-    void Initialize(ChVector<>& center,						   ///< [in] center of bottom
-                    double length,                             ///< [in] patch dimension in X direction
-                    double width,                              ///< [in] patch dimension in Y direction
-                    double thickness,                          ///< [in] wall thickness
-                    unsigned int num_layers,                   ///< [in] number of layers
-                    double radius,                             ///< [in] particle radius
-                    double density,                            ///< [in] particle density
-                    const ChVector<>& init_vel = ChVector<>()  ///< [in] particle initial velocity
+    void Initialize(ChVector<>& center,	
+                    double length,
+                    double width,
+                    double height,
+                    double radius,
+                    double density,
+                    const ChVector<>& init_vel = ChVector<>()
                     );
 
     /// Update the state of the terrain system at the specified time.
     virtual void Synchronize(double time) override;
 
     /// Get current front boundary location (in positive X direction).
-    double GetPatchFront() const { return m_front; }
+    //double GetPatchFront() const { return m_front; }
     /// Get current rear boundary location (in negative X direction).
-    double GetPatchRear() const { return m_rear; }
+    //double GetPatchRear() const { return m_rear; }
     /// Get left boundary location (in positive Y direction).
-    double GetPatchLeft() const { return m_left; }
+    //double GetPatchLeft() const { return m_left; }
     /// Get right boundary location (in negative Y direction).
-    double GetPatchRight() const { return m_right; }
+    //double GetPatchRight() const { return m_right; }
     /// Get bottom boundary location.
-    double GetPatchBottom() const { return m_bottom; }
+    //double GetPatchBottom() const { return m_bottom; }
 
     /// Report if the patch was moved during the last call to Synchronize().
     // bool PatchMoved() const { return m_moved; }
@@ -153,36 +137,36 @@ class CH_VEHICLE_API MMXTerrain : public ChTerrain {
     virtual float GetCoefficientFriction(const ChVector<>& loc) const override;
 
   private:
-    unsigned int m_min_num_particles;  ///< requested minimum number of particles
-    unsigned int m_num_particles;      ///< actual number of particles
-    int m_start_id;                    ///< start body identifier for particles
-    double m_radius;                   ///< particle radius
+    unsigned int m_min_num_particles;   ///< requested minimum number of particles
+    unsigned int m_num_particles;       ///< actual number of particles
+    int m_start_id;                     ///< start body identifier for particles
+    double m_radius;                    ///< particle radius
 
     // Patch dimensions
-    double m_length;		///< length (X direction) of granular patch
-    double m_width;			///< width (Y direction) of granular patch
-    double m_thickness;     ///< wall thickness
+    double m_length;					///< length (X direction) of granular patch
+    double m_width;						///< width (Y direction) of granular patch
+    double m_height;					///< width (z direction) of granular patch
 
     // Boundary locations
-    double m_front;   ///< front (positive X) boundary location
-    double m_rear;    ///< rear (negative X) boundary location
-    double m_left;    ///< left (positive Y) boundary location
-    double m_right;   ///< right (negative Y) boundary location
-    double m_bottom;  ///< bottom boundary location
+    double m_front;						///< front (positive X) boundary location
+    double m_rear;						///< rear (negative X) boundary location
+    double m_left;						///< left (positive Y) boundary location
+    double m_right;						///< right (negative Y) boundary location
+    double m_bottom;					///< bottom boundary location
 
     // Moving patch parameters
     // bool m_moving_patch;             ///< moving patch feature enabled?
     // bool m_moved;                    ///< was the patch moved?
-    std::shared_ptr<ChBody> m_body;  ///< tracked body
+    // std::shared_ptr<ChBody> m_body;  ///< tracked body
     // double m_buffer_distance;        ///< minimum distance to front boundary
     // double m_shift_distance;         ///< size (X direction) of relocated volume
-    ChVector<> m_init_part_vel;      ///< initial particle velocity
+    // ChVector<> m_init_part_vel;      ///< initial particle velocity
 
     // Rough surface (ground-fixed spheres)
     bool m_rough_surface;  ///< rough surface feature enabled?
 
     // Collision envelope used in custom collision detection
-    double m_envelope;  ///< collision outward envelope
+    // double m_envelope;  ///< collision outward envelope
 
     bool m_vis_enabled;                     ///< boundary visualization enabled?
     std::shared_ptr<ChBody> m_ground;       ///< ground body
@@ -192,7 +176,7 @@ class CH_VEHICLE_API MMXTerrain : public ChTerrain {
 
     bool m_verbose;  ///< verbose output
 
-    // friend class BoundaryContactMMX;
+    friend class BoundaryContactMMX;
 };
 
 /// @} vehicle_terrain

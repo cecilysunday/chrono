@@ -9,31 +9,31 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Cecily Sunday
 // =============================================================================
 //
-// Granular terrain model.
-// This class implements a rectangular patch of granular terrain.
-// Optionally, a moving patch feature can be enable so that the patch is
-// relocated (currently only in the positive X direction) based on the position
-// of a user-specified body.
-// Boundary conditions (model of a container bin) are imposed through a custom
-// collision detection object.
+// MMX terrain model
 //
-// Reference frame is ISO (X forward, Y left, Z up).
-// All units SI.
+// This class implements a patch of rectangular terrain based on a list of 
+// input particle positions and sizes. Boundary conditions (model of a container 
+// bin) are imposed through a custom collision detection object.
+//
+// Reference frame is ISO (X forward, Y left, Z up)
 //
 // =============================================================================
 //
-// TODO:
-//   - re-enable collision envelope for lateral boundaries.
-//   - currently disabled due to a bug in Chrono::Parallel where cohesion forces
+// TODO: DO THESE COMMENTS STILL APPLY??
+//   - Re-enable collision envelope for lateral boundaries.
+//   - Currently disabled due to a bug in Chrono::Parallel where cohesion forces
 //     are applied even when the penetration depth is positive!
-//   - as a result, if envelope is considered, particles stick to the lateral
+//   - As a result, if envelope is considered, particles stick to the lateral
 //     boundaries...
-//   - for now, also make sure the envelope is not too large:  it's still used
+//   - For now, also make sure the envelope is not too large:  it's still used
 //     for the bottom boundary and, if present, for the collision with the
 //     ground-fixed spheres
+//
+//   - Import both wall and grain material properties
+//   - Update the 'find height' function
 //
 // =============================================================================
 
@@ -57,12 +57,9 @@ namespace vehicle {
 // -----------------------------------------------------------------------------
 // Default constructor
 // -----------------------------------------------------------------------------
-MMXTerrain::MMXTerrain(ChSystem* system)
-    : m_start_id(0), 
-	  m_num_particles(0), 
-	  m_vis_enabled(false) {
+MMXTerrain::MMXTerrain(ChSystem* system) : m_start_id(0), m_num_particles(0) {
     
-	  // Create the ground body and add it to the system.
+	  // Create the ground body and add it to the system
       m_ground = std::shared_ptr<ChBody>(system->NewBody());
       m_ground->SetName("ground");
       m_ground->SetPos(ChVector<>(0, 0, 0));
@@ -70,14 +67,15 @@ MMXTerrain::MMXTerrain(ChSystem* system)
       m_ground->SetCollide(false);
       system->AddBody(m_ground);
 
-      // Set default parameters for contact material
+      // Set the default parameters for contact material
       MaterialInfo minfo;
       minfo.mu = 0.9f;
       minfo.cr = 0.0f;
       minfo.Y = 2e5f;
-      m_material = minfo.CreateMaterial(system->GetContactMethod());
+      m_ground_material = minfo.CreateMaterial(system->GetContactMethod());
+      m_sphere_material = minfo.CreateMaterial(system->GetContactMethod());
 
-      // Create the default color asset
+      // Create the default color assets
       m_ground_color = chrono_types::make_shared<ChColorAsset>();
       m_ground_color->SetColor(ChColor(0.65f, 0.44f, 0.39f));
 
@@ -138,7 +136,7 @@ void BoundaryContactMMX::CheckBottom(ChBody* body, const ChVector<>& center, con
     contact.distance = dist - radius;
     contact.eff_radius = radius;
 
-    body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_material, m_terrain->m_material);
+    body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_ground_material, m_terrain->m_sphere_material);
 }
 
 // Check contact between granular material and left boundary.
@@ -159,7 +157,7 @@ void BoundaryContactMMX::CheckLeft(ChBody* body, const ChVector<>& center, const
     contact.distance = dist - radius;
     contact.eff_radius = radius;
 
-    body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_material, m_terrain->m_material);
+    body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_ground_material, m_terrain->m_sphere_material);
 }
 
 // Check contact between granular material and right boundary.
@@ -180,7 +178,7 @@ void BoundaryContactMMX::CheckRight(ChBody* body, const ChVector<>& center, cons
     contact.distance = dist - radius;
     contact.eff_radius = radius;
 
-    body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_material, m_terrain->m_material);
+    body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_ground_material, m_terrain->m_sphere_material);
 }
 
 // Check contact between granular material and front boundary.
@@ -201,7 +199,7 @@ void BoundaryContactMMX::CheckFront(ChBody* body, const ChVector<>& center, cons
     contact.distance = dist - radius;
     contact.eff_radius = radius;
 
-    body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_material, m_terrain->m_material);
+    body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_ground_material, m_terrain->m_sphere_material);
 }
 
 // Check contact between granular material and rear boundary.
@@ -222,7 +220,7 @@ void BoundaryContactMMX::CheckRear(ChBody* body, const ChVector<>& center, const
     contact.distance = dist - radius;
     contact.eff_radius = radius;
 
-    body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_material, m_terrain->m_material);
+    body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_ground_material, m_terrain->m_sphere_material);
 }
 
 // -----------------------------------------------------------------------------
@@ -242,106 +240,21 @@ void MMXTerrain::Initialize(const ChVector<>& center,
     m_height = height;
     m_radius = radius;
 
-    // Set boundary locations
+    // Set the container boundary locations
     m_front = center.x() + length / 2.0;
     m_rear = center.x() - length / 2.0;
     m_left = center.y() + width / 2.0;
     m_right = center.y() - width / 2.0;
     m_bottom = center.z();
 
-    /*// Create a box around the terrain area. If enabled, create visualization assets for the boundaries.
-    // FIX THESE
-    double cthickness = 10.0;
-    double cmass = 1.0E3;
-    double tempt = cthickness * 0.99;
-    double temph = 2.0 * height;
-
-    ChVector<> sbase = ChVector<>(length, width, tempt) / 2.0;
-    ChVector<> srght = ChVector<>(tempt, width, temph + 2.0 * cthickness) / 2.0;
-    ChVector<> sback = ChVector<>(length + 2.0 * cthickness, tempt, temph + 2.0 * cthickness) / 2.0;
-
-    ChVector<> pbase = center - ChVector<>(0, 0, cthickness) / 2.0;
-    ChVector<> prght = center + ChVector<>(length + cthickness, 0, temph) / 2.0;
-    ChVector<> pleft = center - ChVector<>(length + cthickness, 0, -temph) / 2.0;
-    ChVector<> pfrnt = center + ChVector<>(0, width + cthickness, temph) / 2.0;
-    ChVector<> pback = center - ChVector<>(0, width + cthickness, -temph) / 2.0;
-
-    //auto base = m_ground->GetSystem()->NewBody();
-    int ground_id = m_ground->GetSystem()->Get_bodylist().size() * -1;
-    /*m_ground->SetIdentifier(ground_id);
-    m_ground->SetMass(cmass);
-    m_ground->SetPos(pbase);
-    m_ground->SetBodyFixed(true);
-    m_ground->SetCollide(true);
-
-    m_ground->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(m_ground.get(), m_material, sbase, VNULL, QUNIT, m_vis_enabled);  // UPDATE FOR TWO MATERIAL INPUTS 
-	m_ground->GetCollisionModel()->BuildModel();
-
-    auto right = m_ground->GetSystem()->NewBody();
-    right->SetIdentifier(--ground_id);
-    right->SetMass(cmass);
-    right->SetPos(prght);
-    right->SetBodyFixed(true);
-    right->SetCollide(true);
-
-    right->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(right, m_material, srght, VNULL, QUNIT, m_vis_enabled);  // UPDATE FOR TWO MATERIAL INPUTS
-    right->GetCollisionModel()->BuildModel();
-
-    auto left = m_ground->GetSystem()->NewBody();
-    left->SetIdentifier(--ground_id);
-    left->SetMass(cmass);
-    left->SetPos(pleft);
-    left->SetBodyFixed(true);
-    left->SetCollide(true);
-
-    left->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(left, m_material, srght, VNULL, QUNIT, m_vis_enabled);  // UPDATE FOR TWO MATERIAL INPUTS
-    left->GetCollisionModel()->BuildModel();
-
-    auto back = m_ground->GetSystem()->NewBody();
-    back->SetIdentifier(--ground_id);
-    back->SetMass(cmass);
-    back->SetPos(pback);
-    back->SetBodyFixed(true);
-    back->SetCollide(true);
-
-    back->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(back, m_material, sback, VNULL, QUNIT, m_vis_enabled);  // UPDATE FOR TWO MATERIAL INPUTS
-    back->GetCollisionModel()->BuildModel();
-
-    auto front = m_ground->GetSystem()->NewBody();
-    front->SetIdentifier(--ground_id);
-    front->SetMass(cmass);
-    front->SetPos(pfrnt);
-    front->SetBodyFixed(true);
-    front->SetCollide(true);
-
-    front->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(front, m_material, sback, VNULL, QUNIT, false);  // UPDATE FOR TWO MATERIAL INPUTS
-    front->GetCollisionModel()->BuildModel();
-
-    // std::shared_ptr<ChBody> basePtr(base);
-    std::shared_ptr<ChBody> rghtPtr(right);
-    std::shared_ptr<ChBody> leftPtr(left);
-    std::shared_ptr<ChBody> backPtr(back);
-    std::shared_ptr<ChBody> frntPtr(front);
-
-    // m_ground->GetSystem()->AddBody(basePtr);
-    m_ground->GetSystem()->AddBody(rghtPtr);
-    m_ground->GetSystem()->AddBody(leftPtr);
-    m_ground->GetSystem()->AddBody(backPtr);
-    m_ground->GetSystem()->AddBody(frntPtr);*/
-
-    // Set an invisible ground body at the base of the terrain patch
+    // Create an invisible ground body at the base of the terrain patch. This is simply used as a reference body
     int g_id = -1 * m_ground->GetSystem()->Get_bodylist().size();
 	m_ground->SetIdentifier(g_id);
     m_ground->SetPos(center);
 
 	// Add the particles to the system. If initial prarticle positions are not provided, create a rough surface
     if (pinfo.size() == 0) {
-		// Define parameters needed to create a rough surface
+		// Define spacing parameters needed to create the rough surface
         double marg = radius * 1.01;
         double sft_x = marg;
         double sft_y = 2.0 * marg * sin(CH_C_PI / 3.0);
@@ -370,7 +283,7 @@ void MMXTerrain::Initialize(const ChVector<>& center,
 						sphere->SetCollide(true);
                         sphere->AddAsset(m_ground_color);
 						sphere->GetCollisionModel()->ClearModel();
-						utils::AddSphereGeometry(sphere, m_material, radius);
+						utils::AddSphereGeometry(sphere, m_sphere_material, radius);
 						sphere->GetCollisionModel()->BuildModel();
 
 						std::shared_ptr<ChBody> spherePtr(sphere);
@@ -381,7 +294,7 @@ void MMXTerrain::Initialize(const ChVector<>& center,
 			}
         }
     } else {
-		// Add particles to the system based on in array of input positions
+		// Fill the container with particles using and input array of particle positions and sizes
         int p_id = m_start_id;
         for (size_t i = 0; i < pinfo.size(); i++) {
 			double rad = pinfo.at(i).second;
@@ -398,7 +311,7 @@ void MMXTerrain::Initialize(const ChVector<>& center,
             sphere->SetCollide(true);
             sphere->AddAsset(m_sphere_color);
             sphere->GetCollisionModel()->ClearModel();
-            utils::AddSphereGeometry(sphere, m_material, rad);
+            utils::AddSphereGeometry(sphere, m_sphere_material, rad);
             sphere->GetCollisionModel()->BuildModel();
 
             std::shared_ptr<ChBody> spherePtr(sphere);
@@ -413,7 +326,6 @@ void MMXTerrain::Initialize(const ChVector<>& center,
     m_ground->GetSystem()->RegisterCustomCollisionCallback(cb);
 }
 
-// FIX THIS ?
 void MMXTerrain::Synchronize(double time) {
     return;
 }
@@ -434,12 +346,11 @@ ChVector<> MMXTerrain::GetNormal(const ChVector<>& loc) const {
     return ChWorldFrame::Vertical();
 }
 
-// FIX THIS ?
 float MMXTerrain::GetCoefficientFriction(const ChVector<>& loc) const {
     if (m_friction_fun)
         return (*m_friction_fun)(loc);
 
-    return m_material->GetSfriction();
+    return m_sphere_material->GetSfriction();
 }
 
 }  // end namespace vehicle

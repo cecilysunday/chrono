@@ -9,10 +9,14 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Cecily Sunday
 // =============================================================================
 //
-// Implementation of a single-tire test rig.
+// Implementation of the MMX single-tire test rig
+//
+// TODO:
+// - Look at the advance function and undertand what is happening with all
+//   of the subsystems synchronize and advance calls
 //
 // =============================================================================
 
@@ -72,8 +76,8 @@ void MMXTireTestRig::SetTireCollisionType(ChTire::CollisionType coll_type) {
 
 // -----------------------------------------------------------------------------
 
-void MMXTireTestRig::SetTerrainMMX(std::shared_ptr<ChMaterialSurfaceSMC> mat_g,
-                                   std::shared_ptr<ChMaterialSurfaceSMC> mat_w,
+void MMXTireTestRig::SetTerrainMMX(std::shared_ptr<ChMaterialSurfaceSMC> sphere_mat,
+                                   std::shared_ptr<ChMaterialSurfaceSMC> ground_mat,
                                    double length,
 								   double width,
 								   double height,
@@ -82,8 +86,8 @@ void MMXTireTestRig::SetTerrainMMX(std::shared_ptr<ChMaterialSurfaceSMC> mat_g,
 
     m_terrain_type = TerrainType::MMX;
 
-	m_params_mmx.mat_g = mat_g;
-    m_params_mmx.mat_w = mat_w;
+	m_params_mmx.sphere_mat = sphere_mat;
+    m_params_mmx.ground_mat = ground_mat;
     m_params_mmx.length = length;
     m_params_mmx.width = width;
     m_params_mmx.height = height;
@@ -107,7 +111,7 @@ void MMXTireTestRig::Initialize() {
     CreateTerrain();
 }
 
-void MMXTireTestRig::Reinitialize() {
+void MMXTireTestRig::Update() {
     if (m_ls_actuated)
         m_lin_motor->SetSpeedFunction(m_ls_fun);
 
@@ -154,22 +158,6 @@ class RotSpeedFunction : public BaseFunction, public ChFunction {
     double m_slip;
     double m_radius;
 };
-
-void MMXTireTestRig::Initialize(double long_slip, double base_speed) {
-    m_ls_actuated = true;
-    m_rs_actuated = true;
-
-    CreateMechanism();
-
-    m_ls_fun = chrono_types::make_shared<LinSpeedFunction>(base_speed);
-    m_rs_fun = chrono_types::make_shared<RotSpeedFunction>(long_slip, base_speed, m_tire->GetRadius());
-
-    m_lin_motor->SetSpeedFunction(m_ls_fun);
-    m_rot_motor->SetSpeedFunction(m_rs_fun);
-    m_slip_lock->SetMotion_ang(m_sa_fun);
-
-    CreateTerrain();
-}
 
 // -----------------------------------------------------------------------------
 
@@ -338,7 +326,7 @@ void MMXTireTestRig::CreateMechanism() {
     m_tire->SetVisualizationType(m_tire_vis);
 
     // Set the rig offset based on wheel center
-    m_rig_hoffset = 3 * dim; //+ m_tire->GetWidth() / 2.0;
+    m_rig_hoffset = 3 * dim + m_wheel->GetWidth() / 2.0;
     m_rig_voffset = 4 * dim + m_tire->GetRadius();
 }
 
@@ -355,20 +343,13 @@ void MMXTireTestRig::CreateTerrain() {
 }
 
 void MMXTireTestRig::CreateTerrainMMX() {
-
-	// 3) Set wall and particle material properties
-
-
     double terrain_voffset = m_params_mmx.height + 2.0 * m_params_mmx.radius;
-    ChVector<> location = ChVector<>(0, m_rig_hoffset, -m_rig_voffset - terrain_voffset);
+	ChVector<> location = ChVector<>(0, m_rig_hoffset, -m_rig_voffset - terrain_voffset);
 
     auto terrain = chrono_types::make_shared<vehicle::MMXTerrain>(m_system);
-    terrain->SetStartIdentifier(0);
-	
-	terrain->SetContactMaterial(m_params_mmx.mat_g);
-    
-	terrain->EnableVisualization(false);
-
+	terrain->SetStartIdentifier(0);
+    terrain->SetSphereContactMaterial(m_params_mmx.sphere_mat);
+	terrain->SetGroundContactMaterial(m_params_mmx.ground_mat);
     terrain->Initialize(location, m_params_mmx.length, m_params_mmx.width, m_params_mmx.height, m_params_mmx.radius,
                         m_params_mmx.density, m_params_mmx.pinfo);
 

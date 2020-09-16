@@ -9,17 +9,14 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban with modifications by Cecily Sunday
+// Authors: Radu Serban, Cecily Sunday
 // =============================================================================
 //
 // Implementation of a single-tire test rig for MMX rover wheels
-// - Accepts an arbitrary Chrono::Vehicle tire object
-//   (and associated ChWheel object)
+// - Accepts an arbitrary Chrono::Vehicle tire object (associated ChWheel object)
 // - Works with MMX terrain
 // - Allows variation of longitudinal speed, wheel angular speed, and wheel slip
 //   angle as functions of time
-// - Provides support for automatic selection of longitudinal and angular speeds
-//   in order to enforce a specified longitudinal slip value
 // - Allows specification of camber angle (kept constant through the simulation)
 //
 // =============================================================================
@@ -80,8 +77,8 @@ class CH_VEHICLE_API MMXTireTestRig {
     /// Enable use of MMX terrain.
     /// The terrain subsystem consists of identical spherical particles initialized in layers.
     /// A moving-patch option is used, with the patch dimensions set based on the tire dimensions.
-    void SetTerrainMMX(std::shared_ptr<ChMaterialSurfaceSMC> mat_g,
-                       std::shared_ptr<ChMaterialSurfaceSMC> mat_w,
+    void SetTerrainMMX(std::shared_ptr<ChMaterialSurfaceSMC> sphere_mat,
+                       std::shared_ptr<ChMaterialSurfaceSMC> ground_mat,
                        double length,
                        double width,
                        double height,
@@ -95,14 +92,8 @@ class CH_VEHICLE_API MMXTireTestRig {
     /// responsibility to set these up for a meaningful test.
     void Initialize();
 
-    ///  Re-initialize the rig system when motor functions have been updated
-    void Reinitialize();
-
-    /// Initialize the rig system for a simulation with given longitudinal slip. This version overrides the motion
-    /// functions for the carrier longitudinal slip and for the wheel angular speed to enfore the specified longitudinal
-    /// slip value. A positive slip value indicates that the wheel is spinning. A negative slip value indicates that the
-    /// wheel is sliding (skidding); in particular, s=-1 indicates sliding without rotation.
-    void Initialize(double long_slip, double base_speed = 1);
+    ///  Update the rig system if motor functions have changed
+    void Update();
 
     /// Advance system state by the specified time step.
     void Advance(double step);
@@ -126,8 +117,8 @@ class CH_VEHICLE_API MMXTireTestRig {
     enum class TerrainType { MMX, NONE };
 
     struct TerrainParamsMMX {
-        std::shared_ptr<ChMaterialSurfaceSMC> mat_g;
-        std::shared_ptr<ChMaterialSurfaceSMC> mat_w;
+        std::shared_ptr<ChMaterialSurfaceSMC> sphere_mat;
+        std::shared_ptr<ChMaterialSurfaceSMC> ground_mat;
         double length;
         double width;
         double height;
@@ -157,15 +148,15 @@ class CH_VEHICLE_API MMXTireTestRig {
 
     TerrainType m_terrain_type;				 ///< terrain type
     TerrainParamsMMX m_params_mmx;			 ///< granular terrain parameters
+                                            
+    double m_rig_hoffset;					 ///< horizontal offset from the base frame to the wheel face
+    double m_rig_voffset;					 ///< vertical offset from the base frame to the bottom of the wheel
 
-    double m_rig_hoffset;				 
-    double m_rig_voffset;				
-
-    std::shared_ptr<ChBody> m_ground_body;   ///< ground body
-    std::shared_ptr<ChBody> m_carrier_body;  ///< rig carrier body
-    std::shared_ptr<ChBody> m_chassis_body;  ///< "chassis" body which carries normal load
-    std::shared_ptr<ChBody> m_slip_body;     ///< intermediate body for controlling slip angle
-    std::shared_ptr<ChBody> m_spindle_body;  ///< wheel spindle body
+    std::shared_ptr<ChBody> m_ground_body;   ///< pointer to the ground body
+    std::shared_ptr<ChBody> m_carrier_body;  ///< pointer to the rig carrier body
+    std::shared_ptr<ChBody> m_chassis_body;  ///< pointer to the "chassis" body which carries normal load
+    std::shared_ptr<ChBody> m_slip_body;     ///< pointer to the intermediate body for controlling slip angle
+    std::shared_ptr<ChBody> m_spindle_body;  ///< pointe to the wheel spindle body
 
     bool m_ls_actuated;                      ///< is linear spped actuated?
     bool m_rs_actuated;                      ///< is angular speed actuated?
@@ -174,9 +165,9 @@ class CH_VEHICLE_API MMXTireTestRig {
     std::shared_ptr<ChFunction> m_rs_fun;    ///< angular speed function of time
     std::shared_ptr<ChFunction> m_sa_fun;    ///< slip angle function of time
 
-    std::shared_ptr<ChLinkMotorLinearSpeed> m_lin_motor;    ///< carrier actuator
-    std::shared_ptr<ChLinkMotorRotationSpeed> m_rot_motor;  ///< wheel actuator
-    std::shared_ptr<ChLinkLockLock> m_slip_lock;            ///< slip angle actuator
+    std::shared_ptr<ChLinkMotorLinearSpeed> m_lin_motor;    ///< pointer to the carrier actuator
+    std::shared_ptr<ChLinkMotorRotationSpeed> m_rot_motor;  ///< pointer to the wheel actuator
+    std::shared_ptr<ChLinkLockLock> m_slip_lock;            ///< pointer to the slip angle actuator
 };
 
 /// @} vehicle_wheeled_test_rig

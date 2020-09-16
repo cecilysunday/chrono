@@ -62,25 +62,18 @@ class CH_VEHICLE_API MMXTerrain : public ChTerrain {
     /// Get the current contact material.
     std::shared_ptr<ChMaterialSurface> GetContactMaterial() const { return m_material; }
 
-    /// Set the minimum number of particles to be generated (default: 0).
-    void SetMinNumParticles(unsigned int min_num_particles) { m_min_num_particles = min_num_particles; }
-
-    /// Enable/disable verbose output (default: false).
-    void EnableVerbose(bool val) { m_verbose = val; }
-
-    /// Enable creation of particles fixed to bottom container.
-    void EnableRoughSurface(bool val) { m_rough_surface = val; }
-
     /// Set start value for body identifiers of generated particles (default: 1000000).
     /// It is assumed that all bodies with a larger identifier are granular material particles.
     void SetStartIdentifier(int id) { m_start_id = id; }
 
     /// Enable/disable visualization of boundaries (default: false).
     void EnableVisualization(bool val) { m_vis_enabled = val; }
-    bool IsVisualizationEnabled() const { return m_vis_enabled; }
 
     /// Set boundary visualization color.
-    void SetColor(ChColor color) { m_color->SetColor(color); }
+    void SetGroundColor(ChColor color) { m_ground_color->SetColor(color); }
+
+
+	void SetSphereColor(ChColor color) { m_sphere_color->SetColor(color); }
 
     /// Return a handle to the ground body.
     std::shared_ptr<ChBody> GetGroundBody() { return m_ground; }
@@ -91,31 +84,17 @@ class CH_VEHICLE_API MMXTerrain : public ChTerrain {
     /// minimum value (see SetMinNumParticles).
     /// The initial particle locations are obtained with Poisson Disk sampling, using the
     /// given minimum separation distance.
-    void Initialize(ChVector<>& center,	
+    void Initialize(const ChVector<>& center,	
                     double length,
                     double width,
                     double height,
                     double radius,
                     double density,
-                    const ChVector<>& init_vel = ChVector<>()
+                    const std::vector<std::pair<ChVector<>, double>>& pinfo
                     );
 
     /// Update the state of the terrain system at the specified time.
     virtual void Synchronize(double time) override;
-
-    /// Get current front boundary location (in positive X direction).
-    //double GetPatchFront() const { return m_front; }
-    /// Get current rear boundary location (in negative X direction).
-    //double GetPatchRear() const { return m_rear; }
-    /// Get left boundary location (in positive Y direction).
-    //double GetPatchLeft() const { return m_left; }
-    /// Get right boundary location (in negative Y direction).
-    //double GetPatchRight() const { return m_right; }
-    /// Get bottom boundary location.
-    //double GetPatchBottom() const { return m_bottom; }
-
-    /// Report if the patch was moved during the last call to Synchronize().
-    // bool PatchMoved() const { return m_moved; }
 
     /// Get the number of particles.
     unsigned int GetNumParticles() const { return m_num_particles; }
@@ -137,7 +116,6 @@ class CH_VEHICLE_API MMXTerrain : public ChTerrain {
     virtual float GetCoefficientFriction(const ChVector<>& loc) const override;
 
   private:
-    unsigned int m_min_num_particles;   ///< requested minimum number of particles
     unsigned int m_num_particles;       ///< actual number of particles
     int m_start_id;                     ///< start body identifier for particles
     double m_radius;                    ///< particle radius
@@ -154,27 +132,14 @@ class CH_VEHICLE_API MMXTerrain : public ChTerrain {
     double m_right;						///< right (negative Y) boundary location
     double m_bottom;					///< bottom boundary location
 
-    // Moving patch parameters
-    // bool m_moving_patch;             ///< moving patch feature enabled?
-    // bool m_moved;                    ///< was the patch moved?
-    // std::shared_ptr<ChBody> m_body;  ///< tracked body
-    // double m_buffer_distance;        ///< minimum distance to front boundary
-    // double m_shift_distance;         ///< size (X direction) of relocated volume
-    // ChVector<> m_init_part_vel;      ///< initial particle velocity
-
-    // Rough surface (ground-fixed spheres)
-    bool m_rough_surface;  ///< rough surface feature enabled?
-
-    // Collision envelope used in custom collision detection
-    // double m_envelope;  ///< collision outward envelope
-
     bool m_vis_enabled;                     ///< boundary visualization enabled?
-    std::shared_ptr<ChBody> m_ground;       ///< ground body
-    std::shared_ptr<ChColorAsset> m_color;  ///< color of boundary visualization asset
+    
+	std::shared_ptr<ChBody> m_ground;       ///< ground body
+    
+	std::shared_ptr<ChColorAsset> m_ground_color;  ///< color of boundary visualization asset
+    std::shared_ptr<ChColorAsset> m_sphere_color; 
 
     std::shared_ptr<ChMaterialSurface> m_material; ///< contact material properties    
-
-    bool m_verbose;  ///< verbose output
 
     friend class BoundaryContactMMX;
 };

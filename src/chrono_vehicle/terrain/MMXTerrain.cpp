@@ -54,16 +54,13 @@
 namespace chrono {
 namespace vehicle {
 
-
 // -----------------------------------------------------------------------------
 // Default constructor
 // -----------------------------------------------------------------------------
 MMXTerrain::MMXTerrain(ChSystem* system)
-    : m_start_id(0),
-      m_min_num_particles(0),
-      m_num_particles(0),
-      m_rough_surface(false),
-      m_vis_enabled(false) {
+    : m_start_id(0), 
+	  m_num_particles(0), 
+	  m_vis_enabled(false) {
     
 	  // Create the ground body and add it to the system.
       m_ground = std::shared_ptr<ChBody>(system->NewBody());
@@ -81,11 +78,12 @@ MMXTerrain::MMXTerrain(ChSystem* system)
       m_material = minfo.CreateMaterial(system->GetContactMethod());
 
       // Create the default color asset
-      m_color = chrono_types::make_shared<ChColorAsset>();
-      m_color->SetColor(ChColor(1, 1, 1));
-      m_ground->AddAsset(m_color);
-}
+      m_ground_color = chrono_types::make_shared<ChColorAsset>();
+      m_ground_color->SetColor(ChColor(0.65f, 0.44f, 0.39f));
 
+	  m_sphere_color = chrono_types::make_shared<ChColorAsset>();
+      m_sphere_color->SetColor(ChColor(0.0f, 0.28f, 0.67f));
+}
 
 // -----------------------------------------------------------------------------
 // Custom collision callback
@@ -96,11 +94,11 @@ class BoundaryContactMMX : public ChSystem::CustomCollisionCallback {
     virtual void OnCustomCollision(ChSystem* system) override;
 
   private:
-    void CheckBottom(ChBody* body, const ChVector<>& center);
-    //void CheckLeft(ChBody* body, const ChVector<>& center);
-    //void CheckRight(ChBody* body, const ChVector<>& center);
-    //void CheckFront(ChBody* body, const ChVector<>& center);
-    //void CheckRear(ChBody* body, const ChVector<>& center);
+    void CheckBottom(ChBody* body, const ChVector<>& center, const double& radius);
+    void CheckLeft(ChBody* body, const ChVector<>& center, const double& radius);
+    void CheckRight(ChBody* body, const ChVector<>& center, const double& radius);
+    void CheckFront(ChBody* body, const ChVector<>& center, const double& radius);
+    void CheckRear(ChBody* body, const ChVector<>& center, const double& radius);
 
     MMXTerrain* m_terrain;
     double m_radius;
@@ -109,22 +107,24 @@ class BoundaryContactMMX : public ChSystem::CustomCollisionCallback {
 void BoundaryContactMMX::OnCustomCollision(ChSystem* system) {
     auto bodylist = system->Get_bodylist();
     for (auto body : bodylist) {
-        auto center = body->GetPos();
-        //if (body->GetIdentifier() > m_terrain->m_start_id) {
-            // CheckLeft(body.get(), center);
-            // CheckRight(body.get(), center);
-            // CheckFront(body.get(), center);
-            // CheckRear(body.get(), center);
-            CheckBottom(body.get(), center);
-        //}
+		if (body->GetIdentifier() >= m_terrain->m_start_id) {
+            auto center = body->GetPos();
+            auto radius = body->GetCollisionModel()->GetShapeDimensions(0).at(0);
+			
+			CheckBottom(body.get(), center, radius);
+            CheckLeft(body.get(), center, radius);
+            CheckRight(body.get(), center, radius);
+            CheckFront(body.get(), center, radius);
+            CheckRear(body.get(), center, radius);
+        }
     }
 }
 
 // Check contact between granular material and bottom boundary.
-void BoundaryContactMMX::CheckBottom(ChBody* body, const ChVector<>& center) {
+void BoundaryContactMMX::CheckBottom(ChBody* body, const ChVector<>& center, const double& radius) {
     double dist = center.z() - m_terrain->m_bottom;
 
-    if (dist > m_radius)
+    if (dist > radius)
         return;
 
     collision::ChCollisionInfo contact;
@@ -134,19 +134,18 @@ void BoundaryContactMMX::CheckBottom(ChBody* body, const ChVector<>& center) {
     contact.shapeB = nullptr;
     contact.vN = ChVector<>(0, 0, 1);
     contact.vpA = ChVector<>(center.x(), center.y(), m_terrain->m_bottom);
-    contact.vpB = ChVector<>(center.x(), center.y(), center.z() - m_radius);
-    contact.distance = dist - m_radius;
-    contact.eff_radius = m_radius;
+    contact.vpB = ChVector<>(center.x(), center.y(), center.z() - radius);
+    contact.distance = dist - radius;
+    contact.eff_radius = radius;
 
     body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_material, m_terrain->m_material);
 }
 
 // Check contact between granular material and left boundary.
-/*void BoundaryContactMMX::CheckLeft(ChBody* body, const ChVector<>& center) {
+void BoundaryContactMMX::CheckLeft(ChBody* body, const ChVector<>& center, const double& radius) {
     double dist = m_terrain->m_left - center.y();
 
-    ////if (dist > m_radius + 2 * m_terrain->m_envelope)
-    if (dist > m_radius)
+    if (dist > radius)
         return;
 
     collision::ChCollisionInfo contact;
@@ -156,19 +155,18 @@ void BoundaryContactMMX::CheckBottom(ChBody* body, const ChVector<>& center) {
     contact.shapeB = nullptr;
     contact.vN = ChVector<>(0, -1, 0);
     contact.vpA = ChVector<>(center.x(), m_terrain->m_left, center.z());
-    contact.vpB = ChVector<>(center.x(), center.y() + m_radius, center.z());
-    contact.distance = dist - m_radius;
-    contact.eff_radius = m_radius;
+    contact.vpB = ChVector<>(center.x(), center.y() + radius, center.z());
+    contact.distance = dist - radius;
+    contact.eff_radius = radius;
 
     body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_material, m_terrain->m_material);
 }
 
 // Check contact between granular material and right boundary.
-void BoundaryContactMMX::CheckRight(ChBody* body, const ChVector<>& center) {
+void BoundaryContactMMX::CheckRight(ChBody* body, const ChVector<>& center, const double& radius) {
     double dist = center.y() - m_terrain->m_right;
 
-    ////if (dist > m_radius + 2 * m_terrain->m_envelope)
-    if (dist > m_radius)
+    if (dist > radius)
         return;
 
     collision::ChCollisionInfo contact;
@@ -178,19 +176,18 @@ void BoundaryContactMMX::CheckRight(ChBody* body, const ChVector<>& center) {
     contact.shapeB = nullptr;
     contact.vN = ChVector<>(0, 1, 0);
     contact.vpA = ChVector<>(center.x(), m_terrain->m_right, center.z());
-    contact.vpB = ChVector<>(center.x(), center.y() - m_radius, center.z());
-    contact.distance = dist - m_radius;
-    contact.eff_radius = m_radius;
+    contact.vpB = ChVector<>(center.x(), center.y() - radius, center.z());
+    contact.distance = dist - radius;
+    contact.eff_radius = radius;
 
     body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_material, m_terrain->m_material);
 }
 
 // Check contact between granular material and front boundary.
-void BoundaryContactMMX::CheckFront(ChBody* body, const ChVector<>& center) {
+void BoundaryContactMMX::CheckFront(ChBody* body, const ChVector<>& center, const double& radius) {
     double dist = m_terrain->m_front - center.x();
 
-    ////if (dist > m_radius + 2 * m_terrain->m_envelope)
-    if (dist > m_radius)
+    if (dist > radius)
         return;
 
     collision::ChCollisionInfo contact;
@@ -200,19 +197,18 @@ void BoundaryContactMMX::CheckFront(ChBody* body, const ChVector<>& center) {
     contact.shapeB = nullptr;
     contact.vN = ChVector<>(-1, 0, 0);
     contact.vpA = ChVector<>(m_terrain->m_front, center.y(), center.z());
-    contact.vpB = ChVector<>(center.x() + m_radius, center.y(), center.z());
-    contact.distance = dist - m_radius;
-    contact.eff_radius = m_radius;
+    contact.vpB = ChVector<>(center.x() + radius, center.y(), center.z());
+    contact.distance = dist - radius;
+    contact.eff_radius = radius;
 
     body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_material, m_terrain->m_material);
 }
 
 // Check contact between granular material and rear boundary.
-void BoundaryContactMMX::CheckRear(ChBody* body, const ChVector<>& center) {
+void BoundaryContactMMX::CheckRear(ChBody* body, const ChVector<>& center, const double& radius) {
     double dist = center.x() - m_terrain->m_rear;
 
-    ////if (dist > m_radius + 2 * m_terrain->m_envelope)
-    if (dist > m_radius)
+    if (dist > radius)
         return;
 
     collision::ChCollisionInfo contact;
@@ -222,24 +218,24 @@ void BoundaryContactMMX::CheckRear(ChBody* body, const ChVector<>& center) {
     contact.shapeB = nullptr;
     contact.vN = ChVector<>(1, 0, 0);
     contact.vpA = ChVector<>(m_terrain->m_rear, center.y(), center.z());
-    contact.vpB = ChVector<>(center.x() - m_radius, center.y(), center.z());
-    contact.distance = dist - m_radius;
-    contact.eff_radius = m_radius;
+    contact.vpB = ChVector<>(center.x() - radius, center.y(), center.z());
+    contact.distance = dist - radius;
+    contact.eff_radius = radius;
 
     body->GetSystem()->GetContactContainer()->AddContact(contact, m_terrain->m_material, m_terrain->m_material);
-}*/
+}
 
 // -----------------------------------------------------------------------------
 // Initialize the MMW terrain container
 // -----------------------------------------------------------------------------
-void MMXTerrain::Initialize(ChVector<>& center,
+void MMXTerrain::Initialize(const ChVector<>& center,
                             double length,
                             double width,
                             double height,
                             double radius,
                             double density,
-                            const ChVector<>& init_vel) {
-
+                            const std::vector<std::pair<ChVector<>, double>>& pinfo) {
+    
 	// Set the container and grain dimensions
     m_length = length;
     m_width = width;
@@ -247,14 +243,14 @@ void MMXTerrain::Initialize(ChVector<>& center,
     m_radius = radius;
 
     // Set boundary locations
-    m_front = center.x() + length / 2;
-    m_rear = center.x() - length / 2;
-    m_left = center.y() + width / 2;
-    m_right = center.y() - width / 2;
+    m_front = center.x() + length / 2.0;
+    m_rear = center.x() - length / 2.0;
+    m_left = center.y() + width / 2.0;
+    m_right = center.y() - width / 2.0;
     m_bottom = center.z();
 
     /*// Create a box around the terrain area. If enabled, create visualization assets for the boundaries.
-	// FIX THESE
+    // FIX THESE
     double cthickness = 10.0;
     double cmass = 1.0E3;
     double tempt = cthickness * 0.99;
@@ -279,8 +275,8 @@ void MMXTerrain::Initialize(ChVector<>& center,
     m_ground->SetCollide(true);
 
     m_ground->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(m_ground.get(), m_material, sbase, VNULL, QUNIT, m_vis_enabled);  // UPDATE FOR TWO MATERIAL INPUTS
-    m_ground->GetCollisionModel()->BuildModel();
+    utils::AddBoxGeometry(m_ground.get(), m_material, sbase, VNULL, QUNIT, m_vis_enabled);  // UPDATE FOR TWO MATERIAL INPUTS 
+	m_ground->GetCollisionModel()->BuildModel();
 
     auto right = m_ground->GetSystem()->NewBody();
     right->SetIdentifier(--ground_id);
@@ -338,70 +334,84 @@ void MMXTerrain::Initialize(ChVector<>& center,
     m_ground->GetSystem()->AddBody(backPtr);
     m_ground->GetSystem()->AddBody(frntPtr);*/
 
-
-	// Move the ground body at patch location
-    int ground_id = m_ground->GetSystem()->Get_bodylist().size() * -1;
+    // Set an invisible ground body at the base of the terrain patch
+    int g_id = -1 * m_ground->GetSystem()->Get_bodylist().size();
+	m_ground->SetIdentifier(g_id);
     m_ground->SetPos(center);
-    m_ground->SetIdentifier(m_start_id);
 
-    // Create particles fixed to ground.
-    if (m_rough_surface) {
-        // Re-name and define certain size parameters
+	// Add the particles to the system. If initial prarticle positions are not provided, create a rough surface
+    if (pinfo.size() == 0) {
+		// Define parameters needed to create a rough surface
         double marg = radius * 1.01;
-        double sft_yx = marg;
-        double sft_yy = 2.0 * marg * sin(CH_C_PI / 3.0);
+        double sft_x = marg;
+        double sft_y = 2.0 * marg * sin(CH_C_PI / 3.0);
         double numx = ceil(length / (marg * 2.0));
-        double numy = ceil(width / sft_yy);
+        double numy = ceil(width / sft_y);
 
         // Add roughness to the base of the box because collision detection does not support cylinder - box contacts
-        ChVector<> pos_ref = center + ChVector<>(-length / 2.0 + marg, -width / 2.0 + marg, marg);
+        ChVector<> pos_ref = ChVector<>(m_rear + marg, m_right + marg, m_bottom + marg);
         for (int iy = 0; iy < numy; ++iy) {
-            double posx = sft_yx * (iy % 2);
-            double posy = sft_yy * iy;
+            double posx = sft_x * (iy % 2);
+            double posy = sft_y * iy;
 
             ChVector<> pos_next = pos_ref + ChVector<>(posx, posy, 0);
-            for (int ix = 0; ix < numx; ++ix) {
-                if (pos_next.x() <= center.x() + length / 2.0 - marg && 
-					pos_next.x() >= center.x() - length / 2.0 + marg) { 
-                    if (pos_next.y() <= center.y() + width / 2.0 - marg &&
-                        pos_next.y() >= center.y() - width / 2.0 + marg) {
-                        
+            if (pos_next.y() <= m_left - marg && pos_next.y() >= m_right + marg) {
+				for (int ix = 0; ix < numx; ++ix) {
+					if (pos_next.x() <= m_front - marg && pos_next.x() >= m_rear + marg) {
 						double mass = density * (4.0 / 3.0) * CH_C_PI * radius * radius * radius;
-                        ChVector<> inertia = 0.4 * mass * radius * radius * ChVector<>(1, 1, 1);
+						ChVector<> inertia = 0.4 * mass * radius * radius * ChVector<>(1, 1, 1);
 
-                        ChBody* sphere = m_ground->GetSystem()->NewBody();
-                        sphere->SetIdentifier(--ground_id);
-                        sphere->SetMass(mass);
-                        sphere->SetPos(pos_next);
-                        sphere->SetInertiaXX(inertia);
-                        sphere->SetBodyFixed(false);   //  TRUE
-                        sphere->SetCollide(true);
-                        sphere->GetCollisionModel()->ClearModel();
-                        utils::AddSphereGeometry(sphere, m_material, radius);
-                        sphere->GetCollisionModel()->BuildModel();
+						ChBody* sphere = m_ground->GetSystem()->NewBody();
+						sphere->SetIdentifier(--g_id);
+						sphere->SetMass(mass);
+						sphere->SetPos(pos_next);
+						sphere->SetInertiaXX(inertia);
+						sphere->SetBodyFixed(true);
+						sphere->SetCollide(true);
+                        sphere->AddAsset(m_ground_color);
+						sphere->GetCollisionModel()->ClearModel();
+						utils::AddSphereGeometry(sphere, m_material, radius);
+						sphere->GetCollisionModel()->BuildModel();
 
-						sphere->AddAsset(chrono_types::make_shared<ChColorAsset>(0.65f, 0.44f, 0.39f));
+						std::shared_ptr<ChBody> spherePtr(sphere);
+						m_ground->GetSystem()->AddBody(spherePtr);
+					}
+					pos_next += ChVector<>(2.0 * sft_x, 0, 0);
+				}
+			}
+        }
+    } else {
+		// Add particles to the system based on in array of input positions
+        int p_id = m_start_id;
+        for (size_t i = 0; i < pinfo.size(); i++) {
+			double rad = pinfo.at(i).second;
+            double mass = density * (4.0 / 3.0) * CH_C_PI * rad * rad * rad;
+            ChVector<> pos = center + pinfo.at(i).first;
+            ChVector<> inertia = 0.4 * mass * rad * rad * ChVector<>(1, 1, 1);
 
-                        std::shared_ptr<ChBody> spherePtr(sphere);
-                        m_ground->GetSystem()->AddBody(spherePtr);
-                    }
-                }
-                pos_next += ChVector<>(2.0 * sft_yx, 0, 0);
-            }
+            ChBody* sphere = m_ground->GetSystem()->NewBody();
+            sphere->SetIdentifier(p_id++);
+            sphere->SetMass(mass);
+            sphere->SetPos(pos);
+            sphere->SetInertiaXX(inertia);
+            sphere->SetBodyFixed(false);
+            sphere->SetCollide(true);
+            sphere->AddAsset(m_sphere_color);
+            sphere->GetCollisionModel()->ClearModel();
+            utils::AddSphereGeometry(sphere, m_material, rad);
+            sphere->GetCollisionModel()->BuildModel();
+
+            std::shared_ptr<ChBody> spherePtr(sphere);
+            m_ground->GetSystem()->AddBody(spherePtr);
+
+			m_num_particles++;
         }
     }
 
     // Register the custom collision callback for boundary conditions.
     auto cb = chrono_types::make_shared<BoundaryContactMMX>(this);
     m_ground->GetSystem()->RegisterCustomCollisionCallback(cb);
-
 }
-
-
-
-
-
-
 
 // FIX THIS ?
 void MMXTerrain::Synchronize(double time) {
@@ -424,7 +434,7 @@ ChVector<> MMXTerrain::GetNormal(const ChVector<>& loc) const {
     return ChWorldFrame::Vertical();
 }
 
-// FIX THIS ? 
+// FIX THIS ?
 float MMXTerrain::GetCoefficientFriction(const ChVector<>& loc) const {
     if (m_friction_fun)
         return (*m_friction_fun)(loc);

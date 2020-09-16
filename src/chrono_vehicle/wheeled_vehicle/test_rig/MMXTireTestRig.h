@@ -74,17 +74,19 @@ class CH_VEHICLE_API MMXTireTestRig {
     /// Set visualization type for the tire (default: PRIMITIVES).
     void SetTireVisualizationType(VisualizationType vis) { m_tire_vis = vis; }
 
-	/// Enable use of MMX terrain.
+    /// Import vectors containing inital size and location properties of the particles in the terrain
+    void SetTerrainParticles(std::vector<std::pair<ChVector<>, double>>& pinfo) { m_params_mmx.pinfo = pinfo; }
+
+    /// Enable use of MMX terrain.
     /// The terrain subsystem consists of identical spherical particles initialized in layers.
     /// A moving-patch option is used, with the patch dimensions set based on the tire dimensions.
     void SetTerrainMMX(std::shared_ptr<ChMaterialSurfaceSMC> mat_g,
                        std::shared_ptr<ChMaterialSurfaceSMC> mat_w,
                        double length,
                        double width,
-					   double height,
-					   double radius,        
-                       double density
-    );
+                       double height,
+                       double radius,
+                       double density);
 
     /// Set time delay before releasing the wheel (default: 0s).
     void SetTimeDelay(double delay) { m_time_delay = delay; }
@@ -93,7 +95,7 @@ class CH_VEHICLE_API MMXTireTestRig {
     /// responsibility to set these up for a meaningful test.
     void Initialize();
 
-	///  Re-initialize the rig system when motor functions have been updated
+    ///  Re-initialize the rig system when motor functions have been updated
     void Reinitialize();
 
     /// Initialize the rig system for a simulation with given longitudinal slip. This version overrides the motion
@@ -108,8 +110,7 @@ class CH_VEHICLE_API MMXTireTestRig {
     /// Get total rig mass.
     double GetTotalMass() const { return m_total_mass; }
 
-    /// Get applied load on rig
-    /// (to enforce specified normal load, taking into account the masses of all components).
+    /// Get applied load on rig (to enforce specified normal load, taking into account the masses of all components).
     double GetAppliedLoad() const { return m_applied_load; }
 
     /// Get a handle to the underlying terrain subsystem.
@@ -124,14 +125,15 @@ class CH_VEHICLE_API MMXTireTestRig {
   private:
     enum class TerrainType { MMX, NONE };
 
-	struct TerrainParamsMMX {
+    struct TerrainParamsMMX {
         std::shared_ptr<ChMaterialSurfaceSMC> mat_g;
         std::shared_ptr<ChMaterialSurfaceSMC> mat_w;
         double length;
-        double width;        
-        double height; 
+        double width;
+        double height;
         double radius;
         double density;
+        std::vector<std::pair<ChVector<>, double>>& pinfo = std::vector<std::pair<ChVector<>, double>>();
     };
 
     void CreateMechanism();
@@ -139,25 +141,25 @@ class CH_VEHICLE_API MMXTireTestRig {
     void CreateTerrain();
     void CreateTerrainMMX();
 
-    ChSystem* m_system;  ///< pointer to the Chrono system
+    ChSystem* m_system;						 ///< pointer to the Chrono system
 
-    std::shared_ptr<ChTerrain> m_terrain;  ///< handle to underlying terrain subsystem
-    std::shared_ptr<ChWheel> m_wheel;      ///< handle to wheel subsystem
-    std::shared_ptr<ChTire> m_tire;        ///< handle to tire subsystem
-    VisualizationType m_tire_vis;          ///< visualization type for tire subsystem
-    double m_tire_step;                    ///< step size for tire integration
-    double m_camber_angle;                 ///< camber angle
+    std::shared_ptr<ChTerrain> m_terrain;    ///< handle to underlying terrain subsystem
+    std::shared_ptr<ChWheel> m_wheel;        ///< handle to wheel subsystem
+    std::shared_ptr<ChTire> m_tire;          ///< handle to tire subsystem
+    VisualizationType m_tire_vis;            ///< visualization type for tire subsystem
+    
+	double m_tire_step;						 ///< step size for tire integration
+    double m_camber_angle;					 ///< camber angle
+    double m_normal_load;					 ///< desired normal load
+    double m_applied_load;					 ///< applied load on chassis body
+    double m_total_mass;					 ///< total sprung mass
+    double m_time_delay;					 ///< time delay before applying external load
 
-    double m_normal_load;   ///< desired normal load
-    double m_applied_load;  ///< applied load on chassis body
-    double m_total_mass;    ///< total sprung mass
-    double m_time_delay;    ///< time delay before applying external load 
+    TerrainType m_terrain_type;				 ///< terrain type
+    TerrainParamsMMX m_params_mmx;			 ///< granular terrain parameters
 
-    TerrainType m_terrain_type;     ///< terrain type
-    TerrainParamsMMX m_params_mmx;  ///< granular terrain parameters
-
-    double m_terrain_offset;  ///< Y coordinate of tire center
-    double m_terrain_height;  ///< height coordinate for terrain subsystem
+    double m_rig_hoffset;				 
+    double m_rig_voffset;				
 
     std::shared_ptr<ChBody> m_ground_body;   ///< ground body
     std::shared_ptr<ChBody> m_carrier_body;  ///< rig carrier body
@@ -165,11 +167,12 @@ class CH_VEHICLE_API MMXTireTestRig {
     std::shared_ptr<ChBody> m_slip_body;     ///< intermediate body for controlling slip angle
     std::shared_ptr<ChBody> m_spindle_body;  ///< wheel spindle body
 
-    bool m_ls_actuated;                    ///< is linear spped actuated?
-    bool m_rs_actuated;                    ///< is angular speed actuated?
-    std::shared_ptr<ChFunction> m_ls_fun;  ///< longitudinal speed function of time
-    std::shared_ptr<ChFunction> m_rs_fun;  ///< angular speed function of time
-    std::shared_ptr<ChFunction> m_sa_fun;  ///< slip angle function of time
+    bool m_ls_actuated;                      ///< is linear spped actuated?
+    bool m_rs_actuated;                      ///< is angular speed actuated?
+    
+	std::shared_ptr<ChFunction> m_ls_fun;    ///< longitudinal speed function of time
+    std::shared_ptr<ChFunction> m_rs_fun;    ///< angular speed function of time
+    std::shared_ptr<ChFunction> m_sa_fun;    ///< slip angle function of time
 
     std::shared_ptr<ChLinkMotorLinearSpeed> m_lin_motor;    ///< carrier actuator
     std::shared_ptr<ChLinkMotorRotationSpeed> m_rot_motor;  ///< wheel actuator

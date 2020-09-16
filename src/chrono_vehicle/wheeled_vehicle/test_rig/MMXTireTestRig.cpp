@@ -42,8 +42,8 @@ MMXTireTestRig::MMXTireTestRig(std::shared_ptr<ChWheel> wheel, std::shared_ptr<C
       m_ls_actuated(false),
       m_rs_actuated(false),
       m_terrain_type(TerrainType::NONE),
-      m_terrain_offset(0),
-      m_terrain_height(0),
+      m_rig_voffset(0),
+      m_rig_hoffset(0),
       m_tire_step(1e-3),
       m_tire_vis(VisualizationType::PRIMITIVES) {
 	 
@@ -324,9 +324,7 @@ void MMXTireTestRig::CreateMechanism() {
         revolute->Initialize(m_spindle_body, m_slip_body, ChCoordsys<>(ChVector<>(0, 3 * dim, -4 * dim), z2y));
     }
 
-    // Calculate required body force on chassis (to enforce given normal load)
-    // Approach using ChLoad does not work with Chrono::Parallel (loads currently not supported).
-    // Instead use a force accumulator (updated in MMXTireTestRig::Advance)
+    // Calculate required body force on chassis to enforce given normal load
     m_total_mass = m_chassis_body->GetMass() + m_slip_body->GetMass() + m_spindle_body->GetMass() + m_wheel->GetMass() +
                    m_tire->GetMass();
     m_applied_load = m_total_mass * m_system->Get_G_acc().Length() - m_normal_load;
@@ -339,18 +337,15 @@ void MMXTireTestRig::CreateMechanism() {
     m_tire->Initialize(m_wheel);
     m_tire->SetVisualizationType(m_tire_vis);
 
-    // Set terrain offset (based on wheel center) and terrain height (below tire)
-    m_terrain_offset = 3 * dim;
-    m_terrain_height = -4 * dim - m_tire->GetRadius(); // - 0.1
+    // Set the rig offset based on wheel center
+    m_rig_hoffset = 3 * dim; //+ m_tire->GetWidth() / 2.0;
+    m_rig_voffset = 4 * dim + m_tire->GetRadius();
 }
 
 // -----------------------------------------------------------------------------
 
 void MMXTireTestRig::CreateTerrain() {
     switch (m_terrain_type) {
-        case TerrainType::NONE:
-            CreateTerrainMMX();
-            break;
         case TerrainType::MMX:
             CreateTerrainMMX();
             break;
@@ -360,21 +355,22 @@ void MMXTireTestRig::CreateTerrain() {
 }
 
 void MMXTireTestRig::CreateTerrainMMX() {
-    //double vertical_offset = m_params_mmx.num_layers * 2.0 * m_params_mmx.radius + 6.0 * m_params_mmx.radius;
-    double vertical_offset = 6.0 * m_params_mmx.radius;
-    ChVector<> location(0, m_terrain_offset, m_terrain_height - vertical_offset);
+
+	// 3) Set wall and particle material properties
+
+
+    double terrain_voffset = m_params_mmx.height + 2.0 * m_params_mmx.radius;
+    ChVector<> location = ChVector<>(0, m_rig_hoffset, -m_rig_voffset - terrain_voffset);
 
     auto terrain = chrono_types::make_shared<vehicle::MMXTerrain>(m_system);
-    terrain->SetContactMaterial(m_params_mmx.mat_g);
-   
     terrain->SetStartIdentifier(0);
-    terrain->EnableRoughSurface(true);
-    terrain->EnableVisualization(false);
-    terrain->EnableVerbose(true);
-    //terrain->Initialize(location, m_params_mmx.length, m_params_mmx.width, m_params_mmx.thickness, m_params_mmx.num_layers,
-    //                    m_params_mmx.radius, m_params_mmx.density);
-    terrain->Initialize(location, m_params_mmx.length, m_params_mmx.width, m_params_mmx.height,
-                        m_params_mmx.radius, m_params_mmx.density);
+	
+	terrain->SetContactMaterial(m_params_mmx.mat_g);
+    
+	terrain->EnableVisualization(false);
+
+    terrain->Initialize(location, m_params_mmx.length, m_params_mmx.width, m_params_mmx.height, m_params_mmx.radius,
+                        m_params_mmx.density, m_params_mmx.pinfo);
 
     m_terrain = terrain;
 }

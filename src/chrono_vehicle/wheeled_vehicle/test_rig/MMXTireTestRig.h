@@ -59,9 +59,6 @@ class CH_VEHICLE_API MMXTireTestRig {
     /// If a function is not specified, the wheel is not actuated.
     void SetAngSpeedFunction(std::shared_ptr<ChFunction> funct);
 
-    /// Specify wheel slip angle as function of time (default: constant value 0 rad).
-    void SetSlipAngleFunction(std::shared_ptr<ChFunction> funct) { m_sa_fun = funct; }
-
     /// Set collision type for tire-terrain interaction (default: SINGLE_POINT).
     void SetTireCollisionType(ChTire::CollisionType coll_type);
 
@@ -85,15 +82,15 @@ class CH_VEHICLE_API MMXTireTestRig {
                        double radius,
                        double density);
 
-    /// Set time delay before releasing the wheel (default: 0s).
-    void SetTimeDelay(double delay) { m_time_delay = delay; }
-
     /// Initialize the rig system. This version uses all motion functions as specified by the user. It is the user's
     /// responsibility to set these up for a meaningful test.
-    void Initialize();
+    void InitializeRig();
 
     ///  Update the rig system if motor functions have changed
-    void Update();
+    void InitializeMotors();
+
+	/// Apply an external load to the system
+    void InitializeLoad() { m_load_chassis = true; }
 
     /// Advance system state by the specified time step.
     void Advance(double step);
@@ -144,7 +141,6 @@ class CH_VEHICLE_API MMXTireTestRig {
     double m_normal_load;					 ///< desired normal load
     double m_applied_load;					 ///< applied load on chassis body
     double m_total_mass;					 ///< total sprung mass
-    double m_time_delay;					 ///< time delay before applying external load
 
     TerrainType m_terrain_type;				 ///< terrain type
     TerrainParamsMMX m_params_mmx;			 ///< granular terrain parameters
@@ -158,12 +154,12 @@ class CH_VEHICLE_API MMXTireTestRig {
     std::shared_ptr<ChBody> m_slip_body;     ///< pointer to the intermediate body for controlling slip angle
     std::shared_ptr<ChBody> m_spindle_body;  ///< pointe to the wheel spindle body
 
+	bool m_load_chassis;					 ///< is the external load applied to the system?
     bool m_ls_actuated;                      ///< is linear spped actuated?
     bool m_rs_actuated;                      ///< is angular speed actuated?
     
 	std::shared_ptr<ChFunction> m_ls_fun;    ///< longitudinal speed function of time
     std::shared_ptr<ChFunction> m_rs_fun;    ///< angular speed function of time
-    std::shared_ptr<ChFunction> m_sa_fun;    ///< slip angle function of time
 
     std::shared_ptr<ChLinkMotorLinearSpeed> m_lin_motor;    ///< pointer to the carrier actuator
     std::shared_ptr<ChLinkMotorRotationSpeed> m_rot_motor;  ///< pointer to the wheel actuator

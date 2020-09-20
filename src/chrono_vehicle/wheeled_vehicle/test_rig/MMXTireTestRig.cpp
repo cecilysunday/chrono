@@ -42,7 +42,7 @@ MMXTireTestRig::MMXTireTestRig(std::shared_ptr<ChWheel> wheel, std::shared_ptr<C
       m_normal_load(0),
       m_applied_load(0),
       m_total_mass(0),
-      m_time_delay(0),
+      m_load_chassis(false),
       m_ls_actuated(false),
       m_rs_actuated(false),
       m_terrain_type(TerrainType::NONE),
@@ -51,9 +51,6 @@ MMXTireTestRig::MMXTireTestRig(std::shared_ptr<ChWheel> wheel, std::shared_ptr<C
       m_tire_step(1e-3),
       m_tire_vis(VisualizationType::PRIMITIVES) {
 	 
-	  // Default motion function for slip angle control
-      m_sa_fun = chrono_types::make_shared<ChFunction_Const>(0);
-      
 	  // Default tire-terrain collision method
       m_tire->SetCollisionType(ChTire::CollisionType::SINGLE_POINT);
 }
@@ -97,28 +94,24 @@ void MMXTireTestRig::SetTerrainMMX(std::shared_ptr<ChMaterialSurfaceSMC> sphere_
 
 // -----------------------------------------------------------------------------
 
-void MMXTireTestRig::Initialize() {
+void MMXTireTestRig::InitializeRig() {
     CreateMechanism();
-
-    if (m_ls_actuated)
-        m_lin_motor->SetSpeedFunction(m_ls_fun);
+	
+	if (m_ls_actuated)
+        m_lin_motor->SetSpeedFunction(chrono_types::make_shared<ChFunction_Const>(0));
 
     if (m_rs_actuated)
-        m_rot_motor->SetSpeedFunction(m_rs_fun);
-
-    m_slip_lock->SetMotion_ang(m_sa_fun);
+        m_rot_motor->SetSpeedFunction(chrono_types::make_shared<ChFunction_Const>(0));
 
     CreateTerrain();
 }
 
-void MMXTireTestRig::Update() {
+void MMXTireTestRig::InitializeMotors() {
     if (m_ls_actuated)
         m_lin_motor->SetSpeedFunction(m_ls_fun);
 
     if (m_rs_actuated)
         m_rot_motor->SetSpeedFunction(m_rs_fun);
-
-    m_slip_lock->SetMotion_ang(m_sa_fun);
 }
 
 // -----------------------------------------------------------------------------
@@ -128,7 +121,7 @@ class BaseFunction {
     BaseFunction(double speed) : m_speed(speed) {}
     double calc(double t) const {
         double delay = 0.25;
-        double ramp = 0.5;
+        double ramp = 0.50;
         if (t <= delay)
             return 0;
         double tt = t - delay;
@@ -163,10 +156,10 @@ class RotSpeedFunction : public BaseFunction, public ChFunction {
 
 void MMXTireTestRig::Advance(double step) {
     double time = m_system->GetChTime();
-
+  
     // Apply load on chassis body
     double external_force = m_total_mass * m_system->Get_G_acc().Length();
-    if (time > m_time_delay)
+    if (m_load_chassis)
         external_force = m_applied_load;
 
     m_chassis_body->Empty_forces_accumulators();
@@ -179,8 +172,8 @@ void MMXTireTestRig::Advance(double step) {
     m_wheel->Synchronize();
 
     // Advance state
-    m_terrain->Advance(step);
-    m_tire->Advance(step);
+    // m_terrain->Advance(step); // These don't appear to do anything ....
+    // m_tire->Advance(step);	 // These don't appear to do anything ....
     m_system->DoStepDynamics(step);
 }
 
@@ -315,6 +308,7 @@ void MMXTireTestRig::CreateMechanism() {
     // Calculate required body force on chassis to enforce given normal load
     m_total_mass = m_chassis_body->GetMass() + m_slip_body->GetMass() + m_spindle_body->GetMass() + m_wheel->GetMass() +
                    m_tire->GetMass();
+
     m_applied_load = m_total_mass * m_system->Get_G_acc().Length() - m_normal_load;
 
     // Initialize subsystems
@@ -324,6 +318,7 @@ void MMXTireTestRig::CreateMechanism() {
     m_tire->SetStepsize(m_tire_step);
     m_tire->Initialize(m_wheel);
     m_tire->SetVisualizationType(m_tire_vis);
+    m_tire->AddVisualizationAssets(m_tire_vis);
 
     // Set the rig offset based on wheel center
     m_rig_hoffset = 3 * dim + m_wheel->GetWidth() / 2.0;

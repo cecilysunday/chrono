@@ -64,7 +64,7 @@ MMXTerrain::MMXTerrain(ChSystem* system) : m_start_id(0), m_num_particles(0) {
       m_ground->SetName("ground");
       m_ground->SetPos(ChVector<>(0, 0, 0));
       m_ground->SetBodyFixed(true);
-      m_ground->SetCollide(false);
+      m_ground->SetCollide(true);
       system->AddBody(m_ground);
 
       // Set the default parameters for contact material
@@ -108,8 +108,7 @@ void BoundaryContactMMX::OnCustomCollision(ChSystem* system) {
 		if (body->GetIdentifier() >= m_terrain->m_start_id) {
             auto center = body->GetPos();
             auto radius = body->GetCollisionModel()->GetShapeDimensions(0).at(0);
-			
-			CheckBottom(body.get(), center, radius);
+
             CheckLeft(body.get(), center, radius);
             CheckRight(body.get(), center, radius);
             CheckFront(body.get(), center, radius);
@@ -247,10 +246,16 @@ void MMXTerrain::Initialize(const ChVector<>& center,
     m_right = center.y() - width / 2.0;
     m_bottom = center.z();
 
-    // Create an invisible ground body at the base of the terrain patch. This is simply used as a reference body
-    int g_id = -1 * m_ground->GetSystem()->Get_bodylist().size();
+    // Create a box at the base of the terrain patch
+	int g_id = -1 * m_ground->GetSystem()->Get_bodylist().size();
+    ChVector<> g_size = ChVector<>(m_length, m_width, m_radius * 2.0) / 2.0;
+    ChVector<> g_pos = ChVector<>(center.x(), center.y(), center.z() - g_size.z());
+
 	m_ground->SetIdentifier(g_id);
-    m_ground->SetPos(center);
+    m_ground->SetPos(g_pos);
+    m_ground->GetCollisionModel()->ClearModel();
+    utils::AddBoxGeometry(m_ground.get(), m_ground_material, g_size, VNULL, QUNIT, true);
+    m_ground->GetCollisionModel()->BuildModel();
 
 	// Add the particles to the system. If initial prarticle positions are not provided, create a rough surface
     if (pinfo.size() == 0) {

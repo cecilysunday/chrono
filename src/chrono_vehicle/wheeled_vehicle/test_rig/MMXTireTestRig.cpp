@@ -172,8 +172,8 @@ void MMXTireTestRig::Advance(double step) {
     m_wheel->Synchronize();
 
     // Advance state
-    // m_terrain->Advance(step); // These don't appear to do anything ....
-    // m_tire->Advance(step);	 // These don't appear to do anything ....
+    m_terrain->Advance(step);			// These don't appear to do anything ....
+    m_tire->Advance(step);				// These don't appear to do anything ....
     m_system->DoStepDynamics(step);
 }
 
@@ -321,7 +321,7 @@ void MMXTireTestRig::CreateMechanism() {
     m_tire->AddVisualizationAssets(m_tire_vis);
 
     // Set the rig offset based on wheel center
-    m_rig_hoffset = 3 * dim + m_wheel->GetWidth() / 2.0;
+    m_rig_hoffset = 3 * dim;
     m_rig_voffset = 4 * dim + m_tire->GetRadius();
 }
 

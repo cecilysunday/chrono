@@ -525,6 +525,9 @@ set(CV_WV_TIRE_FILES
     wheeled_vehicle/tire/ANCFToroidalTire.cpp
     wheeled_vehicle/tire/ReissnerToroidalTire.h
     wheeled_vehicle/tire/ReissnerToroidalTire.cpp
+
+    wheeled_vehicle/tire/MMXTestTire.h
+    wheeled_vehicle/tire/MMXTestTire.cpp
     wheeled_vehicle/tire/MMXPaddleTire.h
     wheeled_vehicle/tire/MMXPaddleTire.cpp
 )

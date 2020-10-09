@@ -19,7 +19,7 @@
 #ifndef MMX_TEST_TIRE_H
 #define MMX_TEST_TIRE_H
 
-#include "chrono_vehicle/wheeled_vehicle/tire/ChRigidTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/MMXTestTire.h"
 
 #include "chrono_models/ChApiModels.h"
 
@@ -31,7 +31,7 @@ namespace mmx {
 /// @{
 
 /// Rigid tire model for the MMX rover
-class CH_MODELS_API MMX_TestTire : public ChRigidTire {
+class CH_MODELS_API MMX_TestTire : public MMXTestTire {
   public:
     MMX_TestTire(const std::string& name);
 

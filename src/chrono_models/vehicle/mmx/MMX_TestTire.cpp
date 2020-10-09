@@ -34,7 +34,7 @@ const ChVector<> MMX_TestTire::m_inertia(4321.333, 8174.500, 4321.333);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-MMX_TestTire::MMX_TestTire(const std::string& name) : ChRigidTire(name) {}
+MMX_TestTire::MMX_TestTire(const std::string& name) : MMXTestTire(name) {}
 
 void MMX_TestTire::CreateContactMaterial(ChContactMethod contact_method) {
     MaterialInfo minfo;

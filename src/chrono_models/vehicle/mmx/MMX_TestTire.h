@@ -16,8 +16,8 @@
 //
 // =============================================================================
 
-#ifndef MMX_SIMPLE_TIRE_H
-#define MMX_SIMPLE_TIRE_H
+#ifndef MMX_TEST_TIRE_H
+#define MMX_TEST_TIRE_H
 
 #include "chrono_vehicle/wheeled_vehicle/tire/ChRigidTire.h"
 
@@ -31,11 +31,11 @@ namespace mmx {
 /// @{
 
 /// Rigid tire model for the MMX rover
-class CH_MODELS_API MMX_SimpleTire : public ChRigidTire {
+class CH_MODELS_API MMX_TestTire : public ChRigidTire {
   public:
-    MMX_SimpleTire(const std::string& name);
+    MMX_TestTire(const std::string& name);
 
-    ~MMX_SimpleTire() {}
+    ~MMX_TestTire() {}
 
     virtual double GetRadius() const override { return m_radius; }
     virtual double GetWidth() const override { return m_width; }

@@ -436,6 +436,10 @@ set(CVM_MMX_FILES
     mmx/MMX_SimpleTire.cpp
     mmx/MMX_Wheel.h
     mmx/MMX_Wheel.cpp
+    mmx/MMX_TestWheel.h
+    mmx/MMX_TestWheel.cpp
+    mmx/MMX_TestTire.h
+    mmx/MMX_TestTire.cpp
 )
 source_group("mmx" FILES ${CVM_MMX_FILES})
 

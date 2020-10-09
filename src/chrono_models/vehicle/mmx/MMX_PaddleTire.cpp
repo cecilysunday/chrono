@@ -28,9 +28,9 @@ namespace mmx {
 
 const double MMX_PaddleTire::m_radius = 107.0;
 const double MMX_PaddleTire::m_width = 53.0;
-const double MMX_PaddleTire::m_mass = 648.0;
+const double MMX_PaddleTire::m_mass = 648.035;
 
-const ChVector<> MMX_PaddleTire::m_inertia(2000000.0, 4000000.0, 2000000.0);
+const ChVector<> MMX_PaddleTire::m_inertia(2356057.375, 4408726.551, 2356057.375);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

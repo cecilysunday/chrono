@@ -16,7 +16,7 @@
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/mmx/MMX_SimpleTire.h"
+#include "chrono_models/vehicle/mmx/MMX_TestTire.h"
 
 namespace chrono {
 namespace vehicle {
@@ -26,17 +26,17 @@ namespace mmx {
 // Static variables - units in mm g s
 // -----------------------------------------------------------------------------
 
-const double MMX_SimpleTire::m_radius = 107.0;
-const double MMX_SimpleTire::m_width = 53.0;
-const double MMX_SimpleTire::m_mass = 1308.525;
+const double MMX_TestTire::m_radius = 107.0;
+const double MMX_TestTire::m_width = 53.0;
+const double MMX_TestTire::m_mass = 1.0;
 
-const ChVector<> MMX_SimpleTire::m_inertia(5654572.105, 10696536.487, 5654572.105);
+const ChVector<> MMX_TestTire::m_inertia(4321.333, 8174.500, 4321.333);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-MMX_SimpleTire::MMX_SimpleTire(const std::string& name) : ChRigidTire(name) {}
+MMX_TestTire::MMX_TestTire(const std::string& name) : ChRigidTire(name) {}
 
-void MMX_SimpleTire::CreateContactMaterial(ChContactMethod contact_method) {
+void MMX_TestTire::CreateContactMaterial(ChContactMethod contact_method) {
     MaterialInfo minfo;
     minfo.mu = 0.9f;
     minfo.cr = 0.1f;

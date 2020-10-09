@@ -28,8 +28,8 @@ namespace mmx {
 
 const double MMX_Wheel::m_radius = 70.0;
 const double MMX_Wheel::m_width = 53.0;
-const double MMX_Wheel::m_mass = 979.0;
-const ChVector<> MMX_Wheel::m_inertia(1000000.0, 2000000.0, 1000000.0);
+const double MMX_Wheel::m_mass = 979.046;
+const ChVector<> MMX_Wheel::m_inertia(1428509.606, 2398662.540, 1428509.606);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

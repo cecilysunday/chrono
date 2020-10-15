@@ -146,6 +146,10 @@ void function_CalcContactForces(
 
     real cr_eff = cr[index];
 
+	if (b1 == 4 && b2 == 6) {
+        GetLog() << "\n" << mu_eff << "\t" << cr_eff;
+	}
+
     real user_kn = smc_params[index].x;
     real user_kt = smc_params[index].y;
     real user_gn = smc_params[index].z;
@@ -243,6 +247,11 @@ void function_CalcContactForces(
         // Load the initial collision velocity and accumulated contact duration from the contact history.
         relvel_init = (contact_relvel_init[ctSaveId] < char_vel) ? char_vel : contact_relvel_init[ctSaveId];
         t_contact = contact_duration[ctSaveId];
+
+		if (b1 == 4 && b2 == 6) {
+			//GetLog() << "\n" << b1 << "\t" << b2 << "\t" << s1 << "\t" << s2 << "\t" << newcontact;
+        }
+	
     }
 
     auto eps = std::numeric_limits<double>::epsilon();

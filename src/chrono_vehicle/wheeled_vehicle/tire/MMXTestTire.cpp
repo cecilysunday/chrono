@@ -53,8 +53,7 @@ void MMXTestTire::Initialize(std::shared_ptr<ChWheel> wheel) {
     CreateContactMaterial(wheel_body->GetSystem()->GetContactMethod());
     assert(m_material && m_material->GetContactMethod() == wheel_body->GetSystem()->GetContactMethod());
     
-    wheel_body->SetCollide(false);
-    //wheel_body->SetBodyFixed(true);
+    wheel_body->SetCollide(true);
 
     wheel_body->GetCollisionModel()->ClearModel();
 
@@ -81,7 +80,7 @@ void MMXTestTire::Initialize(std::shared_ptr<ChWheel> wheel) {
         //                                             ChVector<>(0, GetOffset(), 0));
 
 		wheel_body->GetCollisionModel()->AddSphere(m_material, GetRadius(),
-                                                     ChVector<>(0, GetOffset(), 0));
+                                                   ChVector<>(0, GetOffset(), 0));
     }
 
     wheel_body->GetCollisionModel()->BuildModel();

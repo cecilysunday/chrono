@@ -100,8 +100,10 @@ void MMXTireTestRig::InitializeRig() {
 	if (m_ls_actuated)
         m_lin_motor->SetSpeedFunction(chrono_types::make_shared<ChFunction_Const>(0));
 
-    if (m_rs_actuated)
+    if (m_rs_actuated) {
         m_rot_motor->SetSpeedFunction(chrono_types::make_shared<ChFunction_Const>(0));
+        m_rot_motor->SetAvoidAngleDrift(false); // Do I need this?
+    }
 
     CreateTerrain();
 }
@@ -158,12 +160,12 @@ void MMXTireTestRig::Advance(double step) {
     double time = m_system->GetChTime();
   
     // Apply load on chassis body
-    double external_force = m_total_mass * m_system->Get_G_acc().Length();
+    /*double external_force = m_total_mass * m_system->Get_G_acc().Length();
     if (m_load_chassis)
         external_force = m_applied_load;
 
     m_chassis_body->Empty_forces_accumulators();
-    m_chassis_body->Accumulate_force(ChVector<>(0, 0, external_force), ChVector<>(0, 0, 0), true);
+    m_chassis_body->Accumulate_force(ChVector<>(0, 0, external_force), ChVector<>(0, 0, 0), true);*/
 
     // Synchronize subsystems
     m_terrain->Synchronize(time);
@@ -280,18 +282,18 @@ void MMXTireTestRig::CreateMechanism() {
         ChQuaternion<> z2x;
         z2x.Q_from_AngY(CH_C_PI_2);
         auto prismatic = chrono_types::make_shared<ChLinkLockPrismatic>();
-        m_system->AddLink(prismatic);
-        prismatic->Initialize(m_carrier_body, m_ground_body, ChCoordsys<>(VNULL, z2x));
+        // m_system->AddLink(prismatic);
+        // prismatic->Initialize(m_carrier_body, m_ground_body, ChCoordsys<>(VNULL, z2x));
     }
 
     auto prismatic = chrono_types::make_shared<ChLinkLockPrismatic>();
-    m_system->AddLink(prismatic);
-    prismatic->Initialize(m_carrier_body, m_chassis_body, ChCoordsys<>(VNULL, QUNIT));
+    // m_system->AddLink(prismatic);
+    // prismatic->Initialize(m_carrier_body, m_chassis_body, ChCoordsys<>(VNULL, QUNIT));
 
     m_slip_lock = chrono_types::make_shared<ChLinkLockLock>();
-    m_system->AddLink(m_slip_lock);
-    m_slip_lock->Initialize(m_chassis_body, m_slip_body, ChCoordsys<>(VNULL, QUNIT));
-    m_slip_lock->SetMotion_axis(ChVector<>(0, 0, 1));
+    // m_system->AddLink(m_slip_lock);
+    // m_slip_lock->Initialize(m_chassis_body, m_slip_body, ChCoordsys<>(VNULL, QUNIT));
+    // m_slip_lock->SetMotion_axis(ChVector<>(0, 0, 1));
 
     ChQuaternion<> z2y;
     z2y.Q_from_AngAxis(-CH_C_PI / 2 - m_camber_angle, ChVector<>(1, 0, 0));
@@ -301,8 +303,8 @@ void MMXTireTestRig::CreateMechanism() {
         m_rot_motor->Initialize(m_spindle_body, m_slip_body, ChFrame<>(ChVector<>(0, 3 * dim, -4 * dim), z2y));
     } else {
         auto revolute = chrono_types::make_shared<ChLinkLockRevolute>();
-        m_system->AddLink(revolute);
-        revolute->Initialize(m_spindle_body, m_slip_body, ChCoordsys<>(ChVector<>(0, 3 * dim, -4 * dim), z2y));
+        //m_system->AddLink(revolute);
+        //revolute->Initialize(m_spindle_body, m_slip_body, ChCoordsys<>(ChVector<>(0, 3 * dim, -4 * dim), z2y));
     }
 
     // Calculate required body force on chassis to enforce given normal load

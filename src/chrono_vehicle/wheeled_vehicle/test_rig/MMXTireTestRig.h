@@ -69,7 +69,7 @@ class CH_VEHICLE_API MMXTireTestRig {
     void SetTireVisualizationType(VisualizationType vis) { m_tire_vis = vis; }
 
     /// Import vectors containing inital size and location properties of the particles in the terrain
-    void SetTerrainParticles(std::vector<std::pair<ChVector<>, double>>& pinfo) { m_params_mmx.pinfo = pinfo; }
+    void SetTerrainParticles(const std::vector<std::pair<ChVector<>, double>>& pinfo) { m_params_mmx.pinfo = pinfo; }
 
     /// Enable use of MMX terrain.
     /// The terrain subsystem consists of identical spherical particles initialized in layers.
@@ -121,7 +121,7 @@ class CH_VEHICLE_API MMXTireTestRig {
         double height;
         double radius;
         double density;
-        std::vector<std::pair<ChVector<>, double>>& pinfo = std::vector<std::pair<ChVector<>, double>>();
+        std::vector<std::pair<ChVector<>, double>> pinfo = std::vector<std::pair<ChVector<>, double>>();
     };
 
     void CreateMechanism();

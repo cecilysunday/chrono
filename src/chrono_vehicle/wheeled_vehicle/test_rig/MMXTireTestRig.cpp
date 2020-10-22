@@ -50,9 +50,6 @@ MMXTireTestRig::MMXTireTestRig(std::shared_ptr<ChWheel> wheel, std::shared_ptr<C
       m_rig_hoffset(0),
       m_tire_step(1e-3),
       m_tire_vis(VisualizationType::PRIMITIVES) {
-	 
-	  // Default tire-terrain collision method
-      m_tire->SetCollisionType(ChTire::CollisionType::SINGLE_POINT);
 }
 
 // -----------------------------------------------------------------------------
@@ -65,10 +62,6 @@ void MMXTireTestRig::SetLongSpeedFunction(std::shared_ptr<ChFunction> funct) {
 void MMXTireTestRig::SetAngSpeedFunction(std::shared_ptr<ChFunction> funct) {
     m_rs_fun = funct;
     m_rs_actuated = true;
-}
-
-void MMXTireTestRig::SetTireCollisionType(ChTire::CollisionType coll_type) {
-    m_tire->SetCollisionType(coll_type);
 }
 
 // -----------------------------------------------------------------------------
@@ -118,7 +111,7 @@ void MMXTireTestRig::InitializeMotors() {
 
 // -----------------------------------------------------------------------------
 
-class BaseFunction {
+/*class BaseFunction {
   protected:
     BaseFunction(double speed) : m_speed(speed) {}
     double calc(double t) const {
@@ -152,20 +145,19 @@ class RotSpeedFunction : public BaseFunction, public ChFunction {
 
     double m_slip;
     double m_radius;
-};
+};*/
 
 // -----------------------------------------------------------------------------
 
 void MMXTireTestRig::Advance(double step) {
     double time = m_system->GetChTime();
-  
-    // Apply load on chassis body
-    /*double external_force = m_total_mass * m_system->Get_G_acc().Length();
-    if (m_load_chassis)
-        external_force = m_applied_load;
 
-    m_chassis_body->Empty_forces_accumulators();
-    m_chassis_body->Accumulate_force(ChVector<>(0, 0, external_force), ChVector<>(0, 0, 0), true);*/
+	// Update the load on the chassis
+	m_chassis_body->Empty_forces_accumulators();
+    if (!m_load_chassis) {
+        double external_force = m_total_mass * m_system->Get_G_acc().Length();
+        m_chassis_body->Accumulate_force(ChVector<>(0, 0, external_force), ChVector<>(0, 0, 0), true);
+    }
 
     // Synchronize subsystems
     m_terrain->Synchronize(time);
@@ -261,8 +253,8 @@ void MMXTireTestRig::CreateMechanism() {
     m_system->AddBody(m_spindle_body);
     m_spindle_body->SetName("rig_spindle");
     m_spindle_body->SetIdentifier(-5);
-    m_spindle_body->SetMass(1);
-    m_spindle_body->SetInertiaXX(ChVector<>(0.01, 0.01, 0.01));
+    m_spindle_body->SetMass(m_wheel->GetMass());          // 1
+    m_spindle_body->SetInertiaXX(m_wheel->GetInertia());  // ChVector<>(0.01, 0.01, 0.01)
     m_spindle_body->SetPos(ChVector<>(0, 3 * dim, -4 * dim));
     m_spindle_body->SetRot(qc);
     {
@@ -282,18 +274,18 @@ void MMXTireTestRig::CreateMechanism() {
         ChQuaternion<> z2x;
         z2x.Q_from_AngY(CH_C_PI_2);
         auto prismatic = chrono_types::make_shared<ChLinkLockPrismatic>();
-        // m_system->AddLink(prismatic);
-        // prismatic->Initialize(m_carrier_body, m_ground_body, ChCoordsys<>(VNULL, z2x));
+        m_system->AddLink(prismatic);
+        prismatic->Initialize(m_carrier_body, m_ground_body, ChCoordsys<>(VNULL, z2x));
     }
 
     auto prismatic = chrono_types::make_shared<ChLinkLockPrismatic>();
-    // m_system->AddLink(prismatic);
-    // prismatic->Initialize(m_carrier_body, m_chassis_body, ChCoordsys<>(VNULL, QUNIT));
+    m_system->AddLink(prismatic);
+    prismatic->Initialize(m_carrier_body, m_chassis_body, ChCoordsys<>(VNULL, QUNIT));
 
     m_slip_lock = chrono_types::make_shared<ChLinkLockLock>();
-    // m_system->AddLink(m_slip_lock);
-    // m_slip_lock->Initialize(m_chassis_body, m_slip_body, ChCoordsys<>(VNULL, QUNIT));
-    // m_slip_lock->SetMotion_axis(ChVector<>(0, 0, 1));
+    m_system->AddLink(m_slip_lock);
+    m_slip_lock->Initialize(m_chassis_body, m_slip_body, ChCoordsys<>(VNULL, QUNIT));
+    m_slip_lock->SetMotion_axis(ChVector<>(0, 0, 1));
 
     ChQuaternion<> z2y;
     z2y.Q_from_AngAxis(-CH_C_PI / 2 - m_camber_angle, ChVector<>(1, 0, 0));
@@ -303,17 +295,11 @@ void MMXTireTestRig::CreateMechanism() {
         m_rot_motor->Initialize(m_spindle_body, m_slip_body, ChFrame<>(ChVector<>(0, 3 * dim, -4 * dim), z2y));
     } else {
         auto revolute = chrono_types::make_shared<ChLinkLockRevolute>();
-        //m_system->AddLink(revolute);
-        //revolute->Initialize(m_spindle_body, m_slip_body, ChCoordsys<>(ChVector<>(0, 3 * dim, -4 * dim), z2y));
+        m_system->AddLink(revolute);
+        revolute->Initialize(m_spindle_body, m_slip_body, ChCoordsys<>(ChVector<>(0, 3 * dim, -4 * dim), z2y));
     }
 
-    // Calculate required body force on chassis to enforce given normal load
-    m_total_mass = m_chassis_body->GetMass() + m_slip_body->GetMass() + m_spindle_body->GetMass() + m_wheel->GetMass() +
-                   m_tire->GetMass();
-
-    m_applied_load = m_total_mass * m_system->Get_G_acc().Length() - m_normal_load;
-
-    // Initialize subsystems
+    // Initialize the wheel and tire subsystems
     m_wheel->Initialize(m_spindle_body, LEFT);
     m_wheel->SetVisualizationType(VisualizationType::NONE);
     m_wheel->SetTire(m_tire);
@@ -321,6 +307,25 @@ void MMXTireTestRig::CreateMechanism() {
     m_tire->Initialize(m_wheel);
     m_tire->SetVisualizationType(m_tire_vis);
     m_tire->AddVisualizationAssets(m_tire_vis);
+
+	// Update the spindle to hold only the tire mass and inertia 
+	m_spindle_body->SetMass(m_tire->GetMass());
+    m_spindle_body->SetInertiaXX(m_tire->GetInertia());
+
+	 // Calculate required body force on chassis to enforce a given normal load
+    m_total_mass = m_chassis_body->GetMass() + m_slip_body->GetMass() + m_spindle_body->GetMass();
+    m_applied_load = m_total_mass * m_system->Get_G_acc().Length() - m_normal_load;
+
+    // If the load is great enough, adjust the mass of the chassis to acount for the applied load
+    // Otherwise, the no additional oad will be applied or removed from the system
+    double new_chassis_mass = m_chassis_body->GetMass() - m_applied_load / m_system->Get_G_acc().Length();
+    if (new_chassis_mass > m_wheel->GetMass()) {
+        m_chassis_body->SetMass(new_chassis_mass);
+        m_chassis_body->SetInertiaXX(m_wheel->GetInertia() * new_chassis_mass);
+        
+		m_total_mass = m_chassis_body->GetMass() + m_slip_body->GetMass() + m_spindle_body->GetMass();
+        m_applied_load = -1 * m_total_mass * m_system->Get_G_acc().Length();
+    }
 
     // Set the rig offset based on wheel center
     m_rig_hoffset = 3 * dim;

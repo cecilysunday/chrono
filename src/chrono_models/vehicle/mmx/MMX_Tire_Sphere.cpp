@@ -9,14 +9,14 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban with modifications by Cecily Sunday
 // =============================================================================
 //
-// MMX rover wheel subsystem
+// MMX spherical tire subsystem
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/mmx/MMX_Wheel.h"
+#include "chrono_models/vehicle/mmx/MMX_Tire_Sphere.h"
 
 namespace chrono {
 namespace vehicle {
@@ -26,15 +26,25 @@ namespace mmx {
 // Static variables - units in mm g s
 // -----------------------------------------------------------------------------
 
-const double MMX_Wheel::m_radius = 0.5;   // 70.0;
-const double MMX_Wheel::m_width = 1.0;    // 53.0;
-const double MMX_Wheel::m_mass = 1.0;     // 979.046;
-const ChVector<> MMX_Wheel::m_inertia(0.145833333, 0.125, 0.145833333);  // (1428509.606, 2398662.540, 1428509.606);
+const double MMX_Tire_Sphere::m_radius = 50.0;
+const double MMX_Tire_Sphere::m_width = 100.0;
+const double MMX_Tire_Sphere::m_mass = 1000.0;
+
+const ChVector<> MMX_Tire_Sphere::m_inertia(1000000, 1000000, 1000000);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-MMX_Wheel::MMX_Wheel(const std::string& name) : ChWheel(name) {}
+MMX_Tire_Sphere::MMX_Tire_Sphere(const std::string& name) : MMXTire(name) {
+    SetTireType(TireType::SPHERE);
+}
 
+void MMX_Tire_Sphere::CreateContactMaterial(ChContactMethod contact_method) {
+    MaterialInfo minfo;
+    minfo.mu = 0.45f;
+    minfo.cr = 0.50f;
+    minfo.Y = 7.0e8f;
+    m_material = minfo.CreateMaterial(contact_method);
+}
 
 }  // end namespace generic
 }  // end namespace vehicle

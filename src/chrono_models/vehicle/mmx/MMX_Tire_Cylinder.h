@@ -12,14 +12,14 @@
 // Authors: Radu Serban with modifications by Cecily Sunday
 // =============================================================================
 //
-// MMX rover rigid tire subsystem
+// MMX cylindrical tire subsystem
 //
 // =============================================================================
 
-#ifndef MMX_SIMPLE_TIRE_H
-#define MMX_SIMPLE_TIRE_H
+#ifndef MMX_TIRE_CYLINDER_H
+#define MMX_TIRE_CYLINDER_H
 
-#include "chrono_vehicle/wheeled_vehicle/tire/ChRigidTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/MMXTire.h"
 
 #include "chrono_models/ChApiModels.h"
 
@@ -31,11 +31,11 @@ namespace mmx {
 /// @{
 
 /// Rigid tire model for the MMX rover
-class CH_MODELS_API MMX_SimpleTire : public ChRigidTire {
+class CH_MODELS_API MMX_Tire_Cylinder : public MMXTire {
   public:
-    MMX_SimpleTire(const std::string& name);
+    MMX_Tire_Cylinder(const std::string& name);
 
-    ~MMX_SimpleTire() {}
+    ~MMX_Tire_Cylinder() {}
 
     virtual double GetRadius() const override { return m_radius; }
     virtual double GetWidth() const override { return m_width; }

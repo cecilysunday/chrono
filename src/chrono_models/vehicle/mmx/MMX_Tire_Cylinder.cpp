@@ -12,11 +12,11 @@
 // Authors: Radu Serban with modifications by Cecily Sunday
 // =============================================================================
 //
-// MMX rover rigid tire subsystem
+// MMX cylindrical tire subsystem
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/mmx/MMX_PaddleTire.h"
+#include "chrono_models/vehicle/mmx/MMX_Tire_Cylinder.h"
 
 namespace chrono {
 namespace vehicle {
@@ -26,21 +26,22 @@ namespace mmx {
 // Static variables - units in mm g s
 // -----------------------------------------------------------------------------
 
-const double MMX_PaddleTire::m_radius = 107.0;
-const double MMX_PaddleTire::m_width = 53.0;
-const double MMX_PaddleTire::m_mass = 648.035;
-
-const ChVector<> MMX_PaddleTire::m_inertia(2356057.375, 4408726.551, 2356057.375);
+const double MMX_Tire_Cylinder::m_radius = 50.0;
+const double MMX_Tire_Cylinder::m_width = 100.0;		
+const double MMX_Tire_Cylinder::m_mass = 1000.0;
+const ChVector<> MMX_Tire_Cylinder::m_inertia(1458333.33, 1458333.33, 1250000.0);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-MMX_PaddleTire::MMX_PaddleTire(const std::string& name) : MMXPaddleTire(name) {}
+MMX_Tire_Cylinder::MMX_Tire_Cylinder(const std::string& name) : MMXTire(name) {
+    SetTireType(TireType::CYLINDER);
+}
 
-void MMX_PaddleTire::CreateContactMaterial(ChContactMethod contact_method) {
+void MMX_Tire_Cylinder::CreateContactMaterial(ChContactMethod contact_method) {
     MaterialInfo minfo;
-    minfo.mu = 0.9f;
-    minfo.cr = 0.1f;
-    minfo.Y = 2e7f;
+    minfo.mu = 0.45f;
+    minfo.cr = 0.50f;
+    minfo.Y = 7.0e8f;
     m_material = minfo.CreateMaterial(contact_method);
 }
 

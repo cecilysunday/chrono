@@ -12,11 +12,11 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// MMX rover wheel subsystem
+// MMX cylindrical wheel subsystem
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/mmx/MMX_TestWheel.h"
+#include "chrono_models/vehicle/mmx/MMX_Wheel_Cylinder.h"
 
 namespace chrono {
 namespace vehicle {
@@ -26,14 +26,14 @@ namespace mmx {
 // Static variables - units in mm g s
 // -----------------------------------------------------------------------------
 
-const double MMX_TestWheel::m_radius = 70.0;
-const double MMX_TestWheel::m_width = 53.0;
-const double MMX_TestWheel::m_mass = 1.0;
-const ChVector<> MMX_TestWheel::m_inertia(1459.083, 2450.000, 1459.083);
+const double MMX_Wheel_Cylinder::m_radius = 0.5;
+const double MMX_Wheel_Cylinder::m_width = 1.0;
+const double MMX_Wheel_Cylinder::m_mass = 1.0;
+const ChVector<> MMX_Wheel_Cylinder::m_inertia(0.145833333, 0.145833333, 0.125);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-MMX_TestWheel::MMX_TestWheel(const std::string& name) : ChWheel(name) {}
+MMX_Wheel_Cylinder::MMX_Wheel_Cylinder(const std::string& name) : ChWheel(name) {}
 
 
 }  // end namespace generic

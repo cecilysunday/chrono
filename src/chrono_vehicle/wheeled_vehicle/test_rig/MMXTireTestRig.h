@@ -59,9 +59,6 @@ class CH_VEHICLE_API MMXTireTestRig {
     /// If a function is not specified, the wheel is not actuated.
     void SetAngSpeedFunction(std::shared_ptr<ChFunction> funct);
 
-    /// Set collision type for tire-terrain interaction (default: SINGLE_POINT).
-    void SetTireCollisionType(ChTire::CollisionType coll_type);
-
     /// Set the time step for advancing tire dynamics (default: 1e-3 s).
     void SetTireStepsize(double step) { m_tire_step = step; }
 

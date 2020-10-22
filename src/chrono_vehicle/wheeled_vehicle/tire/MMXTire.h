@@ -12,12 +12,12 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Template for a rigid tire
+// MMX rigid 'paddle-wheel' subsystem
 //
 // =============================================================================
 
-#ifndef MMXPADDLETIRE_H
-#define MMXPADDLETIRE_H
+#ifndef MMXTIRE_H
+#define MMXTIRE_H
 
 #include <vector>
 
@@ -42,20 +42,25 @@ namespace vehicle {
 /// Rigid tire model.
 /// This tire is modeled as a rigid cylinder.  Requires a terrain system that
 /// supports rigid contact with friction.
-class CH_VEHICLE_API MMXPaddleTire : public ChTire {
+class CH_VEHICLE_API MMXTire : public ChTire {
   public:
-    MMXPaddleTire(const std::string& name  ///< [in] name of this tire system
+    enum class TireType { SPHERE, CYLINDER, SIMPLE, PADDLE };
+
+    MMXTire(const std::string& name  ///< [in] name of this tire system
                 );
 
-    virtual ~MMXPaddleTire();
+    virtual ~MMXTire();
 
     /// Get the name of the vehicle subsystem template.
-    virtual std::string GetTemplateName() const override { return "RigidTire"; }
+    virtual std::string GetTemplateName() const override { return "MMXTire"; }
 
     /// Set Wavefront OBJ file for contact mesh.
     void SetMeshFilename(const std::string& mesh_file,   ///< [in] name of Wavefront file
                          double sweep_sphere_radius = 0  ///< [in] radius of sweeping sphere
                          );
+
+	/// Set the type of tire that is to be used in the case that a contect mesh is not provided
+    void SetTireType(TireType ttype) { m_tire_type = ttype; }
 
     /// Check whether or not this tire uses a contact mesh.
     bool UseContactMesh() const { return m_use_contact_mesh; }
@@ -111,6 +116,8 @@ class CH_VEHICLE_API MMXPaddleTire : public ChTire {
 
     /// Initialize this tire by associating it to the specified wheel.
     virtual void Initialize(std::shared_ptr<ChWheel> wheel) override;
+
+	TireType m_tire_type;		 ///< tire shape (if a contact mesh is not being used)
 
     bool m_use_contact_mesh;         ///< flag indicating use of a contact mesh
     std::string m_contact_meshFile;  ///< name of the OBJ file for contact mesh

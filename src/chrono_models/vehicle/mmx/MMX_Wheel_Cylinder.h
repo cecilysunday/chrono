@@ -12,12 +12,12 @@
 // Authors: Radu Serban with modifications by Cecily Sunday
 // =============================================================================
 //
-// MMX rover wheel subsystem
+// MMX cylindrical wheel subsystem
 //
 // =============================================================================
 
-#ifndef MMX_TEST_WHEEL_H
-#define MMX_TEST_WHEEL_H
+#ifndef MMX_WHEEL_CYLINDER_H
+#define MMX_WHEEL_CYLINDER_H
 
 #include "chrono/core/ChGlobal.h"
 #include "chrono/assets/ChCylinderShape.h"
@@ -37,10 +37,10 @@ namespace mmx {
 /// @{
 
 /// Wheel subsystem for the mmw rover
-class CH_MODELS_API MMX_TestWheel : public ChWheel {
+class CH_MODELS_API MMX_Wheel_Cylinder : public ChWheel {
   public:
-    MMX_TestWheel(const std::string& name);
-    ~MMX_TestWheel() {}
+    MMX_Wheel_Cylinder(const std::string& name);
+    ~MMX_Wheel_Cylinder() {}
 
     virtual double GetMass() const override { return m_mass; }
     virtual ChVector<> GetInertia() const override { return m_inertia; }

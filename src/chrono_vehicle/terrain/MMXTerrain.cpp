@@ -32,8 +32,7 @@
 //     for the bottom boundary and, if present, for the collision with the
 //     ground-fixed spheres
 //
-//   - Import both wall and grain material properties
-//   - Update the 'find height' function
+//   - Check the 'find height' function
 //
 // =============================================================================
 
@@ -312,7 +311,7 @@ void MMXTerrain::Initialize(const ChVector<>& center,
             sphere->SetMass(mass);
             sphere->SetPos(pos);
             sphere->SetInertiaXX(inertia);
-            sphere->SetBodyFixed(false);
+            sphere->SetBodyFixed(true);
             sphere->SetCollide(true);
             sphere->AddAsset(m_sphere_color);
             sphere->GetCollisionModel()->ClearModel();
@@ -335,15 +334,15 @@ void MMXTerrain::Synchronize(double time) {
     return;
 }
 
-// FIX THIS
+// CHECK IF THIS IS CORRECT OR NOT
 double MMXTerrain::GetHeight(const ChVector<>& loc) const {
-    /*double highest = m_bottom;
+    double highest = m_bottom;
     for (auto body : m_ground->GetSystem()->Get_bodylist()) {
         double height = ChWorldFrame::Height(body->GetPos());
         if (body->GetIdentifier() > m_start_id && body->GetPos().z() > highest)
             highest = body->GetPos().z();
     }
-    return highest + m_radius;*/
+    return highest + m_radius;
     return m_height;
 }
 

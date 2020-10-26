@@ -263,8 +263,8 @@ void function_CalcContactForces(
             } else {
                 kn = user_kn;
                 kt = user_kt;
-                gn = m_eff * user_gn;
-                gt = m_eff * user_gt;
+                gn = user_gn;
+                gt = user_gt;
             }
 
             kn_simple = kn;

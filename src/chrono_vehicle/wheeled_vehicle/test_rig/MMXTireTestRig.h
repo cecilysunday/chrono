@@ -45,6 +45,17 @@ class CH_VEHICLE_API MMXTireTestRig {
                    ChSystem* system                 ///< containing mechanical system
     );
 
+	MMXTireTestRig(ChSystem* system);
+
+	// If the default constructor is used, set the system type
+    void SetSystem(ChSystem* system) { m_system = system; }
+
+	// If the default constructor is used, set the system type
+    void SetWheel(std::shared_ptr<ChWheel> wheel) { m_wheel = wheel; }
+
+	// If the default constructor is used, set the tire type
+	void SetTire(std::shared_ptr<ChTire> tire) { m_tire = tire; }
+
     /// Set desired normal load (default: 0 N).
     void SetNormalLoad(double load) { m_normal_load = load; }
 
@@ -100,6 +111,9 @@ class CH_VEHICLE_API MMXTireTestRig {
 
     /// Get a handle to the underlying terrain subsystem.
     std::shared_ptr<ChTerrain> GetTerrain() const { return m_terrain; }
+
+	/// Get a handle to the underlying tire subsystem.
+    std::shared_ptr<ChTire> GetTire() const { return m_tire; }
 
     /// Get current carrier body position.
     const ChVector<>& GetPos() const { return m_carrier_body->GetPos(); }

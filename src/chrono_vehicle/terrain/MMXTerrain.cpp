@@ -311,7 +311,7 @@ void MMXTerrain::Initialize(const ChVector<>& center,
             sphere->SetMass(mass);
             sphere->SetPos(pos);
             sphere->SetInertiaXX(inertia);
-            sphere->SetBodyFixed(true);
+            sphere->SetBodyFixed(false);
             sphere->SetCollide(true);
             sphere->AddAsset(m_sphere_color);
             sphere->GetCollisionModel()->ClearModel();
@@ -330,11 +330,7 @@ void MMXTerrain::Initialize(const ChVector<>& center,
     m_ground->GetSystem()->RegisterCustomCollisionCallback(cb);
 }
 
-void MMXTerrain::Synchronize(double time) {
-    return;
-}
-
-// CHECK IF THIS IS CORRECT OR NOT
+// Check if this is correct
 double MMXTerrain::GetHeight(const ChVector<>& loc) const {
     double highest = m_bottom;
     for (auto body : m_ground->GetSystem()->Get_bodylist()) {
@@ -343,7 +339,6 @@ double MMXTerrain::GetHeight(const ChVector<>& loc) const {
             highest = body->GetPos().z();
     }
     return highest + m_radius;
-    return m_height;
 }
 
 ChVector<> MMXTerrain::GetNormal(const ChVector<>& loc) const {

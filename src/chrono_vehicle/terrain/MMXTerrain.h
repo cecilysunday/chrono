@@ -89,9 +89,6 @@ class CH_VEHICLE_API MMXTerrain : public ChTerrain {
                     const std::vector<std::pair<ChVector<>, double>>& pinfo
                     );
 
-    /// Update the state of the terrain system at the specified time
-    virtual void Synchronize(double time) override;
-
     /// Get the number of particles.
     unsigned int GetNumParticles() const { return m_num_particles; }
 

@@ -34,10 +34,27 @@
 namespace chrono {
 namespace vehicle {
 
+	
 MMXTireTestRig::MMXTireTestRig(std::shared_ptr<ChWheel> wheel, std::shared_ptr<ChTire> tire, ChSystem* system)
     : m_system(system),
       m_wheel(wheel),
       m_tire(tire),
+      m_camber_angle(0),
+      m_normal_load(0),
+      m_applied_load(0),
+      m_total_mass(0),
+      m_load_chassis(false),
+      m_ls_actuated(false),
+      m_rs_actuated(false),
+      m_terrain_type(TerrainType::NONE),
+      m_rig_voffset(0),
+      m_rig_hoffset(0),
+      m_tire_step(1e-3),
+      m_tire_vis(VisualizationType::PRIMITIVES) {
+}
+
+MMXTireTestRig::MMXTireTestRig(ChSystem* system) 
+	: m_system(system), 
       m_camber_angle(0),
       m_normal_load(0),
       m_applied_load(0),
@@ -111,44 +128,6 @@ void MMXTireTestRig::InitializeMotors() {
 
 // -----------------------------------------------------------------------------
 
-/*class BaseFunction {
-  protected:
-    BaseFunction(double speed) : m_speed(speed) {}
-    double calc(double t) const {
-        double delay = 0.25;
-        double ramp = 0.50;
-        if (t <= delay)
-            return 0;
-        double tt = t - delay;
-        if (tt >= ramp)
-            return m_speed;
-        return m_speed * tt / ramp;
-    }
-    double m_speed;
-};
-
-class LinSpeedFunction : public BaseFunction, public ChFunction {
-  public:
-    LinSpeedFunction(double speed) : BaseFunction(speed) {}
-    virtual double Get_y(double t) const override { return calc(t); }
-    virtual LinSpeedFunction* Clone() const override { return new LinSpeedFunction(*this); }
-};
-
-class RotSpeedFunction : public BaseFunction, public ChFunction {
-  public:
-    RotSpeedFunction(double slip, double speed, double radius) : BaseFunction(speed), m_slip(slip), m_radius(radius) {}
-    virtual double Get_y(double t) const override {
-        double v = calc(t);
-        return (1 + m_slip) * v / m_radius;
-    }
-    virtual RotSpeedFunction* Clone() const override { return new RotSpeedFunction(*this); }
-
-    double m_slip;
-    double m_radius;
-};*/
-
-// -----------------------------------------------------------------------------
-
 void MMXTireTestRig::Advance(double step) {
     double time = m_system->GetChTime();
 
@@ -160,15 +139,15 @@ void MMXTireTestRig::Advance(double step) {
     }
 
     // Synchronize subsystems
-    m_terrain->Synchronize(time);
-    m_tire->Synchronize(time, *m_terrain.get());
-    m_spindle_body->Empty_forces_accumulators();
-    m_wheel->Synchronize();
+    m_terrain->Synchronize(time);					// Empty function
+    m_tire->Synchronize(time, *m_terrain.get());    // Calculate tire kinematics
+    m_spindle_body->Empty_forces_accumulators();	// Remove forces and torques from spindle
+    m_wheel->Synchronize();						    // Add forces and torques to spindle
 
     // Advance state
-    m_terrain->Advance(step);			// These don't appear to do anything ....
-    m_tire->Advance(step);				// These don't appear to do anything ....
-    m_system->DoStepDynamics(step);
+    m_terrain->Advance(step);						// Empty function
+    m_tire->Advance(step);							// Empty function
+    m_system->DoStepDynamics(step);					// Process contacts
 }
 
 // -----------------------------------------------------------------------------
@@ -345,8 +324,7 @@ void MMXTireTestRig::CreateTerrain() {
 }
 
 void MMXTireTestRig::CreateTerrainMMX() {
-    double terrain_voffset = m_params_mmx.height + 2.0 * m_params_mmx.radius;
-	ChVector<> location = ChVector<>(0, m_rig_hoffset, -m_rig_voffset - terrain_voffset);
+    ChVector<> location = ChVector<>(0, m_rig_hoffset, -m_rig_voffset - m_params_mmx.height);
 
     auto terrain = chrono_types::make_shared<vehicle::MMXTerrain>(m_system);
 	terrain->SetStartIdentifier(0);

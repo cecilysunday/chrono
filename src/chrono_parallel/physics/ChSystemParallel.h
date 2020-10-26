@@ -102,16 +102,19 @@ class CH_PARALLEL_API ChSystemParallel : public ChSystem {
 
     /// Return the time (in seconds) for the solver, within the time step.
     /// Note that this time excludes any calls to the solver's Setup function.
-    virtual double GetTimerSolver() const override;
+    virtual double GetTimerLSsolve() const override;
 
     /// Return the time (in seconds) for the solver Setup phase, within the time step.
-    virtual double GetTimerSetup() const override;
+    virtual double GetTimerLSsetup() const override;
 
     /// Return the time (in seconds) for calculating/loading Jacobian information, within the time step.
     virtual double GetTimerJacobian() const override;
 
     /// Return the time (in seconds) for runnning the collision detection step, within the time step.
     virtual double GetTimerCollision() const override;
+
+    /// Return the time (in seconds) for system setup, within the time step.
+    virtual double GetTimerSetup() const override { return 0; }
 
     /// Return the time (in seconds) for updating auxiliary data, within the time step.
     virtual double GetTimerUpdate() const override;
@@ -158,8 +161,25 @@ class CH_PARALLEL_API ChSystemParallel : public ChSystem {
 
     settings_container* GetSettings();
 
-    // Based on the specified logging level and the state of that level, enable or
-    // disable logging level.
+    /// Set the number of OpenMP threads used by Chrono itself, Eigen, and the collision detection system.
+    /// <pre>
+    ///  num_threads_chrono    - used for all OpenMP constructs and thrust algorithms in Chrono::Parallel.
+    ///  num_threads_collision - Ignored.  Chrono::Parallel sets num_threads_collision = num_threads_chrono.
+    ///  num_threads_eigen     - used in the Eigen sparse direct solvers and a few linear algebra operations.
+    ///                          Note that Eigen enables multi-threaded execution only under certain size conditions.
+    ///                          See the Eigen documentation.
+    ///                          If passing 0, then num_threads_eigen = num_threads_chrono.
+    /// </pre>
+    /// By default, num_threads_chrono is set to omp_get_num_procs() and num_threads_eigen is set to 1.
+    virtual void SetNumThreads(int num_threads_chrono,
+                               int num_threads_collision = 0,
+                               int num_threads_eigen = 0) override;
+
+    /// Enable dynamic adjustment of number of threads between the specified limits.
+    /// The initial number of threads is set to min_threads.
+    void EnableThreadTuning(int min_threads, int max_threads);
+
+    // Based on the specified logging level and the state of that level, enable or disable logging level.
     void SetLoggingLevel(LoggingLevel level, bool state = true);
 
     /// Calculate the (linearized) bilateral constraint violations.

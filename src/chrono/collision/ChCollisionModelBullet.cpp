@@ -22,7 +22,6 @@
 #include "chrono/collision/bullet/BulletCollision/CollisionShapes/bt2DShape.h"
 #include "chrono/collision/bullet/BulletCollision/CollisionShapes/btBarrelShape.h"
 #include "chrono/collision/bullet/BulletCollision/CollisionShapes/btCEtriangleShape.h"
-#include "chrono/collision/bullet/BulletWorldImporter/btBulletWorldImporter.h"
 #include "chrono/collision/bullet/btBulletCollisionCommon.h"
 #include "chrono/collision/gimpact/GIMPACT/Bullet/btGImpactCollisionAlgorithm.h"
 #include "chrono/collision/gimpact/GIMPACTUtils/btGImpactConvexDecompositionShape.h"
@@ -128,6 +127,7 @@ void ChCollisionModelBullet::injectShape(const ChVector<>& pos,
             // shape vector: {centered shape}
         } else {
             bt_compound_shape = chrono_types::make_shared<btCompoundShape>(true);
+            bt_compound_shape->setMargin(GetSuggestedFullMargin());
             btTransform mtransform;
             ChPosMatrToBullet(pos, rot, mtransform);
             bt_compound_shape->addChildShape(mtransform, shape->m_bt_shape);
@@ -142,6 +142,7 @@ void ChCollisionModelBullet::injectShape(const ChVector<>& pos,
         // shape vector: {centered shape}
         m_shapes.push_back(std::shared_ptr<ChCollisionShape>(shape));
         bt_compound_shape = chrono_types::make_shared<btCompoundShape>(true);
+        bt_compound_shape->setMargin(GetSuggestedFullMargin());
         btTransform mtransform;
         mtransform.setIdentity();
         bt_compound_shape->addChildShape(mtransform, ((ChCollisionShapeBullet*)m_shapes[0].get())->m_bt_shape);
@@ -624,6 +625,7 @@ bool ChCollisionModelBullet::AddTriangleMesh(std::shared_ptr<ChMaterialSurface> 
         } else {
             // Note: currently there's no 'perfect' convex decomposition method, so code here is a bit experimental...
 
+            /*
             // using the HACD convex decomposition
             auto mydecompositionHACD = chrono_types::make_shared<ChConvexDecompositionHACD>();
             mydecompositionHACD->AddTriangleMesh(*trimesh);
@@ -640,6 +642,22 @@ bool ChCollisionModelBullet::AddTriangleMesh(std::shared_ptr<ChMaterialSurface> 
             );
             mydecompositionHACD->ComputeConvexDecomposition();
             AddTriangleMeshConcaveDecomposed(material, mydecompositionHACD, pos, rot);
+            */
+
+            // using HACDv2 convex decomposition
+            auto mydecompositionHACDv2 = chrono_types::make_shared<ChConvexDecompositionHACDv2>();
+            mydecompositionHACDv2->Reset();
+            mydecompositionHACDv2->AddTriangleMesh(*trimesh);
+            mydecompositionHACDv2->SetParameters(  //
+                512,                               // max hull count
+                256,                               // max hull merge
+                64,                                // max hull vettices
+                0.2f,                              // concavity
+                0.0f,                              // small cluster threshold
+                1e-9f                              // fuse tolerance
+            );
+            mydecompositionHACDv2->ComputeConvexDecomposition();
+            AddTriangleMeshConcaveDecomposed(material, mydecompositionHACDv2, pos, rot);
         }
     }
 

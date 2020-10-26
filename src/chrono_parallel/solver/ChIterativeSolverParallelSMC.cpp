@@ -29,17 +29,12 @@
 //// case. Is there a solution?
 
 #include <algorithm>
+#include <stdexcept>
 #include <thrust/sort.h>
 
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/physics/ChMaterialSurfaceSMC.h"
 #include "chrono_parallel/solver/ChIterativeSolverParallel.h"
-
-#if defined(CHRONO_OPENMP_ENABLED)
-#include <thrust/system/omp/execution_policy.h>
-#elif defined(CHRONO_TBB_ENABLED)
-#include <thrust/system/tbb/execution_policy.h>
-#endif
 
 #if defined _WIN32
 #include <cstdint>
@@ -68,7 +63,7 @@ void function_CalcContactForces(
     real min_spin_vel,                                    // threshold spinning velocity
     real dT,                                              // integration time step
     real* body_mass,                                      // body masses (per body)
-    real3* pos,                                           // body positions 
+    real3* pos,                                           // body positions
     quaternion* rot,                                      // body orientations
     real* vel,                                            // body linear and angular velocities
     real3* friction,                                      // eff. coefficients of friction (per contact)
@@ -150,7 +145,7 @@ void function_CalcContactForces(
     real adhesionSPerko_eff = adhesion[index].z;
 
     real cr_eff = cr[index];
-
+   
     real user_kn = smc_params[index].x;
     real user_kt = smc_params[index].y;
     real user_gn = smc_params[index].z;
@@ -669,8 +664,8 @@ void ChIterativeSolverParallelSMC::ProcessContacts() {
         Thrust_Fill(shear_touch, false);
 #pragma omp parallel for
         for (int i = 0; i < (signed)data_manager->num_rigid_contacts; i++) {
-            vec2 pair = I2(int(data_manager->host_data.contact_pairs[i] >> 32),
-                           int(data_manager->host_data.contact_pairs[i] & 0xffffffff));
+            vec2 pair = I2(int(data_manager->host_data.contact_shapeIDs[i] >> 32),
+                           int(data_manager->host_data.contact_shapeIDs[i] & 0xffffffff));
             shape_pairs[i] = pair;
         }
     }

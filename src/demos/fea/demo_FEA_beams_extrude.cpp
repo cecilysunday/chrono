@@ -16,7 +16,6 @@
 //
 // =============================================================================
 
-#include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/physics/ChLinkMate.h"
 #include "chrono/physics/ChBodyEasy.h"
@@ -125,12 +124,13 @@ int main(int argc, char* argv[]) {
 
     double wire_diameter = 0.010;
 
-	auto minertia = chrono_types::make_shared<ChInertiaCosseratUniformDensity>();
+	auto minertia = chrono_types::make_shared<ChInertiaCosseratSimple>();
 	minertia->SetAsCircularSection(wire_diameter, 2700);  // automatically sets A etc., from width, height, density 
 
 	auto melasticity = chrono_types::make_shared<ChElasticityCosseratSimple>();
 	melasticity->SetYoungModulus(0.5e9);
 	melasticity->SetGshearModulus(0.5e9 * 0.7);
+    melasticity->SetAsCircularSection(wire_diameter);
 
 	auto mdamping = chrono_types::make_shared<ChDampingCosseratLinear>();
 	mdamping->SetDampingCoefficientsRe((1e-3)*ChVector<>(1, 1, 1)); 
@@ -237,7 +237,7 @@ int main(int argc, char* argv[]) {
     mgear_motorLOW->Initialize(gearLOW, mground, ChFrame<>(gear_centerLOW));
     my_system.Add(mgear_motorLOW);
 
-    auto mgear_speedLOW = chrono_types::make_shared<ChFunction_Const>(-0.2); // [rad/s]
+    auto mgear_speedLOW = chrono_types::make_shared<ChFunction_Const>(-0.18); // [rad/s]
     mgear_motorLOW->SetSpeedFunction(mgear_speedLOW);
 
     auto gearHI =  CreateLobedGear (gear_centerHI, lobe_copies, lobe_width, lobe_primitive_rad, 
@@ -248,7 +248,7 @@ int main(int argc, char* argv[]) {
     mgear_motorHI->Initialize(gearHI, mground, ChFrame<>(gear_centerHI));
     my_system.Add(mgear_motorHI);
 
-    auto mgear_speedHI = chrono_types::make_shared<ChFunction_Const>( 0.2); // [rad/s]
+    auto mgear_speedHI = chrono_types::make_shared<ChFunction_Const>( 0.18); // [rad/s]
     mgear_motorHI->SetSpeedFunction(mgear_speedHI);
 
 

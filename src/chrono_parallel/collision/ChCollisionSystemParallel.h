@@ -57,8 +57,14 @@ class CH_PARALLEL_API ChCollisionSystemParallel : public ChCollisionSystem {
     /// Currently not implemented.
     virtual void Remove(ChCollisionModel* model) override;
 
+    /// Set the number of OpenMP threads for collision detection.
+    virtual void SetNumThreads(int nthreads) override;
+
     /// Run the algorithm and finds all the contacts.
     virtual void Run() override;
+
+    /// Return an AABB bounding all collision shapes in the system
+    virtual void GetBoundingBox(ChVector<>& aabb_min, ChVector<>& aabb_max) const override;
 
     /// Return the time (in seconds) for broadphase collision detection.
     virtual double GetTimerCollisionBroad() const override;

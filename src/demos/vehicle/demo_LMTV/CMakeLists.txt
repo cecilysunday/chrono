@@ -22,6 +22,7 @@ SET(LIBRARIES
 
 SET(DEMOS
     demo_VEH_LMTV_ride
+    demo_VEH_MTV_ride
 )
 
 # ------------------------------------------------------------------------------
@@ -39,7 +40,7 @@ FOREACH(PROGRAM ${DEMOS})
         COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
         LINK_FLAGS "${CH_LINKERFLAG_EXE}"
     )
-
+    SET_PROPERTY(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
     TARGET_LINK_LIBRARIES(${PROGRAM} ${LIBRARIES})
 
 ENDFOREACH(PROGRAM)

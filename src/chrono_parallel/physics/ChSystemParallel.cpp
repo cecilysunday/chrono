@@ -27,11 +27,12 @@
 #include "chrono/fea/ChElementTetra_4.h"
 #include "chrono/fea/ChNodeFEAxyz.h"
 
+#include "chrono_parallel/ChConfigParallel.h"
 #include "chrono_parallel/ChDataManager.h"
 #include "chrono_parallel/collision/ChCollisionModelParallel.h"
-#include "chrono_parallel/collision/ChCollisionSystemBulletParallel.h"
 #include "chrono_parallel/collision/ChCollisionSystemParallel.h"
-#include "chrono_parallel/math/matrix.h"  // for quaternion, real4
+#include "chrono_parallel/collision/ChCollisionSystemBulletParallel.h"
+#include "chrono_parallel/math/matrix.h"
 #include "chrono_parallel/physics/ChSystemParallel.h"
 #include "chrono_parallel/solver/ChSolverParallel.h"
 #include "chrono_parallel/solver/ChSystemDescriptorParallel.h"
@@ -719,7 +720,7 @@ void ChSystemParallel::Setup() {
 }
 
 void ChSystemParallel::RecomputeThreads() {
-#ifdef CHRONO_OMP_FOUND
+#ifdef _OPENMP
     timer_accumulator.insert(timer_accumulator.begin(), data_manager->system_timer.GetTime("step"));
     timer_accumulator.pop_back();
 
@@ -885,11 +886,11 @@ double ChSystemParallel::GetTimerUpdate() const {
     return data_manager->system_timer.GetTime("update");
 }
 
-double ChSystemParallel::GetTimerSolver() const {
+double ChSystemParallel::GetTimerLSsolve() const {
     return data_manager->system_timer.GetTime("ChIterativeSolverParallel_Solve");
 }
 
-double ChSystemParallel::GetTimerSetup() const {
+double ChSystemParallel::GetTimerLSsetup() const {
     return data_manager->system_timer.GetTime("ChIterativeSolverParallel_Setup");
 }
 
@@ -903,6 +904,35 @@ double ChSystemParallel::GetTimerCollision() const {
 
 settings_container* ChSystemParallel::GetSettings() {
     return &(data_manager->settings);
+}
+
+// -------------------------------------------------------------
+
+void ChSystemParallel::SetNumThreads(int num_threads_chrono, int num_threads_collision, int num_threads_eigen) {
+    ChSystem::SetNumThreads(num_threads_chrono, num_threads_chrono, num_threads_eigen);
+
+#ifdef _OPENMP
+    int max_avail_threads = omp_get_max_threads();
+
+    if (num_threads_chrono > max_avail_threads) {
+        std::cout << "WARNING! Requested number of threads (" << num_threads_chrono << ") ";
+        std::cout << "larger than maximum available (" << max_avail_threads << ")" << std::endl;
+    }
+    omp_set_num_threads(num_threads_chrono);
+#else
+    std::cout << "WARNING! OpenMP not enabled" << std::endl;
+#endif
+}
+
+void ChSystemParallel::EnableThreadTuning(int min_threads, int max_threads) {
+#ifdef _OPENMP
+    data_manager->settings.perform_thread_tuning = true;
+    data_manager->settings.min_threads = min_threads;
+    data_manager->settings.max_threads = max_threads;
+    omp_set_num_threads(min_threads);
+#else
+    std::cout << "WARNING! OpenMP not enabled" << std::endl;
+#endif
 }
 
 // -------------------------------------------------------------

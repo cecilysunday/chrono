@@ -176,10 +176,10 @@ void SprocketDoublePinContactCB::OnCustomCollision(ChSystem* system) {
         auto shoe = std::static_pointer_cast<ChTrackShoeDoublePin>(m_track->GetTrackShoe(is));
 
         // Perform collision test for the "left" connector body
-        CheckConnectorSprocket(shoe->m_connector_L, shoe->m_conn_material, locS_abs);
+        CheckConnectorSprocket(shoe->m_connector_L, shoe->GetSprocketContactMaterial(), locS_abs);
 
         // Perform collision test for the "right" connector body
-        CheckConnectorSprocket(shoe->m_connector_R, shoe->m_conn_material, locS_abs);
+        CheckConnectorSprocket(shoe->m_connector_R, shoe->GetSprocketContactMaterial(), locS_abs);
 
         if (m_lateral_contact) {
             // Express guiding pin center in the global frame
@@ -396,6 +396,10 @@ void SprocketDoublePinContactCB::CheckPinSprocket(std::shared_ptr<ChTrackShoeDou
 
     // No contact if the pin is close enough to the sprocket's center
     if (std::abs(locPin.y()) < m_lateral_backlash)
+        return;
+
+    // No contact if pin is too far from sprocket center
+    if (locPin.x() * locPin.x() + locPin.z() * locPin.z() > m_gear_RT * m_gear_RT)
         return;
 
     // Fill in contact information and add the contact to the system.

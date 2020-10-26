@@ -9,7 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Alessandro Tasora
+// Authors: Alessandro Tasora, Radu Serban
 // =============================================================================
 
 #ifndef CH_COLLISION_SYSTEM_BULLET_H
@@ -27,7 +27,7 @@ namespace collision {
 /// Contains both the broadphase and the narrow phase Bullet methods.
 class ChApi ChCollisionSystemBullet : public ChCollisionSystem {
   public:
-    ChCollisionSystemBullet(unsigned int max_objects = 16000, double scene_size = 500);
+    ChCollisionSystemBullet();
     virtual ~ChCollisionSystemBullet();
 
     /// Clears all data instanced by this algorithm
@@ -46,9 +46,15 @@ class ChApi ChCollisionSystemBullet : public ChCollisionSystem {
     /// engine (custom data may be deallocated).
     // virtual void RemoveAll();
 
+    /// Set the number of OpenMP threads for collision detection.
+    virtual void SetNumThreads(int nthreads) override;
+
     /// Run the algorithm and finds all the contacts.
     /// (Contacts will be managed by the Bullet persistent contact cache).
     virtual void Run() override;
+
+    /// Return an AABB bounding all collision shapes in the system
+    virtual void GetBoundingBox(ChVector<>& aabb_min, ChVector<>& aabb_max) const override;
 
     /// Reset timers for collision detection.
     virtual void ResetTimers() override;

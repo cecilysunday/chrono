@@ -25,6 +25,10 @@
 #include "chrono_models/vehicle/man/MAN_10t_RotaryArm2.h"
 
 #include "chrono_models/vehicle/uaz/UAZBUS_RotaryArm.h"
+
+#include "chrono_models/vehicle/gator/Gator_RackPinion.h"
+
+#include "chrono_models/vehicle/rccar/RCCar_PitmanArm.h"
 %}
 
 %shared_ptr(chrono::vehicle::citybus::CityBus_RotaryArm)
@@ -34,6 +38,9 @@
 %shared_ptr(chrono::vehicle::man::MAN_10t_RotaryArm2)
 
 %shared_ptr(chrono::vehicle::uaz::UAZBUS_RotaryArm)
+%shared_ptr(chrono::vehicle::rccar::RCCar_PitmanArm)
+
+%shared_ptr(chrono::vehicle::gator::Gator_RackPinion)
 
 /* Parse the header file to generate wrappers */
 %import "chrono_python/vehicle/ChSteering.i"
@@ -47,3 +54,7 @@
 %include "../../chrono_models/vehicle/man/MAN_10t_RotaryArm2.h"
 
 %include "../../chrono_models/vehicle/uaz/UAZBUS_RotaryArm.h"
+
+%include "../../chrono_models/vehicle/gator/Gator_RackPinion.h"
+
+%include "../../chrono_models/vehicle/rccar/RCCar_PitmanArm.h"

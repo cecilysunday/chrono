@@ -253,7 +253,7 @@ void SprocketSinglePinContactCB::CheckCircleProfile(std::shared_ptr<ChTrackShoeS
     ////contact.eff_radius = m_shoe_R;  //// TODO: take into account m_gear_R?
 
     m_sprocket->GetGearBody()->GetSystem()->GetContactContainer()->AddContact(contact, m_sprocket->GetContactMaterial(),
-                                                                              shoe->m_cyl_material);
+                                                                              shoe->GetSprocketContactMaterial());
 }
 
 // Find the center of the profile arc that is closest to the specified location.
@@ -278,6 +278,10 @@ void SprocketSinglePinContactCB::CheckPinSprocket(std::shared_ptr<ChTrackShoeSin
 
     // No contact if the pin is close enough to the sprocket's center
     if (std::abs(locPin.y()) < m_lateral_backlash)
+        return;
+
+    // No contact if pin is too far from sprocket center
+    if (locPin.x() * locPin.x() + locPin.z() * locPin.z() > m_gear_RO * m_gear_RO)
         return;
 
     // Fill in contact information and add the contact to the system.

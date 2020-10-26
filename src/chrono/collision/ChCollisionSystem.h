@@ -33,8 +33,7 @@ namespace collision {
 /// Base class for generic collision engine.
 class ChApi ChCollisionSystem {
   public:
-    ChCollisionSystem(unsigned int max_objects = 16000, double scene_size = 500) {}
-
+    ChCollisionSystem() {}
     virtual ~ChCollisionSystem() {}
 
     /// Clears all data instanced by this algorithm
@@ -57,6 +56,9 @@ class ChApi ChCollisionSystem {
     /// This function will be called at each simulation step.
     virtual void Run() = 0;
 
+    /// Return an AABB bounding all collision shapes in the system
+    virtual void GetBoundingBox(ChVector<>& aabb_min, ChVector<>& aabb_max) const = 0;
+
     /// Return the time (in seconds) for broadphase collision detection.
     virtual double GetTimerCollisionBroad() const = 0;
 
@@ -65,6 +67,10 @@ class ChApi ChCollisionSystem {
 
     /// Reset any timers associated with collision detection.
     virtual void ResetTimers() {}
+
+    /// Set the number of OpenMP threads for collision detection.
+    /// The default implementation does nothing. Derived classes implement this function as applicable.
+    virtual void SetNumThreads(int nthreads) {}
 
     /// After the Run() has completed, you can call this function to
     /// fill a 'contact container', that is an object inherited from class

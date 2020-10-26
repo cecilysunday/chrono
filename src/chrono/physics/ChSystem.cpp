@@ -15,7 +15,6 @@
 #include <algorithm>
 
 #include "chrono/collision/ChCollisionSystemBullet.h"
-#include "chrono/parallel/ChOpenMP.h"
 #include "chrono/physics/ChProximityContainer.h"
 #include "chrono/physics/ChSystem.h"
 #include "chrono/solver/ChSolverAPGD.h"
@@ -51,6 +50,9 @@ ChSystem::ChSystem()
       step_min(0.002),
       step_max(0.04),
       tol_force(-1),
+      nthreads_chrono(ChOMP::GetNumProcs()),
+      nthreads_collision(1),
+      nthreads_eigen(1),
       is_initialized(false),
       is_updated(false),
       applied_forces_current(false),
@@ -101,6 +103,9 @@ ChSystem::ChSystem(const ChSystem& other) {
     dump_matrices = other.dump_matrices;
     SetTimestepperType(other.GetTimestepperType());
     tol_force = other.tol_force;
+    nthreads_chrono = other.nthreads_chrono;
+    nthreads_eigen = other.nthreads_eigen;
+    nthreads_collision = other.nthreads_collision;
     is_initialized = false;
     is_updated = false;
     applied_forces_current = false;
@@ -277,15 +282,32 @@ void ChSystem::SetCollisionSystem(std::shared_ptr<ChCollisionSystem> newcollsyst
     assert(assembly.GetNbodies() == 0);
     assert(newcollsystem);
     collision_system = newcollsystem;
+    collision_system->SetNumThreads(nthreads_collision);
 }
 
 void ChSystem::SetMaterialCompositionStrategy(std::unique_ptr<ChMaterialCompositionStrategy>&& strategy) {
     composition_strategy = std::move(strategy);
 }
 
+void ChSystem::SetNumThreads(int num_threads_chrono, int num_threads_collision, int num_threads_eigen) {
+    nthreads_chrono = std::max(1, num_threads_chrono);
+    nthreads_collision = (num_threads_collision == 0) ? num_threads_chrono : num_threads_collision;
+    nthreads_eigen = (num_threads_eigen == 0) ? num_threads_chrono : num_threads_eigen;
+}
+
+// -----------------------------------------------------------------------------
+
 // Initial system setup before analysis.
 // This function must be called once the system construction is completed.
 void ChSystem::SetupInitial() {
+    // Set num threads for Eigen
+    Eigen::setNbThreads(nthreads_eigen);
+
+    // Set num threads for the collision system
+    if (collision_system) {
+        collision_system->SetNumThreads(nthreads_collision);
+    }
+
     assembly.SetupInitial();
     is_initialized = true;
 }
@@ -536,6 +558,8 @@ void ChSystem::DescriptorPrepareInject(ChSystemDescriptor& mdescriptor) {
 void ChSystem::Setup() {
     CH_PROFILE("Setup");
 
+    timer_setup.start();
+
     ncoords = 0;
     ncoords_w = 0;
     ndoc = 0;
@@ -562,6 +586,8 @@ void ChSystem::Setup() {
     nsysvars_w = ncoords_w + ndoc_w;   // total number of variables (with 6 dof per body)
 
     ndof = ncoords - ndoc;  // number of degrees of freedom (approximate - does not consider constr. redundancy, etc)
+
+    timer_setup.stop();
 
 #ifdef _DEBUG
     // BOOKKEEPING SANITY CHECK
@@ -827,19 +853,20 @@ void ChSystem::StateGather(ChState& x, ChStateDelta& v, double& T) {
 }
 
 // From state Y={x,v} to system.
-void ChSystem::StateScatter(const ChState& x, const ChStateDelta& v, const double T) {
+void ChSystem::StateScatter(const ChState& x, const ChStateDelta& v, const double T, bool full_update) {
     unsigned int off_x = 0;
     unsigned int off_v = 0;
  
     // Let each object (bodies, links, etc.) in the assembly extract its own states.
     // Note that each object also performs an update
-    assembly.IntStateScatter(off_x, x, off_v, v, T);
+    assembly.IntStateScatter(off_x, x, off_v, v, T, full_update);
 
     // Use also on contact container:
     unsigned int displ_x = off_x - assembly.offset_x;
     unsigned int displ_v = off_v - assembly.offset_w;
-    contact_container->IntStateScatter(displ_x + contact_container->GetOffset_x(), x,
-                                       displ_v + contact_container->GetOffset_w(), v, T);
+    contact_container->IntStateScatter(displ_x + contact_container->GetOffset_x(), x,  //
+                                       displ_v + contact_container->GetOffset_w(), v,  //
+                                       T, full_update);
 
     ch_time = T;
 }
@@ -930,12 +957,13 @@ bool ChSystem::StateSolveCorrection(ChStateDelta& Dv,             // result: com
                                     const ChStateDelta& v,        // current state, v part
                                     const double T,               // current time T
                                     bool force_state_scatter,     // if false, x,v and T are not scattered to the system
+                                    bool full_update,             // if true, perform a full update during scatter
                                     bool force_setup              // if true, call the solver's Setup() function
 ) {
     CH_PROFILE("StateSolveCorrection");
 
     if (force_state_scatter)
-        StateScatter(x, v, T);
+        StateScatter(x, v, T, full_update);
 
     // R and Qc vectors  --> solver sparse solver structures  (also sets L and Dv to warmstart)
     IntToDescriptor(0, Dv, R, 0, L, Qc);
@@ -978,9 +1006,9 @@ bool ChSystem::StateSolveCorrection(ChStateDelta& Dv,             // result: com
     // If indicated, first perform a solver setup.
     // Return 'false' if the setup phase fails.
     if (force_setup) {
-        timer_setup.start();
+        timer_ls_setup.start();
         bool success = GetSolver()->Setup(*descriptor);
-        timer_setup.stop();
+        timer_ls_setup.stop();
         setupcount++;
         if (!success)
             return false;
@@ -988,9 +1016,9 @@ bool ChSystem::StateSolveCorrection(ChStateDelta& Dv,             // result: com
 
     // Solve the problem
     // The solution is scattered in the provided system descriptor
-    timer_solver.start();
+    timer_ls_solve.start();
     GetSolver()->Solve(*descriptor);
-    timer_solver.stop();
+    timer_ls_solve.stop();
 
     // Dv and L vectors  <-- sparse solver structures
     IntFromDescriptor(0, Dv, 0, L);

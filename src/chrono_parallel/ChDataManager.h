@@ -199,7 +199,7 @@ typedef blaze::Subvector<const DynamicVector<real>> ConstSubVectorType;
 //#define _GAMMAFFV_ submatrix(_gamma_,  _num_uni_ + _num_bil_ + 3 * _num_rf_c_ + _num_fluid_,  3 * _num_fluid_)
 
 // The maximum number of shear history contacts per smaller body (SMC)
-#define max_shear 15
+#define max_shear 20
 
 /// @addtogroup parallel_module
 /// @{

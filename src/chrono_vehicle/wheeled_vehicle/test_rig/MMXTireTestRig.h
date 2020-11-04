@@ -79,6 +79,9 @@ class CH_VEHICLE_API MMXTireTestRig {
     /// Import vectors containing inital size and location properties of the particles in the terrain
     void SetTerrainParticles(const std::vector<std::pair<ChVector<>, double>>& pinfo) { m_params_mmx.pinfo = pinfo; }
 
+	/// Add an additional offset between the top of the top-center of the terrain and the bottom-center of the wheel
+    void SetTerrainOffset(const ChVector<> offset) { m_terrain_offset = offset; }
+
     /// Enable use of MMX terrain.
     /// The terrain subsystem consists of identical spherical particles initialized in layers.
     /// A moving-patch option is used, with the patch dimensions set based on the tire dimensions.
@@ -158,6 +161,8 @@ class CH_VEHICLE_API MMXTireTestRig {
                                             
     double m_rig_hoffset;					 ///< horizontal offset from the base frame to the wheel face
     double m_rig_voffset;					 ///< vertical offset from the base frame to the bottom of the wheel
+
+	ChVector<> m_terrain_offset;			 ///< additional user-defined terrain offset from the bottom-center of the wheel
 
     std::shared_ptr<ChBody> m_ground_body;   ///< pointer to the ground body
     std::shared_ptr<ChBody> m_carrier_body;  ///< pointer to the rig carrier body

@@ -14,10 +14,6 @@
 //
 // Implementation of the MMX single-tire test rig
 //
-// TODO:
-// - Look at the advance function and undertand what is happening with all
-//   of the subsystems synchronize and advance calls
-//
 // =============================================================================
 
 #include "chrono_vehicle/wheeled_vehicle/test_rig/MMXTireTestRig.h"
@@ -49,6 +45,7 @@ MMXTireTestRig::MMXTireTestRig(std::shared_ptr<ChWheel> wheel, std::shared_ptr<C
       m_terrain_type(TerrainType::NONE),
       m_rig_voffset(0),
       m_rig_hoffset(0),
+      m_terrain_offset(ChVector<>(0,0,0)),
       m_tire_step(1e-3),
       m_tire_vis(VisualizationType::PRIMITIVES) {
 }
@@ -65,6 +62,7 @@ MMXTireTestRig::MMXTireTestRig(ChSystem* system)
       m_terrain_type(TerrainType::NONE),
       m_rig_voffset(0),
       m_rig_hoffset(0),
+      m_terrain_offset(ChVector<>(0, 0, 0)),
       m_tire_step(1e-3),
       m_tire_vis(VisualizationType::PRIMITIVES) {
 }
@@ -324,14 +322,16 @@ void MMXTireTestRig::CreateTerrain() {
 }
 
 void MMXTireTestRig::CreateTerrainMMX() {
-    ChVector<> location = ChVector<>(0, m_rig_hoffset, -m_rig_voffset - m_params_mmx.height);
-
+    ChVector<> location = ChVector<>( m_terrain_offset.x(), 
+									  m_rig_hoffset, 
+		                             -m_rig_voffset - m_params_mmx.height - m_terrain_offset.z());
+   
     auto terrain = chrono_types::make_shared<vehicle::MMXTerrain>(m_system);
 	terrain->SetStartIdentifier(0);
     terrain->SetSphereContactMaterial(m_params_mmx.sphere_mat);
 	terrain->SetGroundContactMaterial(m_params_mmx.ground_mat);
-    terrain->Initialize(location, m_params_mmx.length, m_params_mmx.width, m_params_mmx.height, m_params_mmx.radius,
-                        m_params_mmx.density, m_params_mmx.pinfo);
+    terrain->Initialize(location, m_params_mmx.length, m_params_mmx.width, m_params_mmx.height, 
+						m_params_mmx.radius, m_params_mmx.density, m_params_mmx.pinfo);
 
     m_terrain = terrain;
 }

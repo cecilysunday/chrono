@@ -48,6 +48,7 @@ void MMX_Tire_DLR1::CreateContactMaterial(ChContactMethod contact_method) {
     minfo.mu = 0.45f;
     minfo.cr = 0.50f;
     minfo.Y = 7.0e8f;
+    minfo.nu = 0.24f;
     m_material = minfo.CreateMaterial(contact_method);
 }
 

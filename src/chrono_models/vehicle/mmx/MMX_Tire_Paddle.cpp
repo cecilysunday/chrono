@@ -43,6 +43,7 @@ void MMX_Tire_Paddle::CreateContactMaterial(ChContactMethod contact_method) {
     minfo.mu = 0.45f;
     minfo.cr = 0.50f;
     minfo.Y = 2.0e7f;
+    minfo.nu = 0.24f;
     m_material = minfo.CreateMaterial(contact_method);
 }
 

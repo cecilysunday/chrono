@@ -28,9 +28,9 @@ namespace mmx {
 
 const double MMX_Tire_Paddle::m_radius = 107.0;
 const double MMX_Tire_Paddle::m_width = 53.0;
-const double MMX_Tire_Paddle::m_mass = 1.0; // 838.270
+const double MMX_Tire_Paddle::m_mass = 838.270; // 1.0
 
-const ChVector<> MMX_Tire_Paddle::m_inertia(3176.280, 5941.130, 3176.280);  // (2662580.480, 4980271.335, 2662580.480);
+const ChVector<> MMX_Tire_Paddle::m_inertia(2662580.480, 4980271.335, 2662580.480); // (3176.280, 5941.130, 3176.280);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -42,7 +42,7 @@ void MMX_Tire_Paddle::CreateContactMaterial(ChContactMethod contact_method) {
     MaterialInfo minfo;
     minfo.mu = 0.45f;
     minfo.cr = 0.50f;
-    minfo.Y = 2.0e7f;
+    minfo.Y = 7.0e8f;
     minfo.nu = 0.24f;
     m_material = minfo.CreateMaterial(contact_method);
 }

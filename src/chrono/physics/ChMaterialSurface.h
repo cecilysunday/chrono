@@ -96,7 +96,7 @@ class ChApi ChMaterialCompositionStrategy {
   public:
     virtual ~ChMaterialCompositionStrategy() {}
 
-    virtual float CombineFriction(float a1, float a2) const { return std::min<float>(a1, a2); }
+    virtual float CombineFriction(float a1, float a2) const { return std::max<float>(a1, a2); }
     virtual float CombineCohesion(float a1, float a2) const { return std::min<float>(a1, a2); }
     virtual float CombineRestitution(float a1, float a2) const { return std::min<float>(a1, a2); }
     virtual float CombineDamping(float a1, float a2) const { return std::min<float>(a1, a2); }

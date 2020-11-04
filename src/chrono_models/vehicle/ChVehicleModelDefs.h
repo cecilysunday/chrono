@@ -62,6 +62,9 @@ namespace gator {}
 /// Namespace for the FMTV vehicles
 namespace fmtv {}
 
+/// Namespace for the MMX wheels
+namespace mmx {}
+
 /// @} vehicle_models
 
 }  // end namespace vehicle

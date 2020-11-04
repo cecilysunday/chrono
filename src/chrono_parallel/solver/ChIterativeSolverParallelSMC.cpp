@@ -63,7 +63,7 @@ void function_CalcContactForces(
     real min_spin_vel,                                    // threshold spinning velocity
     real dT,                                              // integration time step
     real* body_mass,                                      // body masses (per body)
-    real3* pos,                                           // body positions 
+    real3* pos,                                           // body positions
     quaternion* rot,                                      // body orientations
     real* vel,                                            // body linear and angular velocities
     real3* friction,                                      // eff. coefficients of friction (per contact)
@@ -145,7 +145,7 @@ void function_CalcContactForces(
     real adhesionSPerko_eff = adhesion[index].z;
 
     real cr_eff = cr[index];
-
+   
     real user_kn = smc_params[index].x;
     real user_kt = smc_params[index].y;
     real user_gn = smc_params[index].z;

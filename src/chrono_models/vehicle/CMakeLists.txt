@@ -429,6 +429,26 @@ set(CVM_M113_FILES
 )
 source_group("m113" FILES ${CVM_M113_FILES})
 
+set(CVM_MMX_FILES
+    mmx/MMX_Tire_Sphere.h
+    mmx/MMX_Tire_Sphere.cpp
+    mmx/MMX_Tire_Simple.h
+    mmx/MMX_Tire_Simple.cpp
+    mmx/MMX_Tire_SimpleMesh.h
+    mmx/MMX_Tire_SimpleMesh.cpp
+    mmx/MMX_Tire_Paddle.h
+    mmx/MMX_Tire_Paddle.cpp
+    mmx/MMX_Tire_PaddleMesh.h
+    mmx/MMX_Tire_PaddleMesh.cpp
+    mmx/MMX_Tire_DLR1.h
+    mmx/MMX_Tire_DLR1.cpp
+    mmx/MMX_Wheel.h
+    mmx/MMX_Wheel.cpp
+    mmx/MMX_Wheel_Sphere.h
+    mmx/MMX_Wheel_Sphere.cpp
+)
+source_group("mmx" FILES ${CVM_MMX_FILES})
+
 set(CVM_RCCAR_FILES
   rccar/RCCar_BrakeSimple.cpp
   rccar/RCCar_BrakeSimple.h
@@ -509,6 +529,7 @@ add_library(ChronoModels_vehicle SHARED
     ${CVM_GATOR_FILES}
     ${CVM_M113_FILES}
     ${CVM_MAN_FILES}
+    ${CVM_MMX_FILES}
     ${CVM_RCCAR_FILES}
     ${CVM_KRAZ_FILES}
  )

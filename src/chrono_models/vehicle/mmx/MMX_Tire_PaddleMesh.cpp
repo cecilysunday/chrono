@@ -30,11 +30,11 @@ namespace mmx {
 
 const double MMX_Tire_PaddleMesh::m_radius = 107.0;
 const double MMX_Tire_PaddleMesh::m_width = 53.0;
-const double MMX_Tire_PaddleMesh::m_mass = 1.0; // 838.270;
+const double MMX_Tire_PaddleMesh::m_mass = 838.270; // 1.0
 
-const ChVector<> MMX_Tire_PaddleMesh::m_inertia(3176.280, 5941.130, 3176.280);  // (2662580.480, 4980271.335, 2662580.480);
+const ChVector<> MMX_Tire_PaddleMesh::m_inertia(2662580.480, 4980271.335, 2662580.480); // (3176.280, 5941.130, 3176.280);
 
-const std::string MMX_Tire_PaddleMesh::m_meshFile("vehicle/mmx/MMX_Tire_Paddle_Mesh10.obj"); // ("vehicle/mmx/MMX_Tire_Paddle_Mesh3.obj");
+const std::string MMX_Tire_PaddleMesh::m_meshFile("vehicle/mmx/MMX_Tire_Paddle_Mesh6.obj");
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -47,7 +47,8 @@ void MMX_Tire_PaddleMesh::CreateContactMaterial(ChContactMethod contact_method) 
     MaterialInfo minfo;
     minfo.mu = 0.45f;
     minfo.cr = 0.50f;
-    minfo.Y = 2.0e7f;
+    minfo.Y = 7.0e8f;
+    minfo.nu = 0.24f;
     m_material = minfo.CreateMaterial(contact_method);
 }
 

@@ -432,10 +432,6 @@ source_group("m113" FILES ${CVM_M113_FILES})
 set(CVM_MMX_FILES
     mmx/MMX_Tire_Sphere.h
     mmx/MMX_Tire_Sphere.cpp
-    mmx/MMX_Tire_Cylinder.h
-    mmx/MMX_Tire_Cylinder.cpp
-    mmx/MMX_Tire_CylinderMesh.h
-    mmx/MMX_Tire_CylinderMesh.cpp
     mmx/MMX_Tire_Simple.h
     mmx/MMX_Tire_Simple.cpp
     mmx/MMX_Tire_SimpleMesh.h
@@ -450,8 +446,6 @@ set(CVM_MMX_FILES
     mmx/MMX_Wheel.cpp
     mmx/MMX_Wheel_Sphere.h
     mmx/MMX_Wheel_Sphere.cpp
-    mmx/MMX_Wheel_Cylinder.h
-    mmx/MMX_Wheel_Cylinder.cpp
 )
 source_group("mmx" FILES ${CVM_MMX_FILES})
 

@@ -40,9 +40,10 @@ MMX_Tire_Sphere::MMX_Tire_Sphere(const std::string& name) : MMXTire(name) {
 
 void MMX_Tire_Sphere::CreateContactMaterial(ChContactMethod contact_method) {
     MaterialInfo minfo;
+    minfo.Y = 7.0e8f;
+    minfo.nu = 0.24f;
     minfo.mu = 0.45f;
     minfo.cr = 0.50f;
-    minfo.Y = 7.0e8f;
     m_material = minfo.CreateMaterial(contact_method);
 }
 

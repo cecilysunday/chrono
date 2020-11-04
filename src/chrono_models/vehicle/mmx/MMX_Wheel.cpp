@@ -26,10 +26,10 @@ namespace mmx {
 // Static variables - units in mm g s
 // -----------------------------------------------------------------------------
 
-const double MMX_Wheel::m_radius = 0.5;   // 70.0;
-const double MMX_Wheel::m_width = 1.0;    // 53.0;
-const double MMX_Wheel::m_mass = 1.0;     // 979.046;
-const ChVector<> MMX_Wheel::m_inertia(0.145833333, 0.125, 0.145833333);  // (1428509.606, 2398662.540, 1428509.606);
+const double MMX_Wheel::m_radius = 0.5;
+const double MMX_Wheel::m_width = 1.0;
+const double MMX_Wheel::m_mass = 1.0;
+const ChVector<> MMX_Wheel::m_inertia(0.145833333, 0.125, 0.145833333);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

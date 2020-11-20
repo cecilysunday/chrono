@@ -65,6 +65,9 @@ namespace fmtv {}
 /// Namespace for the MMX wheels
 namespace mmx {}
 
+/// namespace for the RCCar vehicle
+namespace rccar {}
+
 /// @} vehicle_models
 
 }  // end namespace vehicle

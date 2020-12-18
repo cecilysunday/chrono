@@ -20,7 +20,7 @@
 // Run benchamrk tests for a number of threads between MIN and MAX (inclusive) 
 // in increments of STEP.
 #define TEST_MIN_THREADS 1
-#define TEST_MAX_THREADS 16
+#define TEST_MAX_THREADS 36
 #define TEST_STEP_THREADS 1
 
 // =============================================================================

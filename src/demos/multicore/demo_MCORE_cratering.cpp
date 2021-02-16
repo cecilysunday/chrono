@@ -122,8 +122,21 @@ class ContactReporter : public ChContactContainer::ReportContactCallback {
         auto bodyA = static_cast<ChBody*>(modA);
         auto bodyB = static_cast<ChBody*>(modB);
 
-        csv << bodyA->GetIdentifier() << bodyB->GetIdentifier();
-        csv << pA << pB;
+		ChCollisionModelMulticore* pmodelA = static_cast<ChCollisionModelMulticore*>(bodyA->GetCollisionModel().get());
+        ChCollisionModelMulticore* pmodelB = static_cast<ChCollisionModelMulticore*>(bodyB->GetCollisionModel().get());
+		
+		auto shapeA = std::static_pointer_cast<ChCollisionShapeMulticore>(pmodelA->GetShapes().at(0));
+        auto shapeB = std::static_pointer_cast<ChCollisionShapeMulticore>(pmodelB->GetShapes().at(0));
+
+		double radiusA = -1;
+        double radiusB = -1;
+
+        if (shapeA->GetType() == ChCollisionShape::Type::SPHERE) radiusA = shapeA->B.x;
+        if (shapeB->GetType() == ChCollisionShape::Type::SPHERE) radiusB = shapeB->B.x;
+
+        csv << bodyA->GetIdentifier() << radiusA << bodyA->GetPos().x() << bodyA->GetPos().y() << bodyA->GetPos().z();
+        csv << bodyB->GetIdentifier() << radiusB << bodyB->GetPos().x() << bodyB->GetPos().y() << bodyB->GetPos().z();
+        csv << pA << pB << distance << eff_radius;
         csv << plane_coord.Get_A_Xaxis() << plane_coord.Get_A_Yaxis() << plane_coord.Get_A_Zaxis();
         csv << cforce << ctorque;
         csv << endl;
@@ -175,7 +188,7 @@ ChSystemSMC::TangentialDisplacementModel tangential_displ_mode = ChSystemSMC::Ta
 
 // Output
 bool povray_output = false;
-bool intermediate_checkpoints = false;
+bool intermediate_checkpoints = true;
 
 #ifdef USE_SMC
 const std::string out_dir = GetChronoOutputPath() + "CRATER_SMC";

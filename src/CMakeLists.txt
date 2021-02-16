@@ -544,7 +544,7 @@ add_subdirectory(chrono_sensor)
 add_subdirectory(chrono_synchrono)
 
 # Add directories for model libraries
-add_subdirectory(chrono_models)
+# add_subdirectory(chrono_models)
 
 # Add directories for demo programs, unit test programs, and benchmark test programs.
 if(BUILD_DEMOS)

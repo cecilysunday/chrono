@@ -161,3 +161,222 @@ void ChMulticoreDataManager::PrintMatrix(CompressedMatrix<real> src) {
         std::cout << "\n";
     }
 }
+
+    // MEMBER FUNCTIONS FOR BINARY I/O
+    // NOTE!!!In order to allow serialization with Chrono approach,
+    // at least implement these two functions, with the exact names
+    // ArchiveIN() and ArchiveOUT():
+
+void ChMulticoreDataManager::ArchiveOUT(ChArchiveOut& marchive)  //##### for Chrono serialization
+{
+    // suggested: use versioning
+    marchive.VersionWrite<ChMulticoreDataManager>();
+    // stream out all member data
+
+    ArchiveOUTShapeData(marchive);
+    ArchiveOUTIndexingVariables(marchive);
+}
+
+void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chrono serialization
+{
+    // suggested: use versioning
+    int version = marchive.VersionRead<ChMulticoreDataManager>();
+    // stream in all member data
+    ArchiveINShapeData(marchive);
+    ArchiveINIndexingVariables(marchive);
+}
+
+void ChMulticoreDataManager::ArchiveOUTHostData(ChArchiveOut& marchive) {
+    for (int i = 0; i < host_data.aabb_min.size(); ++i) {
+      std::cout << "iOut: " << i << std::endl;
+      marchive << CHNVP(host_data.aabb_min[i].x);
+    }
+}
+
+void ChMulticoreDataManager::ArchiveOUTVectorReal(ChArchiveOut& marchive, custom_vector<real>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        marchive << CHNVP(vector[i]);
+    }
+}
+void ChMulticoreDataManager::ArchiveOUTVectorReal3(ChArchiveOut& marchive, custom_vector<real3>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        for (int j = 0; j < 4; ++j) {
+            marchive << CHNVP(vector[i][j]);
+        }
+    }
+}
+void ChMulticoreDataManager::ArchiveOUTVectorReal4(ChArchiveOut& marchive, custom_vector<real4>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        for (int j = 0; j < 4; ++j) {
+            marchive << CHNVP(vector[i][j]);
+        }
+    }
+}
+void ChMulticoreDataManager::ArchiveOUTVectorQuaternion(ChArchiveOut& marchive, custom_vector<quaternion>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        for (int j = 0; j < 4; ++j) {
+            marchive << CHNVP(vector[i][j]);
+        }
+    }
+}
+void ChMulticoreDataManager::ArchiveOUTVectorInt(ChArchiveOut& marchive, custom_vector<int>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        marchive << CHNVP(vector[i]);
+    }
+}
+void ChMulticoreDataManager::ArchiveOUTVectorUInt(ChArchiveOut& marchive, custom_vector<uint>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        marchive << CHNVP(vector[i]);
+    }
+}
+void ChMulticoreDataManager::ArchiveOUTShapeData(ChArchiveOut& marchive) {
+    // for (int i = 0; i < shape_data.fam_rigid.size(); ++i) {
+    //     marchive << CHNVP(shape_data.fam_rigid[i].x);
+    //     marchive << CHNVP(shape_data.fam_rigid[i].y);
+    // }
+
+    ArchiveOUTVectorUInt(marchive, shape_data.id_rigid);
+    ArchiveOUTVectorInt(marchive, shape_data.typ_rigid);
+    ArchiveOUTVectorInt(marchive, shape_data.local_rigid);
+    ArchiveOUTVectorInt(marchive, shape_data.start_rigid);
+    ArchiveOUTVectorInt(marchive, shape_data.length_rigid);
+
+    // ArchiveOUTVectorQuaternion(marchive, shape_data.ObR_rigid);
+    // ArchiveOUTVectorReal3(marchive, shape_data.ObA_rigid);
+
+    // ArchiveOUTVectorReal(marchive, shape_data.sphere_rigid);
+    // ArchiveOUTVectorReal3(marchive, shape_data.box_like_rigid);
+    // ArchiveOUTVectorReal3(marchive, shape_data.triangle_rigid);
+    // for (int i = 0; i < shape_data.sphere_rigid.size(); ++i) {
+    //     marchive << CHNVP(shape_data.capsule_rigid[i].x);
+    //     marchive << CHNVP(shape_data.capsule_rigid[i].y);
+    // }
+    // ArchiveOUTVectorReal4(marchive, shape_data.rbox_like_rigid);
+    // ArchiveOUTVectorReal3(marchive, shape_data.convex_rigid);
+    // ArchiveOUTVectorInt(marchive, shape_data.tetrahedron_rigid);
+    // ArchiveOUTVectorReal3(marchive, shape_data.triangle_global);
+    // ArchiveOUTVectorReal3(marchive, shape_data.obj_data_A_global);
+    // ArchiveOUTVectorQuaternion(marchive, shape_data.obj_data_R_global);
+}
+
+void ChMulticoreDataManager::ArchiveOUTIndexingVariables(ChArchiveOut& marchive) {
+    marchive << CHNVP(num_rigid_bodies);
+    marchive << CHNVP(num_fluid_bodies);
+    marchive << CHNVP(num_shafts);
+    marchive << CHNVP(num_motors);
+    marchive << CHNVP(num_linmotors);
+    marchive << CHNVP(num_rotmotors);
+    marchive << CHNVP(num_dof);
+    marchive << CHNVP(num_rigid_shapes);
+    marchive << CHNVP(num_rigid_contacts);
+    marchive << CHNVP(num_rigid_fluid_contacts);
+    marchive << CHNVP(num_fluid_contacts);
+    marchive << CHNVP(num_unilaterals);
+    marchive << CHNVP(num_bilaterals);
+    marchive << CHNVP(num_constraints);
+    marchive << CHNVP(num_fea_nodes);
+    marchive << CHNVP(num_fea_tets);
+    marchive << CHNVP(num_rigid_tet_contacts);
+    marchive << CHNVP(num_marker_tet_contacts);
+    marchive << CHNVP(num_rigid_tet_node_contacts);
+    marchive << CHNVP(nnz_bilaterals);
+    marchive << CHNVP(Fc_current);
+}
+
+void ChMulticoreDataManager::ArchiveINHostData(ChArchiveIn& marchive) {
+    for (int i = 0; i < host_data.aabb_min.size(); ++i) {
+      std::cout << "iIn: " << i << std::endl;
+      marchive >> CHNVP(host_data.aabb_min[i].x);
+    }
+}
+
+void ChMulticoreDataManager::ArchiveINVectorReal(ChArchiveIn& marchive, custom_vector<real>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        marchive >> CHNVP(vector[i]);
+    }
+}
+void ChMulticoreDataManager::ArchiveINVectorReal3(ChArchiveIn& marchive, custom_vector<real3>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        for (int j = 0; j < 4; ++j) {
+            marchive >> CHNVP(vector[i][j]);
+        }
+    }
+}
+void ChMulticoreDataManager::ArchiveINVectorReal4(ChArchiveIn& marchive, custom_vector<real4>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        for (int j = 0; j < 4; ++j) {
+            marchive >> CHNVP(vector[i][j]);
+        }
+    }
+}
+void ChMulticoreDataManager::ArchiveINVectorQuaternion(ChArchiveIn& marchive, custom_vector<quaternion>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        for (int j = 0; j < 4; ++j) {
+            marchive >> CHNVP(vector[i][j]);
+        }
+    }
+}
+void ChMulticoreDataManager::ArchiveINVectorInt(ChArchiveIn& marchive, custom_vector<int>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        marchive >> CHNVP(vector[i]);
+    }
+}
+void ChMulticoreDataManager::ArchiveINVectorUInt(ChArchiveIn& marchive, custom_vector<uint>& vector) {
+    for (int i = 0; i < vector.size(); ++i) {
+        marchive >> CHNVP(vector[i]);
+    }
+}
+void ChMulticoreDataManager::ArchiveINShapeData(ChArchiveIn& marchive) {
+    // for (int i = 0; i < shape_data.fam_rigid.size(); ++i) {
+    //     marchive >> CHNVP(shape_data.fam_rigid[i].x);
+    //     marchive >> CHNVP(shape_data.fam_rigid[i].y);
+    // }
+
+    ArchiveINVectorUInt(marchive, shape_data.id_rigid);
+    ArchiveINVectorInt(marchive, shape_data.typ_rigid);
+    ArchiveINVectorInt(marchive, shape_data.local_rigid);
+    ArchiveINVectorInt(marchive, shape_data.start_rigid);
+    ArchiveINVectorInt(marchive, shape_data.length_rigid);
+
+    // ArchiveINVectorQuaternion(marchive, shape_data.ObR_rigid);
+    // ArchiveINVectorReal3(marchive, shape_data.ObA_rigid);
+
+    // ArchiveINVectorReal(marchive, shape_data.sphere_rigid);
+    // ArchiveINVectorReal3(marchive, shape_data.box_like_rigid);
+    // ArchiveINVectorReal3(marchive, shape_data.triangle_rigid);
+    // for (int i = 0; i < shape_data.sphere_rigid.size(); ++i) {
+    //     marchive >> CHNVP(shape_data.capsule_rigid[i].x);
+    //     marchive >> CHNVP(shape_data.capsule_rigid[i].y);
+    // }
+    // ArchiveINVectorReal4(marchive, shape_data.rbox_like_rigid);
+    // ArchiveINVectorReal3(marchive, shape_data.convex_rigid);
+    // ArchiveINVectorInt(marchive, shape_data.tetrahedron_rigid);
+    // ArchiveINVectorReal3(marchive, shape_data.triangle_global);
+    // ArchiveINVectorReal3(marchive, shape_data.obj_data_A_global);
+    // ArchiveINVectorQuaternion(marchive, shape_data.obj_data_R_global);
+}
+
+void ChMulticoreDataManager::ArchiveINIndexingVariables(ChArchiveIn& marchive) {
+    marchive >> CHNVP(num_rigid_bodies);
+    marchive >> CHNVP(num_fluid_bodies);
+    marchive >> CHNVP(num_shafts);
+    marchive >> CHNVP(num_motors);
+    marchive >> CHNVP(num_linmotors);
+    marchive >> CHNVP(num_rotmotors);
+    marchive >> CHNVP(num_dof);
+    marchive >> CHNVP(num_rigid_shapes);
+    marchive >> CHNVP(num_rigid_contacts);
+    marchive >> CHNVP(num_rigid_fluid_contacts);
+    marchive >> CHNVP(num_fluid_contacts);
+    marchive >> CHNVP(num_unilaterals);
+    marchive >> CHNVP(num_bilaterals);
+    marchive >> CHNVP(num_constraints);
+    marchive >> CHNVP(num_fea_nodes);
+    marchive >> CHNVP(num_fea_tets);
+    marchive >> CHNVP(num_rigid_tet_contacts);
+    marchive >> CHNVP(num_marker_tet_contacts);
+    marchive >> CHNVP(num_rigid_tet_node_contacts);
+    marchive >> CHNVP(nnz_bilaterals);
+    marchive >> CHNVP(Fc_current);
+}
+

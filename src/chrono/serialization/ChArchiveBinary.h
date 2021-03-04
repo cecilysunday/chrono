@@ -37,6 +37,9 @@ class  ChArchiveOutBinary : public ChArchiveOut {
       virtual void out     (ChNameValue<int> bVal) {
             (*ostream) << bVal.value();
       }
+      virtual void out     (ChNameValue<short> bVal) {
+            (*ostream) << bVal.value();
+      }
       virtual void out     (ChNameValue<double> bVal) {
             (*ostream) << bVal.value();
       }
@@ -59,6 +62,9 @@ class  ChArchiveOutBinary : public ChArchiveOut {
             (*ostream) << bVal.value();
       }
       virtual void out     (ChNameValue<unsigned long long> bVal){
+            (*ostream) << bVal.value();
+      }
+      virtual void out     (ChNameValue<long long> bVal){
             (*ostream) << bVal.value();
       }
       virtual void out     (ChNameValue<ChEnumMapperBase> bVal) {
@@ -130,6 +136,9 @@ class  ChArchiveInBinary : public ChArchiveIn {
       virtual void in     (ChNameValue<int> bVal) {
             (*istream) >> bVal.value();
       }
+      virtual void in     (ChNameValue<short> bVal) {
+            (*istream) >> bVal.value();
+      }
       virtual void in     (ChNameValue<double> bVal) {
             (*istream) >> bVal.value();
       }
@@ -149,6 +158,9 @@ class  ChArchiveInBinary : public ChArchiveIn {
             (*istream) >> bVal.value();
       }
       virtual void in     (ChNameValue<unsigned long long> bVal){
+            (*istream) >> bVal.value();
+      }
+      virtual void in     (ChNameValue<long long> bVal){
             (*istream) >> bVal.value();
       }
       virtual void in     (ChNameValue<ChEnumMapperBase> bVal) {

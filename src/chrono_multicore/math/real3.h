@@ -19,7 +19,7 @@
 
 #include "chrono_multicore/math/real.h"
 #include "chrono_multicore/math/real2.h"
-
+#include "chrono/serialization/ChArchive.h"
 #if !defined(__CUDACC__)
 #include "chrono_multicore/math/sse.h"
 #endif
@@ -83,6 +83,12 @@ class CH_MULTICORE_API real3 {
 #else
 
 #endif
+
+    /// Method to allow serialization of transient array to archives.
+    void ArchiveOUT(ChArchiveOut& marchive);
+
+    /// Method to allow de-serialization of transient array from archives.
+    void ArchiveIN(ChArchiveIn& marchive);
 
     // ========================================================================================
     union {
@@ -149,6 +155,26 @@ CUDA_HOST_DEVICE CH_MULTICORE_API real3 OrthogonalVector(const real3& v);
 CUDA_HOST_DEVICE CH_MULTICORE_API real3 UnitOrthogonalVector(const real3& v);
 CUDA_HOST_DEVICE CH_MULTICORE_API void Sort(real& a, real& b, real& c);
 CUDA_HOST_DEVICE CH_MULTICORE_API void Print(real3 v, const char* name);
+
+inline void real3::ArchiveOUT(ChArchiveOut& marchive) {
+    // suggested: use versioning
+    marchive.VersionWrite<real3>();  // must use specialized template (any)
+    // stream out all member array
+    marchive << CHNVP(array[0], "x");
+    marchive << CHNVP(array[1], "y");
+    marchive << CHNVP(array[2], "z");
+    marchive << CHNVP(array[3], "w");
+}
+
+inline void real3::ArchiveIN(ChArchiveIn& marchive) {
+    // suggested: use versioning
+    int version = marchive.VersionRead<real3>();  // must use specialized template (any)
+    // stream in all member array
+    marchive >> CHNVP(array[0], "x");
+    marchive >> CHNVP(array[1], "y");
+    marchive >> CHNVP(array[2], "z");
+    marchive >> CHNVP(array[3], "w");
+}
 
 /// @} multicore_math
 

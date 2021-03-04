@@ -873,6 +873,8 @@ class  ChArchiveOut : public ChArchive {
         // for integral types:
       virtual void out     (ChNameValue<bool> bVal) = 0;
       virtual void out     (ChNameValue<int> bVal) = 0;
+      virtual void out     (ChNameValue<short> bVal) = 0;
+      virtual void out     (ChNameValue<long long> bVal) = 0;
       virtual void out     (ChNameValue<double> bVal) = 0;
       virtual void out     (ChNameValue<float> bVal) = 0;
       virtual void out     (ChNameValue<char> bVal) = 0;
@@ -925,6 +927,7 @@ class  ChArchiveOut : public ChArchive {
       void out     (ChNameValue< std::vector<T> > bVal) {
           ChValueSpecific< std::vector<T> > specVal(bVal.value(), bVal.name(), bVal.flags());
           this->out_array_pre( specVal, bVal.value().size());
+          std::cout << "is fundamental: " << std::is_fundamental<T>::value << std::endl;
           for (size_t i = 0; i<bVal.value().size(); ++i)
           {
               char buffer[20];
@@ -1184,6 +1187,8 @@ class  ChArchiveIn : public ChArchive {
         // for integral types:
       virtual void in     (ChNameValue<bool> bVal) = 0;
       virtual void in     (ChNameValue<int> bVal) = 0;
+      virtual void in     (ChNameValue<short> bVal) = 0;
+      virtual void in     (ChNameValue<long long> bVal) = 0;
       virtual void in     (ChNameValue<double> bVal) = 0;
       virtual void in     (ChNameValue<float> bVal) = 0;
       virtual void in     (ChNameValue<char> bVal) = 0;

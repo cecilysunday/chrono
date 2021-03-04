@@ -81,6 +81,15 @@ ChStreamOutAscii& ChStreamOutAscii::operator<<(unsigned long long unVal) {
 
     return *this;
 }
+ChStreamOutAscii& ChStreamOutAscii::operator<<(long long unVal) {
+    char buffer[100];
+
+    sprintf(buffer, "%lld", unVal);
+
+    Output(buffer, strlen(buffer));
+
+    return *this;
+}
 /*
 ChStreamOutAscii& ChStreamOutAscii::operator <<(long lVal)
 {
@@ -252,6 +261,20 @@ ChStreamInAscii& ChStreamInAscii::operator>>(int& nVal) {
     *this >> buffer;
     RemoveTrailingCommas(buffer);
     nVal = atoi(buffer.c_str());
+    return *this;
+}
+ChStreamInAscii& ChStreamInAscii::operator>>(short& nVal) {
+    std::string buffer;
+    *this >> buffer;
+    RemoveTrailingCommas(buffer);
+    nVal = atoi(buffer.c_str());
+    return *this;
+}
+ChStreamInAscii& ChStreamInAscii::operator>>(long long& nVal) {
+    std::string buffer;
+    *this >> buffer;
+    RemoveTrailingCommas(buffer);
+    nVal = atoll(buffer.c_str());
     return *this;
 }
 /*
@@ -438,7 +461,26 @@ ChStreamOutBinary& ChStreamOutBinary::operator<<(const int Val) {
     }
     return (*this);
 }
-
+ChStreamOutBinary& ChStreamOutBinary::operator<<(const short Val) {
+    if (big_endian_machine) {
+        short tmp = Val;
+        StreamSwapBytes<short>(&tmp);
+        this->Output((char*)&tmp, sizeof(short));
+    } else {
+        this->Output((char*)&Val, sizeof(short));
+    }
+    return (*this);
+}
+ChStreamOutBinary& ChStreamOutBinary::operator<<(const long long Val) {
+    if (big_endian_machine) {
+        long long tmp = Val;
+        StreamSwapBytes<long long>(&tmp);
+        this->Output((char*)&tmp, sizeof(long long));
+    } else {
+        this->Output((char*)&Val, sizeof(long long));
+    }
+    return (*this);
+}
 ChStreamOutBinary& ChStreamOutBinary::operator<<(unsigned int Val) {
     if (big_endian_machine) {
         unsigned int tmp = Val;
@@ -572,7 +614,28 @@ ChStreamInBinary& ChStreamInBinary::operator>>(int& Val) {
     }
     return (*this);
 }
-
+ChStreamInBinary& ChStreamInBinary::operator>>(short& Val) {
+    if (big_endian_machine) {
+        short tmp;
+        this->Input((char*)&tmp, sizeof(short));
+        StreamSwapBytes<short>(&tmp);
+        Val = tmp;
+    } else {
+        this->Input((char*)&Val, sizeof(short));
+    }
+    return (*this);
+}
+ChStreamInBinary& ChStreamInBinary::operator>>(long long& Val) {
+    if (big_endian_machine) {
+        long long tmp;
+        this->Input((char*)&tmp, sizeof(long long));
+        StreamSwapBytes<long long>(&tmp);
+        Val = tmp;
+    } else {
+        this->Input((char*)&Val, sizeof(long long));
+    }
+    return (*this);
+}
 ChStreamInBinary& ChStreamInBinary::operator>>(unsigned int& Val) {
     if (big_endian_machine) {
         unsigned int tmp;

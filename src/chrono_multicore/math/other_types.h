@@ -28,6 +28,7 @@
 
 #define S2 _make_short2
 #define U3 _make_uvec3
+#define U4 _make_uvec4
 #define I2 _make_vec2
 
 typedef unsigned int uint;
@@ -42,6 +43,21 @@ struct bool2 {
 
 struct short2 {
     short x, y;
+    void ArchiveOUT(ChArchiveOut& marchive) {
+        // suggested: use versioning
+        marchive.VersionWrite<short2>();
+        // stream out all member array
+        marchive << CHNVP(x, "x");
+        marchive << CHNVP(y, "y");
+    }
+
+    void ArchiveIN(ChArchiveIn& marchive) {
+        // suggested: use versioning
+        int version = marchive.VersionRead<short2>();
+        // stream in all member array
+        marchive >> CHNVP(x, "x");
+        marchive >> CHNVP(y, "y");
+    }
 };
 
 class CH_MULTICORE_API vec2 {
@@ -63,6 +79,12 @@ class CH_MULTICORE_API vec2 {
         y = int(rhs.y);
         return *this;
     }
+    /// Method to allow serialization of transient array to archives.
+    void ArchiveOUT(ChArchiveOut& marchive);
+
+    /// Method to allow de-serialization of transient array from archives.
+    void ArchiveIN(ChArchiveIn& marchive);
+
     union {
         int array[2];
         struct {
@@ -70,6 +92,22 @@ class CH_MULTICORE_API vec2 {
         };
     };
 };
+
+inline void vec2::ArchiveOUT(ChArchiveOut& marchive) {
+    // suggested: use versioning
+    marchive.VersionWrite<vec2>();  // must use specialized template (any)
+    // stream out all member array
+    marchive << CHNVP(array[0], "x");
+    marchive << CHNVP(array[1], "y");
+}
+
+inline void vec2::ArchiveIN(ChArchiveIn& marchive) {
+    // suggested: use versioning
+    int version = marchive.VersionRead<vec2>();  // must use specialized template (any)
+    // stream in all member array
+    marchive >> CHNVP(array[0], "x");
+    marchive >> CHNVP(array[1], "y");
+}
 
 class CH_MULTICORE_API vec3 {
   public:
@@ -100,6 +138,13 @@ class CH_MULTICORE_API vec3 {
         z = int(rhs.z);
         return *this;
     }
+
+    /// Method to allow serialization of transient array to archives.
+    void ArchiveOUT(ChArchiveOut& marchive);
+
+    /// Method to allow de-serialization of transient array from archives.
+    void ArchiveIN(ChArchiveIn& marchive);
+
     union {
         int array[4];
         struct {
@@ -108,12 +153,70 @@ class CH_MULTICORE_API vec3 {
     };
 };
 
+inline void vec3::ArchiveOUT(ChArchiveOut& marchive) {
+    // suggested: use versioning
+    marchive.VersionWrite<vec3>();  // must use specialized template (any)
+    // stream out all member array
+    marchive << CHNVP(array[0], "x");
+    marchive << CHNVP(array[1], "y");
+    marchive << CHNVP(array[2], "z");
+    marchive << CHNVP(array[3], "w");
+}
+
+inline void vec3::ArchiveIN(ChArchiveIn& marchive) {
+    // suggested: use versioning
+    int version = marchive.VersionRead<vec3>();  // must use specialized template (any)
+    // stream in all member array
+    marchive >> CHNVP(array[0], "x");
+    marchive >> CHNVP(array[1], "y");
+    marchive >> CHNVP(array[2], "x");
+    marchive >> CHNVP(array[3], "w");
+}
+
 struct vec4 {
     int x, y, z, w;
+    inline void ArchiveOUT(ChArchiveOut& marchive) {
+        // suggested: use versioning
+        marchive.VersionWrite<vec4>();  // must use specialized template (any)
+        // stream out all member array
+        marchive << CHNVP(x, "x");
+        marchive << CHNVP(y, "y");
+        marchive << CHNVP(z, "z");
+        marchive << CHNVP(w, "w");
+    }
+
+    inline void ArchiveIN(ChArchiveIn& marchive) {
+        // suggested: use versioning
+        int version = marchive.VersionRead<vec4>();  // must use specialized template (any)
+        // stream in all member array
+        marchive >> CHNVP(x, "x");
+        marchive >> CHNVP(y, "y");
+        marchive >> CHNVP(z, "x");
+        marchive >> CHNVP(w, "w");
+    }
 };
 
 struct uvec4 {
     unsigned int x, y, z, w;
+    inline void ArchiveOUT(ChArchiveOut& marchive) {
+        // suggested: use versioning
+        marchive.VersionWrite<uvec4>();  // must use specialized template (any)
+        // stream out all member array
+        marchive << CHNVP(x, "x");
+        marchive << CHNVP(y, "y");
+        marchive << CHNVP(z, "z");
+        marchive << CHNVP(w, "w");
+    }
+
+    inline void ArchiveIN(ChArchiveIn& marchive) {
+        // suggested: use versioning
+        int version = marchive.VersionRead<uvec4>();  // must use specialized template (any)
+        // stream in all member array
+        marchive >> CHNVP(x, "x");
+        marchive >> CHNVP(y, "y");
+        marchive >> CHNVP(z, "x");
+        marchive >> CHNVP(w, "w");
+    }
 };
 CUDA_HOST_DEVICE CH_MULTICORE_API vec3 operator-(const vec3& a, const vec3& b);
 CUDA_HOST_DEVICE CH_MULTICORE_API vec3 operator-(const vec3& a, const int& b);
@@ -123,6 +226,23 @@ CUDA_HOST_DEVICE CH_MULTICORE_API vec3 Clamp(const vec3& a, const vec3& clamp_mi
 
 struct uvec3 {
     unsigned int x, y, z;
+    inline void ArchiveOUT(ChArchiveOut& marchive) {
+        // suggested: use versioning
+        marchive.VersionWrite<uvec3>();  // must use specialized template (any)
+        // stream out all member array
+        marchive << CHNVP(x, "x");
+        marchive << CHNVP(y, "y");
+        marchive << CHNVP(z, "z");
+    }
+
+    inline void ArchiveIN(ChArchiveIn& marchive) {
+        // suggested: use versioning
+        int version = marchive.VersionRead<uvec3>();  // must use specialized template (any)
+        // stream in all member array
+        marchive >> CHNVP(x, "x");
+        marchive >> CHNVP(y, "y");
+        marchive >> CHNVP(z, "x");
+    }
 };
 
 static inline short2 _make_short2(const short& a, const short& b) {

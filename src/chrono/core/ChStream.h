@@ -135,6 +135,7 @@ class ChApi ChStreamOutAscii : public ChStreamOut {
     ChStreamOutAscii& operator<<(const double dVal);
     ChStreamOutAscii& operator<<(const float dVal);
     ChStreamOutAscii& operator<<(unsigned int unVal);
+    ChStreamOutAscii& operator<<(long long unVal);
     ChStreamOutAscii& operator<<(char* str);
     ChStreamOutAscii& operator<<(const char* str);
     ChStreamOutAscii& operator<<(std::string& str);
@@ -204,6 +205,8 @@ class ChApi ChStreamInAscii : public ChStreamIn {
     virtual ChStreamInAscii& operator>>(bool& bVal);
     virtual ChStreamInAscii& operator>>(char& tch);
     virtual ChStreamInAscii& operator>>(int& nVal);
+    virtual ChStreamInAscii& operator>>(short& nVal);
+    virtual ChStreamInAscii& operator>>(long long& nVal);
     virtual ChStreamInAscii& operator>>(double& dVal);
     virtual ChStreamInAscii& operator>>(float& dVal);
     virtual ChStreamInAscii& operator>>(unsigned int& unVal);
@@ -319,6 +322,8 @@ class ChApi ChStreamOutBinary : public ChStreamOut, public ChBinaryArchive {
     ChStreamOutBinary& operator<<(char Val);
     ChStreamOutBinary& operator<<(bool Val);
     ChStreamOutBinary& operator<<(int Val);
+    ChStreamOutBinary& operator<<(short Val);
+    ChStreamOutBinary& operator<<(long long Val);
     ChStreamOutBinary& operator<<(unsigned int Val);
     ChStreamOutBinary& operator<<(double Val);
     ChStreamOutBinary& operator<<(float Val);
@@ -436,6 +441,8 @@ class ChApi ChStreamInBinary : public ChStreamIn, public ChBinaryArchive {
     ChStreamInBinary& operator>>(char& Val);
     ChStreamInBinary& operator>>(bool& Val);
     ChStreamInBinary& operator>>(int& Val);
+    ChStreamInBinary& operator>>(short& Val);
+    ChStreamInBinary& operator>>(long long& Val);
     ChStreamInBinary& operator>>(unsigned int& Val);
     ChStreamInBinary& operator>>(double& Val);
     ChStreamInBinary& operator>>(float& Val);

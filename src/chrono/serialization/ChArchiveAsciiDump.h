@@ -62,6 +62,20 @@ class  ChArchiveAsciiDump : public ChArchiveOut {
             (*ostream) << bVal.value();
             (*ostream) << "\n";
       }
+      virtual void out     (ChNameValue<short> bVal) {
+            indent();
+            if (!suppress_names) 
+                (*ostream) << bVal.name() << "\t";
+            (*ostream) << bVal.value();
+            (*ostream) << "\n";
+      }
+      virtual void out     (ChNameValue<long long> bVal) {
+            indent();
+            if (!suppress_names) 
+                (*ostream) << bVal.name() << "\t";
+            (*ostream) << bVal.value();
+            (*ostream) << "\n";
+      }
       virtual void out     (ChNameValue<double> bVal) {
             indent();
             if (!suppress_names) 

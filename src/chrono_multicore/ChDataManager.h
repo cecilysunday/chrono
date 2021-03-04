@@ -499,6 +499,31 @@ class CH_MULTICORE_API ChMulticoreDataManager {
 
     /// Print a sparse blaze matrix.
     void PrintMatrix(CompressedMatrix<real> src);
+
+    void ArchiveOUT(ChArchiveOut& marchive);  //##### for Chrono serialization
+
+    void ArchiveIN(ChArchiveIn& marchive);  //##### for Chrono deserialization
+
+    void ArchiveOUTVectorReal(ChArchiveOut& marchive, custom_vector<real>& vector);
+    void ArchiveOUTVectorReal3(ChArchiveOut& marchive, custom_vector<real3>& vector);
+    void ArchiveOUTVectorReal4(ChArchiveOut& marchive, custom_vector<real4>& vector);
+    void ArchiveOUTVectorQuaternion(ChArchiveOut& marchive, custom_vector<quaternion>& vector);
+    void ArchiveOUTVectorInt(ChArchiveOut& marchive, custom_vector<int>& vector);
+    void ArchiveOUTVectorUInt(ChArchiveOut& marchive, custom_vector<uint>& vector);
+    void ArchiveOUTHostData(ChArchiveOut& marchive);
+    void ArchiveOUTShapeData(ChArchiveOut& marchive);
+    void ArchiveOUTIndexingVariables(ChArchiveOut& marchive);
+
+    void ArchiveINVectorReal(ChArchiveIn& marchive, custom_vector<real>& vector);
+    void ArchiveINVectorReal3(ChArchiveIn& marchive, custom_vector<real3>& vector);
+    void ArchiveINVectorReal4(ChArchiveIn& marchive, custom_vector<real4>& vector);
+    void ArchiveINVectorQuaternion(ChArchiveIn& marchive, custom_vector<quaternion>& vector);
+    void ArchiveINVectorInt(ChArchiveIn& marchive, custom_vector<int>& vector);
+    void ArchiveINVectorUInt(ChArchiveIn& marchive, custom_vector<uint>& vector);
+    void ArchiveINHostData(ChArchiveIn& marchive);
+    void ArchiveINShapeData(ChArchiveIn& marchive);
+    void ArchiveINIndexingVariables(ChArchiveIn& marchive);
+
 };
 
 /// @} multicore_module

@@ -92,6 +92,12 @@ class CH_MULTICORE_API real4 {
     static inline __m128 Set(real x, real y, real z, real w) { return _mm_setr_ps(x, y, z, w); }
 #endif
 
+    /// Method to allow serialization of transient array to archives.
+    void ArchiveOUT(ChArchiveOut& marchive);
+
+    /// Method to allow de-serialization of transient array from archives.
+    void ArchiveIN(ChArchiveIn& marchive);
+
     // ========================================================================================
 
     union {
@@ -128,6 +134,26 @@ CUDA_HOST_DEVICE CH_MULTICORE_API OPERATOR_EQUALS_PROTO(-, real4, real4);
 CUDA_HOST_DEVICE CH_MULTICORE_API real4 operator-(const real4& a);
 CUDA_HOST_DEVICE CH_MULTICORE_API real4
 Dot4(const real3& v, const real3& v1, const real3& v2, const real3& v3, const real3& v4);
+inline void real4::ArchiveOUT(ChArchiveOut& marchive) {
+    // suggested: use versioning
+    marchive.VersionWrite<real4>();  // must use specialized template (any)
+    // stream out all member array
+    marchive << CHNVP(array[0], "x");
+    marchive << CHNVP(array[1], "y");
+    marchive << CHNVP(array[2], "z");
+    marchive << CHNVP(array[3], "w");
+}
+
+inline void real4::ArchiveIN(ChArchiveIn& marchive) {
+    // suggested: use versioning
+    int version = marchive.VersionRead<real4>();  // must use specialized template (any)
+    // stream in all member array
+    marchive >> CHNVP(array[0], "x");
+    marchive >> CHNVP(array[1], "y");
+    marchive >> CHNVP(array[2], "z");
+    marchive >> CHNVP(array[3], "w");
+}
+
 
 /// Chrono::Multicore quaternion class.
 class CH_MULTICORE_API quaternion {
@@ -183,6 +209,12 @@ class CH_MULTICORE_API quaternion {
 
 #endif
 
+    /// Method to allow serialization of transient array to archives.
+    void ArchiveOUT(ChArchiveOut& marchive);
+
+    /// Method to allow de-serialization of transient array from archives.
+    void ArchiveIN(ChArchiveIn& marchive);
+
     union {
         real array[4];
         struct {
@@ -212,6 +244,26 @@ CUDA_HOST_DEVICE CH_MULTICORE_API real3 AbsRotate(const quaternion& q, const rea
 CUDA_HOST_DEVICE CH_MULTICORE_API quaternion Q_from_AngAxis(const real& angle, const real3& axis);
 CUDA_HOST_DEVICE CH_MULTICORE_API real3 AMatV(const quaternion& q);
 CUDA_HOST_DEVICE CH_MULTICORE_API void Print(quaternion v, const char* name);
+
+inline void quaternion::ArchiveOUT(ChArchiveOut& marchive) {
+    // suggested: use versioning
+    marchive.VersionWrite<quaternion>();  // must use specialized template (any)
+    // stream out all member array
+    marchive << CHNVP(array[0], "x");
+    marchive << CHNVP(array[1], "y");
+    marchive << CHNVP(array[2], "z");
+    marchive << CHNVP(array[3], "w");
+}
+
+inline void quaternion::ArchiveIN(ChArchiveIn& marchive) {
+    // suggested: use versioning
+    int version = marchive.VersionRead<quaternion>();  // must use specialized template (any)
+    // stream in all member array
+    marchive >> CHNVP(array[0], "x");
+    marchive >> CHNVP(array[1], "y");
+    marchive >> CHNVP(array[2], "z");
+    marchive >> CHNVP(array[3], "w");
+}
 
 /// @} multicore_math
 

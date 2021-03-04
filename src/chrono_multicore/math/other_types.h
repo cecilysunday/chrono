@@ -39,6 +39,21 @@ struct bool2 {
     bool x, y;
     bool2() : x(0), y(0) {}
     bool2(bool a, bool b) : x(a), y(b) {}
+    void ArchiveOUT(ChArchiveOut& marchive) {
+        // suggested: use versioning
+        marchive.VersionWrite<bool2>();
+        // stream out all member array
+        marchive << CHNVP(x, "x");
+        marchive << CHNVP(y, "y");
+    }
+
+    void ArchiveIN(ChArchiveIn& marchive) {
+        // suggested: use versioning
+        int version = marchive.VersionRead<bool2>();
+        // stream in all member array
+        marchive >> CHNVP(x, "x");
+        marchive >> CHNVP(y, "y");
+    }
 };
 
 struct short2 {

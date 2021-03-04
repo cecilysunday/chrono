@@ -23,10 +23,13 @@
 #include "chrono_multicore/physics/Ch3DOFContainer.h"
 #include "chrono_multicore/collision/ChCollision.h"
 
+#include "chrono/serialization/ChArchive.h"
+#include "chrono/serialization/ChBlazeArchive.h"
 #include "chrono/core/ChStream.h"
 
 using namespace chrono;
 using namespace chrono::collision;
+
 
 ChMulticoreDataManager::ChMulticoreDataManager()
     : num_rigid_contacts(0),
@@ -95,6 +98,7 @@ int ChMulticoreDataManager::OutputBlazeMatrix(CompressedMatrix<real> src, std::s
 
     return 0;
 }
+
 
 int ChMulticoreDataManager::ExportCurrentSystem(std::string output_dir) {
     int offset = 0;
@@ -169,12 +173,17 @@ void ChMulticoreDataManager::PrintMatrix(CompressedMatrix<real> src) {
 
 void ChMulticoreDataManager::ArchiveOUT(ChArchiveOut& marchive)  //##### for Chrono serialization
 {
-    // suggested: use versioning
     marchive.VersionWrite<ChMulticoreDataManager>();
     // stream out all member data
-
+    ArchiveOUTHostData(marchive);
     ArchiveOUTShapeData(marchive);
+    marchive << CHNVP(node_container.get());
+    marchive << CHNVP(fea_container.get());
+    marchive << CHNVP(*rigid_rigid); // need to set pointer to data manager
+    //marchive << CHNVP(*bilateral); // need to set pointer to data manager
+    // broadphase // ??
     ArchiveOUTIndexingVariables(marchive);
+    marchive << Fc_current;
 }
 
 void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chrono serialization
@@ -182,81 +191,169 @@ void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chron
     // suggested: use versioning
     int version = marchive.VersionRead<ChMulticoreDataManager>();
     // stream in all member data
+    ArchiveINHostData(marchive);
     ArchiveINShapeData(marchive);
+    marchive >> CHNVP(*node_container);
+    marchive >> CHNVP(*fea_container);
     ArchiveINIndexingVariables(marchive);
+    marchive >> Fc_current;
 }
+
+void ChMulticoreDataManager::ArchiveOUTShapeData(ChArchiveOut& marchive) {
+    marchive << CHNVP(shape_data.fam_rigid);
+    marchive << CHNVP(shape_data.id_rigid);
+    marchive << CHNVP(shape_data.typ_rigid);
+    marchive << CHNVP(shape_data.local_rigid);
+    marchive << CHNVP(shape_data.start_rigid);
+    marchive << CHNVP(shape_data.length_rigid);
+
+    marchive << CHNVP(shape_data.ObR_rigid);
+    marchive << CHNVP(shape_data.ObA_rigid);
+
+    marchive << CHNVP(shape_data.sphere_rigid);
+    marchive << CHNVP(shape_data.box_like_rigid);
+    marchive << CHNVP(shape_data.triangle_rigid);
+    marchive << CHNVP(shape_data.capsule_rigid);
+    marchive << CHNVP(shape_data.rbox_like_rigid);
+    marchive << CHNVP(shape_data.convex_rigid);
+    marchive << CHNVP(shape_data.tetrahedron_rigid);
+
+    marchive << CHNVP(shape_data.triangle_global);
+    marchive << CHNVP(shape_data.obj_data_A_global);
+    marchive << CHNVP(shape_data.obj_data_R_global);
+}
+
 
 void ChMulticoreDataManager::ArchiveOUTHostData(ChArchiveOut& marchive) {
-    for (int i = 0; i < host_data.aabb_min.size(); ++i) {
-      std::cout << "iOut: " << i << std::endl;
-      marchive << CHNVP(host_data.aabb_min[i].x);
-    }
-}
+    marchive << CHNVP(host_data.aabb_min);
+    marchive << CHNVP(host_data.aabb_max);
 
-void ChMulticoreDataManager::ArchiveOUTVectorReal(ChArchiveOut& marchive, custom_vector<real>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        marchive << CHNVP(vector[i]);
-    }
-}
-void ChMulticoreDataManager::ArchiveOUTVectorReal3(ChArchiveOut& marchive, custom_vector<real3>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        for (int j = 0; j < 4; ++j) {
-            marchive << CHNVP(vector[i][j]);
-        }
-    }
-}
-void ChMulticoreDataManager::ArchiveOUTVectorReal4(ChArchiveOut& marchive, custom_vector<real4>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        for (int j = 0; j < 4; ++j) {
-            marchive << CHNVP(vector[i][j]);
-        }
-    }
-}
-void ChMulticoreDataManager::ArchiveOUTVectorQuaternion(ChArchiveOut& marchive, custom_vector<quaternion>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        for (int j = 0; j < 4; ++j) {
-            marchive << CHNVP(vector[i][j]);
-        }
-    }
-}
-void ChMulticoreDataManager::ArchiveOUTVectorInt(ChArchiveOut& marchive, custom_vector<int>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        marchive << CHNVP(vector[i]);
-    }
-}
-void ChMulticoreDataManager::ArchiveOUTVectorUInt(ChArchiveOut& marchive, custom_vector<uint>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        marchive << CHNVP(vector[i]);
-    }
-}
-void ChMulticoreDataManager::ArchiveOUTShapeData(ChArchiveOut& marchive) {
-    // for (int i = 0; i < shape_data.fam_rigid.size(); ++i) {
-    //     marchive << CHNVP(shape_data.fam_rigid[i].x);
-    //     marchive << CHNVP(shape_data.fam_rigid[i].y);
-    // }
+    marchive << CHNVP(host_data.aabb_min_tet);
+    marchive << CHNVP(host_data.aabb_max_tet);
 
-    ArchiveOUTVectorUInt(marchive, shape_data.id_rigid);
-    ArchiveOUTVectorInt(marchive, shape_data.typ_rigid);
-    ArchiveOUTVectorInt(marchive, shape_data.local_rigid);
-    ArchiveOUTVectorInt(marchive, shape_data.start_rigid);
-    ArchiveOUTVectorInt(marchive, shape_data.length_rigid);
+    marchive << CHNVP(host_data.pair_shapeIDs);
+    marchive << CHNVP(host_data.contact_shapeIDs);
 
-    // ArchiveOUTVectorQuaternion(marchive, shape_data.ObR_rigid);
-    // ArchiveOUTVectorReal3(marchive, shape_data.ObA_rigid);
+    marchive << CHNVP(host_data.norm_rigid_rigid);
+    marchive << CHNVP(host_data.cpta_rigid_rigid);
+    marchive << CHNVP(host_data.cptb_rigid_rigid);
+    marchive << CHNVP(host_data.dpth_rigid_rigid);
+    marchive << CHNVP(host_data.erad_rigid_rigid);
+    marchive << CHNVP(host_data.bids_rigid_rigid);
 
-    // ArchiveOUTVectorReal(marchive, shape_data.sphere_rigid);
-    // ArchiveOUTVectorReal3(marchive, shape_data.box_like_rigid);
-    // ArchiveOUTVectorReal3(marchive, shape_data.triangle_rigid);
-    // for (int i = 0; i < shape_data.sphere_rigid.size(); ++i) {
-    //     marchive << CHNVP(shape_data.capsule_rigid[i].x);
-    //     marchive << CHNVP(shape_data.capsule_rigid[i].y);
-    // }
-    // ArchiveOUTVectorReal4(marchive, shape_data.rbox_like_rigid);
-    // ArchiveOUTVectorReal3(marchive, shape_data.convex_rigid);
-    // ArchiveOUTVectorInt(marchive, shape_data.tetrahedron_rigid);
-    // ArchiveOUTVectorReal3(marchive, shape_data.triangle_global);
-    // ArchiveOUTVectorReal3(marchive, shape_data.obj_data_A_global);
-    // ArchiveOUTVectorQuaternion(marchive, shape_data.obj_data_R_global);
+    marchive << CHNVP(host_data.norm_rigid_fluid);
+    marchive << CHNVP(host_data.cpta_rigid_fluid);
+    marchive << CHNVP(host_data.dpth_rigid_fluid);
+    marchive << CHNVP(host_data.neighbor_rigid_fluid);
+    marchive << CHNVP(host_data.c_counts_rigid_fluid);
+
+    marchive << CHNVP(host_data.neighbor_3dof_3dof);
+    marchive << CHNVP(host_data.c_counts_3dof_3dof);
+    marchive << CHNVP(host_data.particle_indices_3dof);
+    marchive << CHNVP(host_data.reverse_mapping_3dof);
+
+    marchive << CHNVP(host_data.norm_rigid_tet);
+    marchive << CHNVP(host_data.cpta_rigid_tet);
+    marchive << CHNVP(host_data.cptb_rigid_tet);
+    marchive << CHNVP(host_data.dpth_rigid_tet);
+    marchive << CHNVP(host_data.neighbor_rigid_tet);
+    marchive << CHNVP(host_data.face_rigid_tet);
+    marchive << CHNVP(host_data.c_counts_rigid_tet);
+
+    marchive << CHNVP(host_data.norm_rigid_tet_node);
+    marchive << CHNVP(host_data.cpta_rigid_tet_node);
+    marchive << CHNVP(host_data.dpth_rigid_tet_node);
+    marchive << CHNVP(host_data.neighbor_rigid_tet_node);
+    marchive << CHNVP(host_data.c_counts_rigid_tet_node);
+
+    marchive << CHNVP(host_data.norm_marker_tet);
+    marchive << CHNVP(host_data.cpta_marker_tet);
+    marchive << CHNVP(host_data.cptb_marker_tet);
+    marchive << CHNVP(host_data.dpth_marker_tet);
+    marchive << CHNVP(host_data.neighbor_marker_tet);
+    marchive << CHNVP(host_data.face_marker_tet);
+    marchive << CHNVP(host_data.c_counts_marker_tet);
+
+    marchive << CHNVP(host_data.ct_force);
+    marchive << CHNVP(host_data.ct_torque);
+
+    marchive << CHNVP(host_data.ct_body_force);
+    marchive << CHNVP(host_data.ct_body_torque);
+
+    marchive << CHNVP(host_data.shear_neigh);
+    marchive << CHNVP(host_data.shear_disp);
+    marchive << CHNVP(host_data.contact_relvel_init);
+    marchive << CHNVP(host_data.contact_duration);
+
+    marchive << CHNVP(host_data.ct_body_map);
+
+    marchive << CHNVP(host_data.fric_rigid_rigid);
+
+    marchive << CHNVP(host_data.coh_rigid_rigid);
+
+    marchive << CHNVP(host_data.compliance_rigid_rigid);
+
+    marchive << CHNVP(host_data.modulus_rigid_rigid);
+    marchive << CHNVP(host_data.adhesion_rigid_rigid);
+    marchive << CHNVP(host_data.cr_rigid_rigid);
+    marchive << CHNVP(host_data.smc_rigid_rigid);
+
+    marchive << CHNVP(host_data.pos_rigid);
+    marchive << CHNVP(host_data.rot_rigid);
+    marchive << CHNVP(host_data.active_rigid);
+    marchive << CHNVP(host_data.collide_rigid);
+    marchive << CHNVP(host_data.mass_rigid);
+
+    marchive << CHNVP(host_data.pos_3dof);
+    marchive << CHNVP(host_data.sorted_pos_3dof);
+    marchive << CHNVP(host_data.vel_3dof);
+    marchive << CHNVP(host_data.sorted_vel_3dof);
+
+    marchive << CHNVP(host_data.pos_node_fea);
+    marchive << CHNVP(host_data.vel_node_fea);
+    marchive << CHNVP(host_data.mass_node_fea);
+    marchive << CHNVP(host_data.tet_indices);
+
+    marchive << CHNVP(host_data.boundary_triangles_fea);
+    marchive << CHNVP(host_data.boundary_node_fea);
+    marchive << CHNVP(host_data.boundary_element_fea);
+    marchive << CHNVP(host_data.boundary_family_fea);
+
+    marchive << CHNVP(host_data.bilateral_type);
+
+    marchive << CHNVP(host_data.bilateral_mapping);
+
+    marchive << CHNVP(host_data.shaft_rot);
+    marchive << CHNVP(host_data.shaft_inr);
+    marchive << CHNVP(host_data.shaft_active);
+
+    marchive << CHNVP(host_data.sliding_friction);
+    marchive << CHNVP(host_data.cohesion);
+
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.Nshur);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.D);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.D_T);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M_inv);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M_invD);
+
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.R_full);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.R);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.b);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.s);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.M_invk);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.v);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.hf);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.gamma);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.E);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.Fc);
+
+    marchive << CHNVP(host_data.bin_intersections);
+    marchive << CHNVP(host_data.bin_number);
+    marchive << CHNVP(host_data.bin_number_out);
+    marchive << CHNVP(host_data.bin_aabb_number);
+    marchive << CHNVP(host_data.bin_start_index);
+    marchive << CHNVP(host_data.bin_num_contact);
 }
 
 void ChMulticoreDataManager::ArchiveOUTIndexingVariables(ChArchiveOut& marchive) {
@@ -283,77 +380,161 @@ void ChMulticoreDataManager::ArchiveOUTIndexingVariables(ChArchiveOut& marchive)
     marchive << CHNVP(Fc_current);
 }
 
-void ChMulticoreDataManager::ArchiveINHostData(ChArchiveIn& marchive) {
-    for (int i = 0; i < host_data.aabb_min.size(); ++i) {
-      std::cout << "iIn: " << i << std::endl;
-      marchive >> CHNVP(host_data.aabb_min[i].x);
-    }
-}
-
-void ChMulticoreDataManager::ArchiveINVectorReal(ChArchiveIn& marchive, custom_vector<real>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        marchive >> CHNVP(vector[i]);
-    }
-}
-void ChMulticoreDataManager::ArchiveINVectorReal3(ChArchiveIn& marchive, custom_vector<real3>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        for (int j = 0; j < 4; ++j) {
-            marchive >> CHNVP(vector[i][j]);
-        }
-    }
-}
-void ChMulticoreDataManager::ArchiveINVectorReal4(ChArchiveIn& marchive, custom_vector<real4>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        for (int j = 0; j < 4; ++j) {
-            marchive >> CHNVP(vector[i][j]);
-        }
-    }
-}
-void ChMulticoreDataManager::ArchiveINVectorQuaternion(ChArchiveIn& marchive, custom_vector<quaternion>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        for (int j = 0; j < 4; ++j) {
-            marchive >> CHNVP(vector[i][j]);
-        }
-    }
-}
-void ChMulticoreDataManager::ArchiveINVectorInt(ChArchiveIn& marchive, custom_vector<int>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        marchive >> CHNVP(vector[i]);
-    }
-}
-void ChMulticoreDataManager::ArchiveINVectorUInt(ChArchiveIn& marchive, custom_vector<uint>& vector) {
-    for (int i = 0; i < vector.size(); ++i) {
-        marchive >> CHNVP(vector[i]);
-    }
-}
 void ChMulticoreDataManager::ArchiveINShapeData(ChArchiveIn& marchive) {
-    // for (int i = 0; i < shape_data.fam_rigid.size(); ++i) {
-    //     marchive >> CHNVP(shape_data.fam_rigid[i].x);
-    //     marchive >> CHNVP(shape_data.fam_rigid[i].y);
-    // }
+    marchive >> CHNVP(shape_data.fam_rigid);
+    marchive >> CHNVP(shape_data.id_rigid);
+    marchive >> CHNVP(shape_data.typ_rigid);
+    marchive >> CHNVP(shape_data.local_rigid);
+    marchive >> CHNVP(shape_data.start_rigid);
+    marchive >> CHNVP(shape_data.length_rigid);
 
-    ArchiveINVectorUInt(marchive, shape_data.id_rigid);
-    ArchiveINVectorInt(marchive, shape_data.typ_rigid);
-    ArchiveINVectorInt(marchive, shape_data.local_rigid);
-    ArchiveINVectorInt(marchive, shape_data.start_rigid);
-    ArchiveINVectorInt(marchive, shape_data.length_rigid);
+    marchive >> CHNVP(shape_data.ObR_rigid);
+    marchive >> CHNVP(shape_data.ObA_rigid);
 
-    // ArchiveINVectorQuaternion(marchive, shape_data.ObR_rigid);
-    // ArchiveINVectorReal3(marchive, shape_data.ObA_rigid);
+    marchive >> CHNVP(shape_data.sphere_rigid);
+    marchive >> CHNVP(shape_data.box_like_rigid);
+    marchive >> CHNVP(shape_data.triangle_rigid);
+    marchive >> CHNVP(shape_data.capsule_rigid);
+    marchive >> CHNVP(shape_data.rbox_like_rigid);
+    marchive >> CHNVP(shape_data.convex_rigid);
+    marchive >> CHNVP(shape_data.tetrahedron_rigid);
 
-    // ArchiveINVectorReal(marchive, shape_data.sphere_rigid);
-    // ArchiveINVectorReal3(marchive, shape_data.box_like_rigid);
-    // ArchiveINVectorReal3(marchive, shape_data.triangle_rigid);
-    // for (int i = 0; i < shape_data.sphere_rigid.size(); ++i) {
-    //     marchive >> CHNVP(shape_data.capsule_rigid[i].x);
-    //     marchive >> CHNVP(shape_data.capsule_rigid[i].y);
-    // }
-    // ArchiveINVectorReal4(marchive, shape_data.rbox_like_rigid);
-    // ArchiveINVectorReal3(marchive, shape_data.convex_rigid);
-    // ArchiveINVectorInt(marchive, shape_data.tetrahedron_rigid);
-    // ArchiveINVectorReal3(marchive, shape_data.triangle_global);
-    // ArchiveINVectorReal3(marchive, shape_data.obj_data_A_global);
-    // ArchiveINVectorQuaternion(marchive, shape_data.obj_data_R_global);
+    marchive >> CHNVP(shape_data.triangle_global);
+    marchive >> CHNVP(shape_data.obj_data_A_global);
+    marchive >> CHNVP(shape_data.obj_data_R_global);
+}
+
+
+void ChMulticoreDataManager::ArchiveINHostData(ChArchiveIn& marchive) {
+    marchive >> CHNVP(host_data.aabb_min);
+    marchive >> CHNVP(host_data.aabb_max);
+
+    marchive >> CHNVP(host_data.aabb_min_tet);
+    marchive >> CHNVP(host_data.aabb_max_tet);
+
+    marchive >> CHNVP(host_data.pair_shapeIDs);
+    marchive >> CHNVP(host_data.contact_shapeIDs);
+
+    marchive >> CHNVP(host_data.norm_rigid_rigid);
+    marchive >> CHNVP(host_data.cpta_rigid_rigid);
+    marchive >> CHNVP(host_data.cptb_rigid_rigid);
+    marchive >> CHNVP(host_data.dpth_rigid_rigid);
+    marchive >> CHNVP(host_data.erad_rigid_rigid);
+    marchive >> CHNVP(host_data.bids_rigid_rigid);
+
+    marchive >> CHNVP(host_data.norm_rigid_fluid);
+    marchive >> CHNVP(host_data.cpta_rigid_fluid);
+    marchive >> CHNVP(host_data.dpth_rigid_fluid);
+    marchive >> CHNVP(host_data.neighbor_rigid_fluid);
+    marchive >> CHNVP(host_data.c_counts_rigid_fluid);
+
+    marchive >> CHNVP(host_data.neighbor_3dof_3dof);
+    marchive >> CHNVP(host_data.c_counts_3dof_3dof);
+    marchive >> CHNVP(host_data.particle_indices_3dof);
+    marchive >> CHNVP(host_data.reverse_mapping_3dof);
+
+    marchive >> CHNVP(host_data.norm_rigid_tet);
+    marchive >> CHNVP(host_data.cpta_rigid_tet);
+    marchive >> CHNVP(host_data.cptb_rigid_tet);
+    marchive >> CHNVP(host_data.dpth_rigid_tet);
+    marchive >> CHNVP(host_data.neighbor_rigid_tet);
+    marchive >> CHNVP(host_data.face_rigid_tet);
+    marchive >> CHNVP(host_data.c_counts_rigid_tet);
+
+    marchive >> CHNVP(host_data.norm_rigid_tet_node);
+    marchive >> CHNVP(host_data.cpta_rigid_tet_node);
+    marchive >> CHNVP(host_data.dpth_rigid_tet_node);
+    marchive >> CHNVP(host_data.neighbor_rigid_tet_node);
+    marchive >> CHNVP(host_data.c_counts_rigid_tet_node);
+
+    marchive >> CHNVP(host_data.norm_marker_tet);
+    marchive >> CHNVP(host_data.cpta_marker_tet);
+    marchive >> CHNVP(host_data.cptb_marker_tet);
+    marchive >> CHNVP(host_data.dpth_marker_tet);
+    marchive >> CHNVP(host_data.neighbor_marker_tet);
+    marchive >> CHNVP(host_data.face_marker_tet);
+    marchive >> CHNVP(host_data.c_counts_marker_tet);
+
+    marchive >> CHNVP(host_data.ct_force);
+    marchive >> CHNVP(host_data.ct_torque);
+
+    marchive >> CHNVP(host_data.ct_body_force);
+    marchive >> CHNVP(host_data.ct_body_torque);
+
+    marchive >> CHNVP(host_data.shear_neigh);
+    marchive >> CHNVP(host_data.shear_disp);
+    marchive >> CHNVP(host_data.contact_relvel_init);
+    marchive >> CHNVP(host_data.contact_duration);
+
+    marchive >> CHNVP(host_data.ct_body_map);
+
+    marchive >> CHNVP(host_data.fric_rigid_rigid);
+
+    marchive >> CHNVP(host_data.coh_rigid_rigid);
+
+    marchive >> CHNVP(host_data.compliance_rigid_rigid);
+
+    marchive >> CHNVP(host_data.modulus_rigid_rigid);
+    marchive >> CHNVP(host_data.adhesion_rigid_rigid);
+    marchive >> CHNVP(host_data.cr_rigid_rigid);
+    marchive >> CHNVP(host_data.smc_rigid_rigid);
+
+    marchive >> CHNVP(host_data.pos_rigid);
+    marchive >> CHNVP(host_data.rot_rigid);
+    marchive >> CHNVP(host_data.active_rigid);
+    marchive >> CHNVP(host_data.collide_rigid);
+    marchive >> CHNVP(host_data.mass_rigid);
+
+    marchive >> CHNVP(host_data.pos_3dof);
+    marchive >> CHNVP(host_data.sorted_pos_3dof);
+    marchive >> CHNVP(host_data.vel_3dof);
+    marchive >> CHNVP(host_data.sorted_vel_3dof);
+
+    marchive >> CHNVP(host_data.pos_node_fea);
+    marchive >> CHNVP(host_data.vel_node_fea);
+    marchive >> CHNVP(host_data.mass_node_fea);
+    marchive >> CHNVP(host_data.tet_indices);
+
+    marchive >> CHNVP(host_data.boundary_triangles_fea);
+    marchive >> CHNVP(host_data.boundary_node_fea);
+    marchive >> CHNVP(host_data.boundary_element_fea);
+    marchive >> CHNVP(host_data.boundary_family_fea);
+
+    marchive >> CHNVP(host_data.bilateral_type);
+
+    marchive >> CHNVP(host_data.bilateral_mapping);
+
+    marchive >> CHNVP(host_data.shaft_rot);
+    marchive >> CHNVP(host_data.shaft_inr);
+    marchive >> CHNVP(host_data.shaft_active);
+
+    marchive >> CHNVP(host_data.sliding_friction);
+    marchive >> CHNVP(host_data.cohesion);
+
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.Nshur);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.D);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.D_T);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M_inv);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M_invD);
+
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.R_full);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.R);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.b);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.s);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.M_invk);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.v);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.hf);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.gamma);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.E);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.Fc);
+
+    marchive >> CHNVP(host_data.bin_intersections);
+    marchive >> CHNVP(host_data.bin_number);
+    marchive >> CHNVP(host_data.bin_number_out);
+    marchive >> CHNVP(host_data.bin_aabb_number);
+    marchive >> CHNVP(host_data.bin_start_index);
+    marchive >> CHNVP(host_data.bin_num_contact);
 }
 
 void ChMulticoreDataManager::ArchiveINIndexingVariables(ChArchiveIn& marchive) {

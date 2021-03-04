@@ -927,7 +927,6 @@ class  ChArchiveOut : public ChArchive {
       void out     (ChNameValue< std::vector<T> > bVal) {
           ChValueSpecific< std::vector<T> > specVal(bVal.value(), bVal.name(), bVal.flags());
           this->out_array_pre( specVal, bVal.value().size());
-          std::cout << "is fundamental: " << std::is_fundamental<T>::value << std::endl;
           for (size_t i = 0; i<bVal.value().size(); ++i)
           {
               char buffer[20];

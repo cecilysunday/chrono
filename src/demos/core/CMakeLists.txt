@@ -8,7 +8,6 @@ SET(DEMOS
   demo_CH_math
   demo_CH_stream
   demo_CH_archive
-  demo_CH_archive_data_manager
   demo_CH_buildsystem
   demo_CH_powertrain
   demo_CH_functions

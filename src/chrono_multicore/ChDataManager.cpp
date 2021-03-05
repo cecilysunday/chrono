@@ -171,29 +171,29 @@ void ChMulticoreDataManager::PrintMatrix(CompressedMatrix<real> src) {
     // at least implement these two functions, with the exact names
     // ArchiveIN() and ArchiveOUT():
 
-void ChMulticoreDataManager::ArchiveOut(ChArchiveOut& marchive)  //##### for Chrono serialization
+void ChMulticoreDataManager::ArchiveOUT(ChArchiveOut& marchive)  //##### for Chrono serialization
 {
     marchive.VersionWrite<ChMulticoreDataManager>();
     // stream out all member data
     ArchiveOUTHostData(marchive);
     ArchiveOUTShapeData(marchive);
-    marchive << CHNVP(*node_container);
-    marchive << CHNVP(*fea_container);
+    marchive << CHNVP(node_container);
+    marchive << CHNVP(fea_container);
     // marchive << CHNVP(*rigid_rigid); // need to set pointer to data manager
     //marchive << CHNVP(*bilateral); // need to set pointer to data manager
     ArchiveOUTIndexingVariables(marchive);
     marchive << CHNVP(Fc_current);
 }
 
-void ChMulticoreDataManager::ArchiveIn(ChArchiveIn& marchive)  //##### for Chrono serialization
+void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chrono serialization
 {
     // suggested: use versioning
     int version = marchive.VersionRead<ChMulticoreDataManager>();
     // stream in all member data
     ArchiveINHostData(marchive);
     ArchiveINShapeData(marchive);
-    marchive >> CHNVP(*node_container);
-    marchive >> CHNVP(*fea_container);
+    marchive >> CHNVP(node_container);
+    marchive >> CHNVP(fea_container);
     ArchiveINIndexingVariables(marchive);
     marchive >> CHNVP(Fc_current);
 }

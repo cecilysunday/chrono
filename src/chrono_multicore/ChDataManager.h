@@ -501,8 +501,10 @@ class CH_MULTICORE_API ChMulticoreDataManager {
     /// Print a sparse blaze matrix.
     void PrintMatrix(CompressedMatrix<real> src);
 
-    void ArchiveOut(ChArchiveOut& marchive);  //##### for Chrono serialization
-    void ArchiveIn(ChArchiveIn& marchive);  //##### for Chrono deserialization
+    // void ArchiveOut(ChArchiveOut& marchive);  //##### for Chrono serialization
+    // void ArchiveIn(ChArchiveIn& marchive);  //##### for Chrono deserialization
+    void ArchiveOUT(ChArchiveOut& marchive);  //##### for Chrono serialization
+    void ArchiveIN(ChArchiveIn& marchive);  //##### for Chrono deserialization
 
     void ArchiveOUTHostData(ChArchiveOut& marchive);
     void ArchiveOUTShapeData(ChArchiveOut& marchive);

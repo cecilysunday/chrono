@@ -346,6 +346,15 @@ class ChApi ChSystemDescriptor {
         marchive.VersionWrite<ChSystemDescriptor>();
         // serialize parent class
         // serialize all member data:
+        // protected
+        // marchive << CHNVP(vconstraints);
+        // marchive << CHNVP(vvariables);
+        // marchive << CHNVP(vstiffness);
+        // marchive << CHNVP(spinlocktable);
+        marchive << CHNVP(c_a);
+        marchive << CHNVP(n_q);
+        marchive << CHNVP(n_c);
+        marchive << CHNVP(freeze_count);
     }
 
     /// Method to allow de-serialization of transient data from archives.
@@ -354,6 +363,10 @@ class ChApi ChSystemDescriptor {
         int version = marchive.VersionRead<ChSystemDescriptor>();
         // deserialize parent class
         // stream in all member data:
+        marchive >> CHNVP(c_a);
+        marchive >> CHNVP(n_q);
+        marchive >> CHNVP(n_c);
+        marchive >> CHNVP(freeze_count);
     }
 };
 

@@ -59,7 +59,29 @@ class real3_int {
 
     real3 v;
     int i;
+
+    /// Method to allow serialization of transient array to archives.
+    void ArchiveOUT(ChArchiveOut& marchive);
+
+    /// Method to allow de-serialization of transient array from archives.
+    void ArchiveIN(ChArchiveIn& marchive);
 };
+
+inline void real3_int::ArchiveOUT(ChArchiveOut& marchive) {
+    // suggested: use versioning
+    marchive.VersionWrite<real3_int>();  // must use specialized template (any)
+    // stream out all member array
+    marchive << CHNVP(v);
+    marchive << CHNVP(i);
+}
+
+inline void real3_int::ArchiveIN(ChArchiveIn& marchive) {
+    // suggested: use versioning
+    int version = marchive.VersionRead<real3_int>();  // must use specialized template (any)
+    // stream in all member array
+    marchive >> CHNVP(v);
+    marchive >> CHNVP(i);
+}
 
 /// @} multicore_math
 

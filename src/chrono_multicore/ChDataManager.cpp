@@ -171,22 +171,21 @@ void ChMulticoreDataManager::PrintMatrix(CompressedMatrix<real> src) {
     // at least implement these two functions, with the exact names
     // ArchiveIN() and ArchiveOUT():
 
-void ChMulticoreDataManager::ArchiveOUT(ChArchiveOut& marchive)  //##### for Chrono serialization
+void ChMulticoreDataManager::ArchiveOut(ChArchiveOut& marchive)  //##### for Chrono serialization
 {
     marchive.VersionWrite<ChMulticoreDataManager>();
     // stream out all member data
     ArchiveOUTHostData(marchive);
     ArchiveOUTShapeData(marchive);
-    marchive << CHNVP(node_container.get());
-    marchive << CHNVP(fea_container.get());
-    marchive << CHNVP(*rigid_rigid); // need to set pointer to data manager
+    marchive << CHNVP(*node_container);
+    marchive << CHNVP(*fea_container);
+    // marchive << CHNVP(*rigid_rigid); // need to set pointer to data manager
     //marchive << CHNVP(*bilateral); // need to set pointer to data manager
-    // broadphase // ??
     ArchiveOUTIndexingVariables(marchive);
-    marchive << Fc_current;
+    marchive << CHNVP(Fc_current);
 }
 
-void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chrono serialization
+void ChMulticoreDataManager::ArchiveIn(ChArchiveIn& marchive)  //##### for Chrono serialization
 {
     // suggested: use versioning
     int version = marchive.VersionRead<ChMulticoreDataManager>();
@@ -196,7 +195,7 @@ void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chron
     marchive >> CHNVP(*node_container);
     marchive >> CHNVP(*fea_container);
     ArchiveINIndexingVariables(marchive);
-    marchive >> Fc_current;
+    marchive >> CHNVP(Fc_current);
 }
 
 void ChMulticoreDataManager::ArchiveOUTShapeData(ChArchiveOut& marchive) {
@@ -330,23 +329,23 @@ void ChMulticoreDataManager::ArchiveOUTHostData(ChArchiveOut& marchive) {
     marchive << CHNVP(host_data.sliding_friction);
     marchive << CHNVP(host_data.cohesion);
 
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.Nshur);
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.D);
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.D_T);
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M);
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M_inv);
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M_invD);
+    // ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.Nshur);
+    // ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.D);
+    // ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.D_T);
+    // ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M);
+    // ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M_inv);
+    // ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M_invD);
 
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.R_full);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.R);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.b);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.s);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.M_invk);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.v);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.hf);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.gamma);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.E);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.Fc);
+    // ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.R_full);
+    // ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.R);
+    // ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.b);
+    // ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.s);
+    // ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.M_invk);
+    // ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.v);
+    // ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.hf);
+    // ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.gamma);
+    // ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.E);
+    // ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.Fc);
 
     marchive << CHNVP(host_data.bin_intersections);
     marchive << CHNVP(host_data.bin_number);
@@ -377,7 +376,6 @@ void ChMulticoreDataManager::ArchiveOUTIndexingVariables(ChArchiveOut& marchive)
     marchive << CHNVP(num_marker_tet_contacts);
     marchive << CHNVP(num_rigid_tet_node_contacts);
     marchive << CHNVP(nnz_bilaterals);
-    marchive << CHNVP(Fc_current);
 }
 
 void ChMulticoreDataManager::ArchiveINShapeData(ChArchiveIn& marchive) {
@@ -511,23 +509,23 @@ void ChMulticoreDataManager::ArchiveINHostData(ChArchiveIn& marchive) {
     marchive >> CHNVP(host_data.sliding_friction);
     marchive >> CHNVP(host_data.cohesion);
 
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.Nshur);
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.D);
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.D_T);
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M);
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M_inv);
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M_invD);
+    // ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.Nshur);
+    // ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.D);
+    // ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.D_T);
+    // ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M);
+    // ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M_inv);
+    // ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M_invD);
 
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.R_full);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.R);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.b);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.s);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.M_invk);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.v);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.hf);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.gamma);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.E);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.Fc);
+    // ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.R_full);
+    // ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.R);
+    // ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.b);
+    // ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.s);
+    // ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.M_invk);
+    // ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.v);
+    // ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.hf);
+    // ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.gamma);
+    // ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.E);
+    // ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.Fc);
 
     marchive >> CHNVP(host_data.bin_intersections);
     marchive >> CHNVP(host_data.bin_number);
@@ -558,6 +556,5 @@ void ChMulticoreDataManager::ArchiveINIndexingVariables(ChArchiveIn& marchive) {
     marchive >> CHNVP(num_marker_tet_contacts);
     marchive >> CHNVP(num_rigid_tet_node_contacts);
     marchive >> CHNVP(nnz_bilaterals);
-    marchive >> CHNVP(Fc_current);
 }
 

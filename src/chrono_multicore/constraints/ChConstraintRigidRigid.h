@@ -55,6 +55,11 @@ class CH_MULTICORE_API ChConstraintRigidRigid {
     /// This operation is sequential.
     void GenerateSparsity();
 
+    virtual void ArchiveOUT(ChArchiveOut& marchive);
+
+    /// Method to allow de-serialization of transient data from archives.
+    virtual void ArchiveIN(ChArchiveIn& marchive);
+
     int offset;
 
   protected:

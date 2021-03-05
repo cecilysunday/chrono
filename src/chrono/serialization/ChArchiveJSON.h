@@ -87,6 +87,24 @@ class  ChArchiveOutJSON : public ChArchiveOut {
             (*ostream) << bVal.value();
             ++nitems.top();
       }
+      virtual void out     (ChNameValue<short> bVal) {
+            comma_cr();
+            indent();
+            if (is_array.top()==false)
+                (*ostream) << "\"" << bVal.name() << "\"";
+            (*ostream) << "\t: ";
+            (*ostream) << bVal.value();
+            ++nitems.top();
+      }
+      virtual void out     (ChNameValue<long long> bVal) {
+            comma_cr();
+            indent();
+            if (is_array.top()==false)
+                (*ostream) << "\"" << bVal.name() << "\"";
+            (*ostream) << "\t: ";
+            (*ostream) << bVal.value();
+            ++nitems.top();
+      }
       virtual void out     (ChNameValue<double> bVal) {
             comma_cr();
             indent();
@@ -347,6 +365,16 @@ class  ChArchiveInJSON : public ChArchiveIn {
             rapidjson::Value* mval = GetValueFromNameOrArray(bVal.name());
 			if (!mval->IsInt()) {throw (ChExceptionArchive( "Invalid integer number after '"+std::string(bVal.name())+"'"));}
 			bVal.value() = mval->GetInt();
+      }
+      virtual void in     (ChNameValue<short> bVal) {
+            rapidjson::Value* mval = GetValueFromNameOrArray(bVal.name());
+      if (!mval->IsInt()) {throw (ChExceptionArchive( "Invalid integer number after '"+std::string(bVal.name())+"'"));}
+      bVal.value() = mval->GetInt();
+      }
+      virtual void in     (ChNameValue<long long> bVal) {
+            rapidjson::Value* mval = GetValueFromNameOrArray(bVal.name());
+      if (!mval->IsInt()) {throw (ChExceptionArchive( "Invalid integer number after '"+std::string(bVal.name())+"'"));}
+      bVal.value() = mval->GetInt();
       }
       virtual void in     (ChNameValue<double> bVal) {
             rapidjson::Value* mval = GetValueFromNameOrArray(bVal.name());

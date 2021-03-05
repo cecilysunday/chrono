@@ -703,3 +703,36 @@ void ChConstraintRigidRigid::D_Tx(const DynamicVector<real>& XYZUVW, DynamicVect
     //        std::cout << compare[i] << " " << out_vector[i] << std::endl;
     //    }
 }
+
+void ChConstraintRigidRigid::ArchiveOUT(ChArchiveOut& marchive) {
+    // version number
+    marchive.VersionWrite<ChConstraintRigidRigid>();
+    // serialize parent class
+    // serialize all member data:
+    marchive << CHNVP(contact_active_pairs);
+    marchive << CHNVP(offset);
+    marchive << CHNVP(inv_h);
+    marchive << CHNVP(inv_hpa);
+    marchive << CHNVP(inv_hhpa);
+    marchive << CHNVP(rotated_point_a);
+    marchive << CHNVP(rotated_point_b);
+    marchive << CHNVP(quat_a);
+    marchive << CHNVP(quat_b);
+}
+
+/// Method to allow de-serialization of transient data from archives.
+void ChConstraintRigidRigid::ArchiveIN(ChArchiveIn& marchive) {
+    // version number
+    int version = marchive.VersionRead<ChConstraintRigidRigid>();
+    // deserialize parent class
+    // stream in all member data:
+    marchive >> CHNVP(contact_active_pairs);
+    marchive >> CHNVP(offset);
+    marchive >> CHNVP(inv_h);
+    marchive >> CHNVP(inv_hpa);
+    marchive >> CHNVP(inv_hhpa);
+    marchive >> CHNVP(rotated_point_a);
+    marchive >> CHNVP(rotated_point_b);
+    marchive >> CHNVP(quat_a);
+    marchive >> CHNVP(quat_b);
+}

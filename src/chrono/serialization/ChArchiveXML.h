@@ -82,6 +82,24 @@ class  ChArchiveOutXML : public ChArchiveOut {
 				(*ostream) << "</" << bVal.name() << ">\n";
             ++nitems.top();
       }
+      virtual void out     (ChNameValue<short> bVal) {
+            indent();
+            //if (is_array.top()==false)
+                (*ostream) << "<" << bVal.name() << ">";
+            (*ostream) << bVal.value();
+      //if (is_array.top() == false)
+        (*ostream) << "</" << bVal.name() << ">\n";
+            ++nitems.top();
+      }
+      virtual void out     (ChNameValue<long long> bVal) {
+            indent();
+            //if (is_array.top()==false)
+                (*ostream) << "<" << bVal.name() << ">";
+            (*ostream) << bVal.value();
+      //if (is_array.top() == false)
+        (*ostream) << "</" << bVal.name() << ">\n";
+            ++nitems.top();
+      }
       virtual void out     (ChNameValue<double> bVal) {
             indent();
 			//if (is_array.top() == false)
@@ -365,6 +383,24 @@ class  ChArchiveInXML : public ChArchiveIn {
 			catch (...) {
 				throw (ChExceptionArchive("Invalid integer number after '" + std::string(bVal.name()) + "'"));
 			}
+      }
+      virtual void in     (ChNameValue<short> bVal) {
+            rapidxml::xml_node<>* mval = GetValueFromNameOrArray(bVal.name());
+      try {
+        bVal.value() = std::stoi(mval->value());
+      }
+      catch (...) {
+        throw (ChExceptionArchive("Invalid integer number after '" + std::string(bVal.name()) + "'"));
+      }
+      }
+      virtual void in     (ChNameValue<long long> bVal) {
+            rapidxml::xml_node<>* mval = GetValueFromNameOrArray(bVal.name());
+      try {
+        bVal.value() = std::stoll(mval->value());
+      }
+      catch (...) {
+        throw (ChExceptionArchive("Invalid integer number after '" + std::string(bVal.name()) + "'"));
+      }
       }
       virtual void in     (ChNameValue<double> bVal) {
             rapidxml::xml_node<>* mval = GetValueFromNameOrArray(bVal.name());

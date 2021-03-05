@@ -8,6 +8,7 @@ SET(DEMOS
   demo_CH_math
   demo_CH_stream
   demo_CH_archive
+  demo_CH_archive_data_manager
   demo_CH_buildsystem
   demo_CH_powertrain
   demo_CH_functions
@@ -24,14 +25,14 @@ FOREACH(PROGRAM ${DEMOS})
 
     ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
     SOURCE_GROUP(""  FILES "${PROGRAM}.cpp")
-
+    INCLUDE_DIRECTORIES(${CH_MULTICORE_INCLUDES})
     SET_TARGET_PROPERTIES(${PROGRAM} PROPERTIES
         FOLDER demos
         COMPILE_FLAGS "${CH_CXX_FLAGS}"
         LINK_FLAGS "${CH_LINKERFLAG_EXE}")
     SET_PROPERTY(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
-    TARGET_LINK_LIBRARIES(${PROGRAM} ChronoEngine)
-    ADD_DEPENDENCIES(${PROGRAM} ChronoEngine)
+    TARGET_LINK_LIBRARIES(${PROGRAM} ChronoEngine ChronoEngine_multicore)
+    ADD_DEPENDENCIES(${PROGRAM} ChronoEngine ChronoEngine_multicore)
 
     INSTALL(TARGETS ${PROGRAM} DESTINATION ${CH_INSTALL_DEMO})
 ENDFOREACH(PROGRAM)

@@ -150,6 +150,22 @@ class  ChArchiveExplorer : public ChArchiveOut {
                 this->found = true;
             }
       }
+      virtual void out     (ChNameValue<short> bVal) {
+            if (this->found && !this->find_all) return;
+            if (this->tablevel != this->search_tokens.size()-1) return;
+            if (this->MatchName(search_tokens[this->tablevel],bVal.name())) {
+                this->results.push_back(new ChValueSpecific<short>(bVal.value(),bVal.name(),bVal.flags()));
+                this->found = true;
+            }
+      }
+      virtual void out     (ChNameValue<long long> bVal) {
+            if (this->found && !this->find_all) return;
+            if (this->tablevel != this->search_tokens.size()-1) return;
+            if (this->MatchName(search_tokens[this->tablevel],bVal.name())) {
+                this->results.push_back(new ChValueSpecific<long long>(bVal.value(),bVal.name(),bVal.flags()));
+                this->found = true;
+            }
+      }
       virtual void out     (ChNameValue<double> bVal) {
             if (this->found && !this->find_all) return;
             if (this->tablevel != this->search_tokens.size()-1) return;

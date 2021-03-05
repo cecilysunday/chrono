@@ -29,6 +29,9 @@
 #include "chrono_multicore/math/sse.h"
 #include "chrono_multicore/physics/ChMPMSettings.h"
 
+// Chrono serialization for blaze types
+#include "chrono/serialization/ChBlazeArchive.h"
+
 // Chrono headers
 #include "chrono/physics/ChBody.h"
 
@@ -114,6 +117,48 @@ class CH_MULTICORE_API Ch3DOFContainer : public ChPhysicsItem {
     DynamicVector<real> contact_forces;
     DynamicVector<real> gamma_old;
     short2 family;
+
+    /// Method to allow serialization of transient data to archives.
+    virtual void ArchiveOUT(ChArchiveOut& marchive) {
+        // version number
+        marchive.VersionWrite<Ch3DOFContainer>();
+        // serialize parent class
+        // serialize all member data:
+        marchive << CHNVP(kernel_radius);
+        marchive << CHNVP(collision_envelope);
+        marchive << CHNVP(contact_recovery_speed);
+        marchive << CHNVP(contact_cohesion);
+        marchive << CHNVP(contact_compliance);
+        marchive << CHNVP(contact_mu);
+        marchive << CHNVP(max_velocity);
+        marchive << CHNVP(start_row);
+        marchive << CHNVP(alpha);
+
+        ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, contact_forces);
+        ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, gamma_old);
+        marchive << CHNVP(family);
+    }
+
+    /// Method to allow de-serialization of transient data from archives.
+    virtual void ArchiveIN(ChArchiveIn& marchive) {
+        // version number
+        int version = marchive.VersionRead<Ch3DOFContainer>();
+        // deserialize parent class
+        // stream in all member data:
+        marchive >> CHNVP(kernel_radius);
+        marchive >> CHNVP(collision_envelope);
+        marchive >> CHNVP(contact_recovery_speed);
+        marchive >> CHNVP(contact_cohesion);
+        marchive >> CHNVP(contact_compliance);
+        marchive >> CHNVP(contact_mu);
+        marchive >> CHNVP(max_velocity);
+        marchive >> CHNVP(start_row);
+        marchive >> CHNVP(alpha);
+
+        ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, contact_forces);
+        ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, gamma_old);
+        marchive >> CHNVP(family);
+    }
 
   protected:
     ChMulticoreDataManager* data_manager;

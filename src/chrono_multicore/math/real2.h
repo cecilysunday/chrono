@@ -18,6 +18,7 @@
 #pragma once
 
 #include "chrono_multicore/math/real.h"
+#include "chrono/serialization/ChArchive.h"
 
 namespace chrono {
 
@@ -39,6 +40,12 @@ class real2 {
         x = x_;
         y = y_;
     }
+
+    /// Method to allow serialization of transient array to archives.
+    void ArchiveOUT(ChArchiveOut& marchive);
+
+    /// Method to allow de-serialization of transient array from archives.
+    void ArchiveIN(ChArchiveIn& marchive);
 
     real x;
     real y;
@@ -74,6 +81,22 @@ CUDA_HOST_DEVICE real Dot(const real2& v);
 CUDA_HOST_DEVICE real Length2(const real2& v1);
 CUDA_HOST_DEVICE real2 Normalize(const real2& v1);
 CUDA_HOST_DEVICE void Print(real2 v, const char* name);
+
+inline void real2::ArchiveOUT(ChArchiveOut& marchive) {
+    // suggested: use versioning
+    marchive.VersionWrite<real2>();  // must use specialized template (any)
+    // stream out all member array
+    marchive << CHNVP(x, "x");
+    marchive << CHNVP(y, "y");
+}
+
+inline void real2::ArchiveIN(ChArchiveIn& marchive) {
+    // suggested: use versioning
+    int version = marchive.VersionRead<real2>();  // must use specialized template (any)
+    // stream in all member array
+    marchive >> CHNVP(x, "x");
+    marchive >> CHNVP(y, "y");
+}
 
 /// @} multicore_math
 

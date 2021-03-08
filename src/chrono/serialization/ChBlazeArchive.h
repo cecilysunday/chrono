@@ -6,6 +6,7 @@
 
 #include <blaze/math/CompressedMatrix.h>
 #include <blaze/math/DynamicVector.h>
+#include "chrono/serialization/ChArchive.h"
 
 using blaze::CompressedMatrix;
 using blaze::DynamicVector;

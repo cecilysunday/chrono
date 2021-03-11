@@ -47,6 +47,33 @@ using blaze::Submatrix;
 using blaze::Subvector;
 using custom_vector;
 
+void Assert_eq(const real3& a, const real3& b) {
+    assert(a.x == b.x);
+    assert(a.y == b.y);
+    assert(a.z == b.z);
+}
+
+void Assert_eq(const real4& a, const real4& b) {
+    assert(a.w == b.w);
+    assert(a.x == b.x);
+    assert(a.y == b.y);
+    assert(a.z == b.z);
+}
+
+void Assert_eq(const uvec4& a, const uvec4& b) {
+    assert(a.x == b.x);
+    assert(a.y == b.y);
+    assert(a.z == b.z);
+    assert(a.w == b.w);
+}
+
+void Assert_near(const quaternion& a, const quaternion& b, real COMPARE_EPS = C_EPSILON) {
+    assert(a.w == b.w);
+    assert(a.x == b.x);
+    assert(a.y == b.y);
+    assert(a.z == b.z);
+}
+
 //
 // Example on how to serialize OUT some data:
 //
@@ -96,36 +123,10 @@ void my_serialization_example(ChArchiveOut& marchive)
     dv[1] = 2.4; dv[4] = -14.243434;
     dataManager->host_data.R_full = dv;
 
-    // dataManager->ArchiveOut(marchive);
+    dataManager->host_data.bin_num_contact.push_back(45);
+
     marchive << CHNVP(dataManager);
     delete dataManager;
-}
-
-void Assert_eq(const real3& a, const real3& b) {
-    assert(a.x == b.x);
-    assert(a.y == b.y);
-    assert(a.z == b.z);
-}
-
-void Assert_eq(const real4& a, const real4& b) {
-    assert(a.w == b.w);
-    assert(a.x == b.x);
-    assert(a.y == b.y);
-    assert(a.z == b.z);
-}
-
-void Assert_eq(const uvec4& a, const uvec4& b) {
-    assert(a.x == b.x);
-    assert(a.y == b.y);
-    assert(a.z == b.z);
-    assert(a.w == b.w);
-}
-
-void Assert_near(const quaternion& a, const quaternion& b, real COMPARE_EPS = C_EPSILON) {
-    assert(a.w == b.w);
-    assert(a.x == b.x);
-    assert(a.y == b.y);
-    assert(a.z == b.z);
 }
 
 //
@@ -134,18 +135,8 @@ void Assert_near(const quaternion& a, const quaternion& b, real COMPARE_EPS = C_
 
 void my_deserialization_example(ChArchiveIn& marchive)
 {
-    // ChMulticoreDataManager* dataManager = new ChMulticoreDataManager();
-    // marchive >> CHNVP(dataManager);
-    // GetLog() << "\n"
-    //     << "num_rigid_bodies: " << dataManager->num_rigid_bodies << "\n"
-    //     << "num_fluid_bodies: " << dataManager->num_fluid_bodies << "\n"
-    //     << "host_data: " << "\n";
-    // for (int i = 0; i < dataManager->shape_data.typ_rigid.size(); ++i) {
-    //     GetLog() << "  typ_rigid[" << i << "]: "
-    //     << dataManager->shape_data.typ_rigid[i] << "\n";
-    // }
-    ChMulticoreDataManager *dataManager = 0;// = new ChMulticoreDataManager();
-    // dataManager->ArchiveIn(marchive);
+    ChMulticoreDataManager *dataManager = 0;
+
     marchive >> CHNVP(dataManager);
     // custom_vector<short2>
     assert(dataManager->shape_data.fam_rigid[0].x == 2);
@@ -185,17 +176,18 @@ void my_deserialization_example(ChArchiveIn& marchive)
     assert(dataManager->node_container->max_velocity == 56.2);
     assert(dataManager->fea_container->max_velocity == -24.2);
     // Blaze::CompressedMatrix<real>
-    // assert(dataManager->host_data.Nshur(0,0) == 0);
-    // assert(dataManager->host_data.Nshur(1,4) == 4);
-    // assert(dataManager->host_data.Nshur(2,3) == 0.5);
-    // assert(dataManager->host_data.Nshur(3,4) == -23);
+    assert(dataManager->host_data.Nshur(0,0) == 0);
+    assert(dataManager->host_data.Nshur(1,4) == 4);
+    assert(dataManager->host_data.Nshur(2,3) == 0.5);
+    assert(dataManager->host_data.Nshur(3,4) == -23);
     // Blaze::DynamicVector<real>
-    // assert(dataManager->host_data.R_full[0] == 0);
-    // assert(dataManager->host_data.R_full[1] == 2.4);
-    // assert(dataManager->host_data.R_full[2] == 0);
-    // assert(dataManager->host_data.R_full[3] == 0);
-    // assert(dataManager->host_data.R_full[4] == -14.243434);
-
+    assert(dataManager->host_data.R_full[0] == 0);
+    assert(dataManager->host_data.R_full[1] == 2.4);
+    assert(dataManager->host_data.R_full[2] == 0);
+    assert(dataManager->host_data.R_full[3] == 0);
+    assert(dataManager->host_data.R_full[4] == -14.243434);
+    // custom_vector<uint>
+    assert(dataManager->host_data.bin_num_contact[0] == 45);
     // GetLog() << "num_rigid_bodies: " << dataManager->num_rigid_bodies << "\n";
     // GetLog() << "node_container max vel: " << dataManager->node_container->max_velocity << "\n";
     // GetLog() << "fea_container max vel: " << dataManager->fea_container->max_velocity << "\n";

@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "chrono/serialization/ChArchive.h"
 #include "chrono_multicore/ChMulticoreDefines.h"
 #include "chrono_multicore/math/other_types.h"  // for uint, vec2, vec3
 #include "chrono_multicore/math/real.h"         // for real
@@ -86,6 +87,51 @@ class collision_measures {
     real3 mpm_min_bounding_point;
     real3 mpm_max_bounding_point;
     vec3 mpm_bins_per_axis;
+
+    inline void ArchiveOUT(ChArchiveOut& marchive) {
+        marchive.VersionWrite<collision_measures>();
+        marchive << CHNVP(min_bounding_point);
+        marchive << CHNVP(max_bounding_point);
+        marchive << CHNVP(global_origin);
+        marchive << CHNVP(bin_size);
+        marchive << CHNVP(inv_bin_size);
+        marchive << CHNVP(number_of_bins_active);
+        marchive << CHNVP(number_of_bin_intersections);
+        marchive << CHNVP(number_of_contacts_possible);
+        marchive << CHNVP(rigid_min_bounding_point);
+        marchive << CHNVP(rigid_max_bounding_point);
+        marchive << CHNVP(ff_bins_per_axis);
+        marchive << CHNVP(ff_min_bounding_point);
+        marchive << CHNVP(ff_max_bounding_point);
+        marchive << CHNVP(tet_bins_per_axis);
+        marchive << CHNVP(tet_min_bounding_point);
+        marchive << CHNVP(tet_max_bounding_point);
+        marchive << CHNVP(mpm_min_bounding_point);
+        marchive << CHNVP(mpm_max_bounding_point);
+        marchive << CHNVP(mpm_bins_per_axis);
+    }
+    inline void ArchiveIN(ChArchiveIn& marchive) {
+        int version = marchive.VersionRead<collision_measures>();
+        marchive >> CHNVP(min_bounding_point);
+        marchive >> CHNVP(max_bounding_point);
+        marchive >> CHNVP(global_origin);
+        marchive >> CHNVP(bin_size);
+        marchive >> CHNVP(inv_bin_size);
+        marchive >> CHNVP(number_of_bins_active);
+        marchive >> CHNVP(number_of_bin_intersections);
+        marchive >> CHNVP(number_of_contacts_possible);
+        marchive >> CHNVP(rigid_min_bounding_point);
+        marchive >> CHNVP(rigid_max_bounding_point);
+        marchive >> CHNVP(ff_bins_per_axis);
+        marchive >> CHNVP(ff_min_bounding_point);
+        marchive >> CHNVP(ff_max_bounding_point);
+        marchive >> CHNVP(tet_bins_per_axis);
+        marchive >> CHNVP(tet_min_bounding_point);
+        marchive >> CHNVP(tet_max_bounding_point);
+        marchive >> CHNVP(mpm_min_bounding_point);
+        marchive >> CHNVP(mpm_max_bounding_point);
+        marchive >> CHNVP(mpm_bins_per_axis);
+    }
 };
 
 /// Solver measures.
@@ -122,6 +168,45 @@ class solver_measures {
     std::vector<real> apgd_step;
     std::vector<real> apgd_step_time;
     std::vector<real> violation;
+
+    inline void ArchiveOUT(ChArchiveOut& marchive) {
+        marchive.VersionWrite<solver_measures>();
+        marchive << CHNVP(total_iteration);
+        marchive << CHNVP(residual);
+        marchive << CHNVP(objective_value);
+        marchive << CHNVP(old_objective_value);
+        marchive << CHNVP(bilateral_apgd_step_length);
+        marchive << CHNVP(normal_apgd_step_length);
+        marchive << CHNVP(sliding_apgd_step_length);
+        marchive << CHNVP(spinning_apgd_step_length);
+        marchive << CHNVP(lambda_max);
+        marchive << CHNVP(maxd_hist);
+        marchive << CHNVP(maxdeltalambda_hist);
+        marchive << CHNVP(time);
+        marchive << CHNVP(apgd_beta);
+        marchive << CHNVP(apgd_step);
+        marchive << CHNVP(apgd_step_time);
+        marchive << CHNVP(violation);
+    }
+    inline void ArchiveIN(ChArchiveIn& marchive) {
+        int version = marchive.VersionRead<solver_measures>();
+        marchive >> CHNVP(total_iteration);
+        marchive >> CHNVP(residual);
+        marchive >> CHNVP(objective_value);
+        marchive >> CHNVP(old_objective_value);
+        marchive >> CHNVP(bilateral_apgd_step_length);
+        marchive >> CHNVP(normal_apgd_step_length);
+        marchive >> CHNVP(sliding_apgd_step_length);
+        marchive >> CHNVP(spinning_apgd_step_length);
+        marchive >> CHNVP(lambda_max);
+        marchive >> CHNVP(maxd_hist);
+        marchive >> CHNVP(maxdeltalambda_hist);
+        marchive >> CHNVP(time);
+        marchive >> CHNVP(apgd_beta);
+        marchive >> CHNVP(apgd_step);
+        marchive >> CHNVP(apgd_step_time);
+        marchive >> CHNVP(violation);
+    }
 };
 
 /// Aggregate of collision and solver measures.
@@ -129,6 +214,17 @@ class measures_container {
   public:
     collision_measures collision;
     solver_measures solver;
+
+    inline void ArchiveOUT(ChArchiveOut& marchive) {
+        marchive.VersionWrite<measures_container>();
+        marchive << CHNVP(collision);
+        marchive << CHNVP(solver);
+    }
+    inline void ArchiveIN(ChArchiveIn& marchive) {
+        int version = marchive.VersionRead<measures_container>();
+        marchive >> CHNVP(collision);
+        marchive >> CHNVP(solver);
+    }
 };
 
 /// @} multicore_module

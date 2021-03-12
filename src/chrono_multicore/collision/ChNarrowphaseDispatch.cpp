@@ -1011,6 +1011,74 @@ void ChCNarrowphaseDispatch::MarkerTetContact(const real sphere_radius,
     Thrust_Exclusive_Scan(contact_counts);
     num_contacts = contact_counts[num_tets];
 }
+void ChCNarrowphaseDispatch::ArchiveOUT(ChArchiveOut& marchive) {
+    marchive.VersionWrite<ChCNarrowphaseDispatch>();
+
+    marchive << CHNVP(this->contact_rigid_active);
+    marchive << CHNVP(this->contact_rigid_fluid_active);
+    marchive << CHNVP(this->contact_fluid_active);
+    marchive << CHNVP(this->contact_index);
+    marchive << CHNVP(this->num_potential_rigid_contacts);
+    marchive << CHNVP(this->num_potential_fluid_contacts);
+    marchive << CHNVP(this->num_potential_rigid_fluid_contacts);
+
+    marchive << CHNVP(this->collision_envelope);
+    NarrowPhaseType_mapper enum_map;
+    marchive << CHNVP(enum_map(this->narrowphase_algorithm), "narrowphase_algorithm");
+    SystemType_mapper enum_map2;
+    marchive << CHNVP(enum_map2(this->system_type), "system_type");
+
+    marchive << CHNVP(this->f_bin_intersections);
+    marchive << CHNVP(this->f_bin_number);
+    marchive << CHNVP(this->f_bin_number_out);
+    marchive << CHNVP(this->f_bin_fluid_number);
+    marchive << CHNVP(this->f_bin_start_index);
+    marchive << CHNVP(this->is_rigid_bin_active);
+    marchive << CHNVP(this->f_number_of_bins_active);
+    marchive << CHNVP(this->ff_bin_ids);
+    marchive << CHNVP(this->ff_bin_starts);
+    marchive << CHNVP(this->ff_bin_ends);
+
+    marchive << CHNVP(this->t_bin_intersections);
+    marchive << CHNVP(this->t_bin_number);
+    marchive << CHNVP(this->t_bin_number_out);
+    marchive << CHNVP(this->t_bin_fluid_number);
+    marchive << CHNVP(this->t_bin_start_index);
+}
+void ChCNarrowphaseDispatch::ArchiveIN(ChArchiveIn& marchive) {
+    int version = marchive.VersionRead<ChCNarrowphaseDispatch>();
+
+    marchive >> CHNVP(this->contact_rigid_active);
+    marchive >> CHNVP(this->contact_rigid_fluid_active);
+    marchive >> CHNVP(this->contact_fluid_active);
+    marchive >> CHNVP(this->contact_index);
+    marchive >> CHNVP(this->num_potential_rigid_contacts);
+    marchive >> CHNVP(this->num_potential_fluid_contacts);
+    marchive >> CHNVP(this->num_potential_rigid_fluid_contacts);
+
+    marchive >> CHNVP(this->collision_envelope);
+    NarrowPhaseType_mapper enum_map;
+    marchive >> CHNVP(enum_map(this->narrowphase_algorithm), "narrowphase_algorithm");
+    SystemType_mapper enum_map2;
+    marchive >> CHNVP(enum_map2(this->system_type), "system_type");
+
+    marchive >> CHNVP(this->f_bin_intersections);
+    marchive >> CHNVP(this->f_bin_number);
+    marchive >> CHNVP(this->f_bin_number_out);
+    marchive >> CHNVP(this->f_bin_fluid_number);
+    marchive >> CHNVP(this->f_bin_start_index);
+    marchive >> CHNVP(this->is_rigid_bin_active);
+    marchive >> CHNVP(this->f_number_of_bins_active);
+    marchive >> CHNVP(this->ff_bin_ids);
+    marchive >> CHNVP(this->ff_bin_starts);
+    marchive >> CHNVP(this->ff_bin_ends);
+
+    marchive >> CHNVP(this->t_bin_intersections);
+    marchive >> CHNVP(this->t_bin_number);
+    marchive >> CHNVP(this->t_bin_number_out);
+    marchive >> CHNVP(this->t_bin_fluid_number);
+    marchive >> CHNVP(this->t_bin_start_index);
+}
 //==================================================================================================================================
 }  // end namespace collision
 }  // end namespace chrono

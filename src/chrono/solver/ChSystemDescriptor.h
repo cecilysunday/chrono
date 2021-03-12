@@ -347,7 +347,7 @@ class ChApi ChSystemDescriptor {
         // serialize parent class
         // serialize all member data:
         // protected
-        // marchive << CHNVP(vconstraints);
+        marchive << CHNVP(vconstraints);
         // marchive << CHNVP(vvariables);
         // marchive << CHNVP(vstiffness);
         // marchive << CHNVP(spinlocktable);
@@ -363,6 +363,10 @@ class ChApi ChSystemDescriptor {
         int version = marchive.VersionRead<ChSystemDescriptor>();
         // deserialize parent class
         // stream in all member data:
+        marchive >> CHNVP(vconstraints);
+        // marchive >> CHNVP(vvariables);
+        // marchive >> CHNVP(vstiffness);
+        // marchive >> CHNVP(spinlocktable);
         marchive >> CHNVP(c_a);
         marchive >> CHNVP(n_q);
         marchive >> CHNVP(n_c);

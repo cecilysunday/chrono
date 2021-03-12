@@ -26,6 +26,7 @@
 // Include the ChConfigMulticore header *before* any Thrust headers!
 #include "chrono_multicore/ChApiMulticore.h"
 #include "chrono_multicore/ChConfigMulticore.h"
+#include "chrono/serialization/ChArchive.h"
 
 #include <thrust/reduce.h>
 #include <thrust/gather.h>
@@ -129,6 +130,23 @@ enum class SolverType {
     BB,                          ///< Barzilai-Borwein
     SPGQP                        ///< Spectral Projected Gradient (QP projection)
 };
+CH_ENUM_MAPPER_BEGIN(SolverType);
+  CH_ENUM_VAL(SolverType::STEEPEST_DESCENT);
+  CH_ENUM_VAL(SolverType::GRADIENT_DESCENT);
+  CH_ENUM_VAL(SolverType::CONJUGATE_GRADIENT);
+  CH_ENUM_VAL(SolverType::CONJUGATE_GRADIENT_SQUARED);
+  CH_ENUM_VAL(SolverType::BICONJUGATE_GRADIENT);
+  CH_ENUM_VAL(SolverType::BICONJUGATE_GRADIENT_STAB);
+  CH_ENUM_VAL(SolverType::MINIMUM_RESIDUAL);
+  CH_ENUM_VAL(SolverType::QUASI_MINIMUM_RESIDUAL);
+  CH_ENUM_VAL(SolverType::APGD);
+  CH_ENUM_VAL(SolverType::APGDREF);
+  CH_ENUM_VAL(SolverType::JACOBI);
+  CH_ENUM_VAL(SolverType::GAUSS_SEIDEL);
+  CH_ENUM_VAL(SolverType::PDIP);
+  CH_ENUM_VAL(SolverType::BB);
+  CH_ENUM_VAL(SolverType::SPGQP);
+CH_ENUM_MAPPER_END(SolverType);
 
 /// Enumeration for solver mode.
 enum class SolverMode {
@@ -137,6 +155,12 @@ enum class SolverMode {
     SPINNING,  ///< solve for rolling resistance impulses
     BILATERAL  ///< solve for bilateral Lagrange multipliers
 };
+CH_ENUM_MAPPER_BEGIN(SolverMode);
+  CH_ENUM_VAL(SolverMode::NORMAL);
+  CH_ENUM_VAL(SolverMode::SLIDING);
+  CH_ENUM_VAL(SolverMode::SPINNING);
+  CH_ENUM_VAL(SolverMode::BILATERAL);
+CH_ENUM_MAPPER_END(SolverMode);
 
 /// Enumeration for the collision system type
 enum class CollisionSystemType {
@@ -150,6 +174,11 @@ enum class NarrowPhaseType {
     NARROWPHASE_R,          ///< analytical collision detection
     NARROWPHASE_HYBRID_MPR  ///< analytical method with fallback on MPR
 };
+CH_ENUM_MAPPER_BEGIN(NarrowPhaseType);
+  CH_ENUM_VAL(NarrowPhaseType::NARROWPHASE_MPR);
+  CH_ENUM_VAL(NarrowPhaseType::NARROWPHASE_R);
+  CH_ENUM_VAL(NarrowPhaseType::NARROWPHASE_HYBRID_MPR);
+CH_ENUM_MAPPER_END(NarrowPhaseType);
 
 /// Enumeration for system type.
 /// Used so that parts of the code that have been "flattened" can know what type of system is used.
@@ -157,6 +186,10 @@ enum class SystemType {
     SYSTEM_NSC,  ///< system using non-smooth (complementarity) contact
     SYSTEM_SMC   ///< system using smooth (penalty) contact
 };
+CH_ENUM_MAPPER_BEGIN(SystemType);
+  CH_ENUM_VAL(SystemType::SYSTEM_NSC);
+  CH_ENUM_VAL(SystemType::SYSTEM_SMC);
+CH_ENUM_MAPPER_END(SystemType);
 
 /// Enumeration for bilateral constraint types.
 enum BilateralType {

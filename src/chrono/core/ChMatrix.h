@@ -158,6 +158,32 @@ inline void StreamOUTdenseMatlabFormat(ChMatrixConstRef A, ChStreamOutAscii& str
     }
 }
 
+inline void ArchiveOutChVectorDynamic(ChArchiveOut& marchive, const ChVectorDynamic<double>& src) {
+    marchive.VersionWrite<size_t>();
+    marchive << CHNVP(src.rows());
+
+    marchive.VersionWrite<std::vector<double>>();
+    std::vector<double> v(src.rows());
+    for (int i = 0; i < src.rows(); ++i) {
+        v[i] = src[i];
+    }
+    marchive << CHNVP(v);
+}
+inline void ArchiveInChVectorDynamic(ChArchiveIn& marchive, ChVectorDynamic<double>& src) {
+    marchive.VersionRead<size_t>();
+    size_t rows;
+    marchive >> CHNVP(rows);
+
+    marchive.VersionRead<std::vector<double>>();
+    std::vector<double> v(rows);
+    marchive >> CHNVP(v);
+
+    src.resize(rows, 1);
+    for (int i = 0; i < rows; ++i) {
+        src[i] = v[i];
+    }
+}
+
 //// RADU
 //// TODO: serialization of matrix classes
 

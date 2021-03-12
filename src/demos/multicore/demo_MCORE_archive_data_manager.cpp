@@ -27,6 +27,7 @@
 #include "chrono/core/ChMatrix.h"
 #include "chrono/core/ChException.h"
 #include "chrono/solver/ChConstraintTuple.h"
+#include "chrono_multicore/constraints/ChConstraintRigidRigid.h"
 
 #include "chrono/core/ChGlobal.h"
 #include "chrono/serialization/ChArchive.h"
@@ -112,8 +113,7 @@ void my_serialization_example(ChArchiveOut& marchive)
     dataManager->host_data.cohesion.push_back(1.4f);
     dataManager->host_data.cohesion.push_back(-0.5f);
     dataManager->num_rigid_bodies = 1204;
-    dataManager->node_container->max_velocity = 56.2;
-    dataManager->fea_container->max_velocity = -24.2;
+
     CompressedMatrix<real> cm;
     cm.clear(); cm.resize(4,5);
     cm(1,4) = 4; cm(2,3) = .5; cm(3,4) = -23;
@@ -124,6 +124,15 @@ void my_serialization_example(ChArchiveOut& marchive)
     dataManager->host_data.R_full = dv;
 
     dataManager->host_data.bin_num_contact.push_back(45);
+
+    dataManager->system_descriptor = std::make_shared<ChSystemDescriptor>();
+    dataManager->system_descriptor->SetMassFactor(2.701);
+
+    dataManager->node_container->max_velocity = 56.2;
+    dataManager->fea_container->max_velocity = -24.2;
+
+    dataManager->rigid_rigid = new ChConstraintRigidRigid();
+    dataManager->rigid_rigid->Setup(dataManager);
 
     marchive << CHNVP(dataManager);
     delete dataManager;
@@ -172,9 +181,6 @@ void my_deserialization_example(ChArchiveIn& marchive)
     assert(dataManager->host_data.cohesion[1] == -0.5f);
     // uint
     assert(dataManager->num_rigid_bodies == 1204);
-    // std::shared_ptr<Ch3DOFContainer>.real
-    assert(dataManager->node_container->max_velocity == 56.2);
-    assert(dataManager->fea_container->max_velocity == -24.2);
     // Blaze::CompressedMatrix<real>
     assert(dataManager->host_data.Nshur(0,0) == 0);
     assert(dataManager->host_data.Nshur(1,4) == 4);
@@ -188,37 +194,14 @@ void my_deserialization_example(ChArchiveIn& marchive)
     assert(dataManager->host_data.R_full[4] == -14.243434);
     // custom_vector<uint>
     assert(dataManager->host_data.bin_num_contact[0] == 45);
-    // GetLog() << "num_rigid_bodies: " << dataManager->num_rigid_bodies << "\n";
-    // GetLog() << "node_container max vel: " << dataManager->node_container->max_velocity << "\n";
-    // GetLog() << "fea_container max vel: " << dataManager->fea_container->max_velocity << "\n";
-    // GetLog() << "fam_rigid: \n" << dataManager->shape_data.fam_rigid << "\n";
-    // GetLog() << "typ_rigid: \n" << dataManager->shape_data.typ_rigid << "\n";
-    // GetLog() << "ObA_rigid: \n" << dataManager->shape_data.ObA_rigid << "\n";
-    // GetLog() << "sphere_rigid: \n" << dataManager->shape_data.sphere_rigid << "\n";
-    // GetLog() << "rbox_like_rigid: \n" << dataManager->shape_data.rbox_like_rigid << "\n";
-    // GetLog() << "obj_data_R_global: \n" << dataManager->shape_data.obj_data_R_global << "\n";
-    // GetLog() << "pair_shapeIDs: \n" << dataManager->host_data.pair_shapeIDs << "\n";
-    // GetLog() << "tet_indices: \n" << dataManager->host_data.tet_indices << "\n";
-    // GetLog() << "shaft_active: \n" << dataManager->host_data.shaft_active << "\n";
-    // GetLog() << "cohesion: \n" << dataManager->host_data.cohesion << "\n";
-    // GetLog() << "Nshur: ";
-    // for (int i = 0; i < dataManager->host_data.Nshur.rows(); ++i) {
-    //     GetLog() << "\n";
-    //     for (int j = 0; j < dataManager->host_data.Nshur.columns(); ++j) {
-    //         real r = dataManager->host_data.Nshur(i, j);
-    //         GetLog() << r;
-    //         if (j < dataManager->host_data.Nshur.columns() - 1) {
-    //             GetLog() << ", ";
-    //         }
-    //     }
-    // }
-    // GetLog() << "\n\n";
-    // GetLog() << "R_full: \n";
-    // for (int i = 0; i < dataManager->host_data.R_full.size(); ++i) {
-    //     real r = dataManager->host_data.R_full[i];
-    //     GetLog() << r << ",";
-    // }
-    // GetLog() << "\n\n";
+    // system_descriptor
+    assert(dataManager->system_descriptor->GetMassFactor() == 2.701);
+    // std::shared_ptr<Ch3DOFContainer>.real
+    assert(dataManager->node_container->max_velocity == 56.2);
+    assert(dataManager->fea_container->max_velocity == -24.2);
+    // ChConstraintRigidRigid*
+    assert(dataManager->rigid_rigid->offset == 3);
+
     delete dataManager;
 }
 

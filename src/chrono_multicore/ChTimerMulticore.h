@@ -23,6 +23,7 @@
 #include <string>
 
 #include "chrono/core/ChTimer.h"
+#include "chrono/serialization/ChArchive.h"
 
 #include "chrono_multicore/ChMulticoreDefines.h"
 #include "chrono_multicore/math/ChMulticoreMath.h"
@@ -99,6 +100,19 @@ class CH_MULTICORE_API ChTimerMulticore {
             std::cout << "Name:\t" << timer.first << "\t" << timer.second.timer() << "\n";
         }
         std::cout << "------------" << std::endl;
+    }
+
+    inline void ArchiveOUT(ChArchiveOut& marchive) {
+        marchive.VersionWrite<ChTimerMulticore>();
+        marchive << CHNVP(total_timers);
+        // marchive << CHNVP(timer_list);
+        // marchive << CHNVP(it);
+    }
+    inline void ArchiveIN(ChArchiveIn& marchive) {
+        int version = marchive.VersionRead<ChTimerMulticore>();
+        marchive >> CHNVP(total_timers);
+        // marchive >> CHNVP(timer_list);
+        // marchive >> CHNVP(it);
     }
 
     int total_timers;

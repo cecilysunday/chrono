@@ -43,6 +43,23 @@ ChVariables& ChVariables::operator=(const ChVariables& other) {
     return *this;
 }
 
+void ChVariables::ArchiveOUT(ChArchiveOut& marchive) {
+    marchive.VersionWrite<ChVariables>();
+    ArchiveOutChVectorDynamic(marchive, this->qb);
+    ArchiveOutChVectorDynamic(marchive, this->fb);
+    marchive << CHNVP(this->ndof);
+    marchive << CHNVP(this->disabled);
+    marchive << CHNVP(this->offset);
+
+}
+void ChVariables::ArchiveIN(ChArchiveIn& marchive) {
+    marchive.VersionRead<ChVariables>();
+    ArchiveInChVectorDynamic(marchive, this->qb);
+    ArchiveInChVectorDynamic(marchive, this->fb);
+    marchive >> CHNVP(this->ndof);
+    marchive >> CHNVP(this->disabled);
+    marchive >> CHNVP(this->offset);
+}
 
 
 }  // end namespace chrono

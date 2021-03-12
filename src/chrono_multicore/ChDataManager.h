@@ -407,7 +407,7 @@ struct host_container {
     ///     n1 n2 ... nN | u1 v1 u2 v2 ... uN vN
     /// \li SPINNING [size(gamma) = 6N]\n
     ///     n1 n2 ... nN | u1 v1 u2 v2 ... uN vN | tn1 tu1 tv1 tn2 tu2 tv2 ... tnN tuN tvN
-    /// 
+    ///
     /// If there are any bilateral constraints, the corresponding impulses are stored at the end of `gamma`.
     DynamicVector<real> gamma;
 
@@ -501,8 +501,6 @@ class CH_MULTICORE_API ChMulticoreDataManager {
     /// Print a sparse blaze matrix.
     void PrintMatrix(CompressedMatrix<real> src);
 
-    // void ArchiveOut(ChArchiveOut& marchive);  //##### for Chrono serialization
-    // void ArchiveIn(ChArchiveIn& marchive);  //##### for Chrono deserialization
     void ArchiveOUT(ChArchiveOut& marchive);  //##### for Chrono serialization
     void ArchiveIN(ChArchiveIn& marchive);  //##### for Chrono deserialization
 

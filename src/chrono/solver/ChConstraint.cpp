@@ -89,6 +89,9 @@ void ChConstraint::ArchiveOUT(ChArchiveOut& marchive) {
     marchive.VersionWrite<ChConstraint>();
 
     // serialize all member data:
+    marchive << CHNVP(c_i);
+    marchive << CHNVP(l_i);
+    marchive << CHNVP(b_i);
     marchive << CHNVP(cfm_i);
     marchive << CHNVP(valid);
     marchive << CHNVP(disabled);
@@ -103,6 +106,9 @@ void ChConstraint::ArchiveIN(ChArchiveIn& marchive) {
     int version = marchive.VersionRead<ChConstraint>();
 
     // stream in all member data:
+    marchive >> CHNVP(c_i);
+    marchive >> CHNVP(l_i);
+    marchive >> CHNVP(b_i);
     marchive >> CHNVP(cfm_i);
     marchive >> CHNVP(valid);
     marchive >> CHNVP(disabled);

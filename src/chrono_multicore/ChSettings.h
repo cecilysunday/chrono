@@ -85,6 +85,36 @@ class collision_settings {
     real grid_density;
     /// Use fixed number of bins instead of tuning them.
     bool fixed_bins;
+
+    inline void ArchiveOUT(ChArchiveOut& marchive) {
+        marchive.VersionWrite<collision_settings>();
+        marchive << CHNVP(min_bounding_point);
+        marchive << CHNVP(max_bounding_point);
+        marchive << CHNVP(collision_envelope);
+        marchive << CHNVP(use_aabb_active);
+        marchive << CHNVP(aabb_min);
+        marchive << CHNVP(aabb_max);
+        marchive << CHNVP(bins_per_axis);
+        NarrowPhaseType_mapper enum_map;
+        marchive << CHNVP(enum_map(narrowphase_algorithm), "narrowphase_algorithm");
+        marchive << CHNVP(grid_density);
+        marchive << CHNVP(fixed_bins);
+
+    }
+    inline void ArchiveIN(ChArchiveIn& marchive) {
+        int version = marchive.VersionRead<collision_settings>();
+        marchive >> CHNVP(min_bounding_point);
+        marchive >> CHNVP(max_bounding_point);
+        marchive >> CHNVP(collision_envelope);
+        marchive >> CHNVP(use_aabb_active);
+        marchive >> CHNVP(aabb_min);
+        marchive >> CHNVP(aabb_max);
+        marchive >> CHNVP(bins_per_axis);
+        NarrowPhaseType_mapper enum_map;
+        marchive >> CHNVP(enum_map(narrowphase_algorithm), "narrowphase_algorithm");
+        marchive >> CHNVP(grid_density);
+        marchive >> CHNVP(fixed_bins);
+    }
 };
 
 /// Chrono::Multicore solver_settings.
@@ -216,6 +246,109 @@ class solver_settings {
     real tolerance_objective;
     /// Compute residual every x iterations.
     int skip_residual;
+
+    inline void ArchiveOUT(ChArchiveOut& marchive) {
+        marchive.VersionWrite<collision_settings>();
+        SolverType_mapper enum_map;
+        marchive << CHNVP(enum_map(solver_type), "solver_type");
+
+        SolverMode_mapper enum_map2;
+        marchive << CHNVP(enum_map2(solver_mode), "solver_mode");
+        marchive << CHNVP(enum_map2(local_solver_mode), "local_solver_mode");
+
+        marchive << CHNVP(alpha);
+        marchive << CHNVP(contact_recovery_speed);
+        marchive << CHNVP(bilateral_clamp_speed);
+        marchive << CHNVP(clamp_bilaterals);
+        marchive << CHNVP(update_rhs);
+        marchive << CHNVP(compute_N);
+        marchive << CHNVP(test_objective);
+        marchive << CHNVP(use_full_inertia_tensor);
+        marchive << CHNVP(cache_step_length);
+        marchive << CHNVP(precondition);
+        marchive << CHNVP(use_power_iteration);
+        marchive << CHNVP(max_power_iteration);
+        marchive << CHNVP(power_iter_tolerance);
+
+        ChSystemSMC::ContactForceModel_mapper enum_map3;
+        marchive << CHNVP(enum_map3(contact_force_model), "contact_force_model");
+
+        ChSystemSMC::AdhesionForceModel_mapper enum_map4;
+        marchive << CHNVP(enum_map4(adhesion_force_model), "adhesion_force_model");
+
+        ChSystemSMC::TangentialDisplacementModel_mapper enum_map5;
+        marchive << CHNVP(enum_map5(tangential_displ_mode), "tangential_displ_mode");
+
+        marchive << CHNVP(use_material_properties);
+        marchive << CHNVP(characteristic_vel);
+        marchive << CHNVP(min_slip_vel);
+        marchive << CHNVP(min_roll_vel);
+        marchive << CHNVP(min_spin_vel);
+
+        marchive << CHNVP(max_iteration);
+        marchive << CHNVP(max_iteration_normal);
+        marchive << CHNVP(max_iteration_sliding);
+        marchive << CHNVP(max_iteration_spinning);
+        marchive << CHNVP(max_iteration_bilateral);
+        marchive << CHNVP(max_iteration_fem);
+
+        marchive << CHNVP(tolerance);
+        marchive << CHNVP(tol_speed);
+        marchive << CHNVP(tolerance_objective);
+
+        marchive << CHNVP(skip_residual);
+    }
+    inline void ArchiveIN(ChArchiveIn& marchive) {
+        int version = marchive.VersionRead<collision_settings>();
+        SolverType_mapper enum_map;
+        marchive >> CHNVP(enum_map(solver_type), "solver_type");
+
+        SolverMode_mapper enum_map2;
+        marchive >> CHNVP(enum_map2(solver_mode), "solver_mode");
+        marchive >> CHNVP(enum_map2(local_solver_mode), "local_solver_mode");
+
+        marchive >> CHNVP(alpha);
+        marchive >> CHNVP(contact_recovery_speed);
+        marchive >> CHNVP(bilateral_clamp_speed);
+        marchive >> CHNVP(clamp_bilaterals);
+        marchive >> CHNVP(update_rhs);
+        marchive >> CHNVP(compute_N);
+        marchive >> CHNVP(test_objective);
+        marchive >> CHNVP(use_full_inertia_tensor);
+        marchive >> CHNVP(cache_step_length);
+        marchive >> CHNVP(precondition);
+        marchive >> CHNVP(use_power_iteration);
+        marchive >> CHNVP(max_power_iteration);
+        marchive >> CHNVP(power_iter_tolerance);
+
+        ChSystemSMC::ContactForceModel_mapper enum_map3;
+        marchive >> CHNVP(enum_map3(contact_force_model), "contact_force_model");
+
+        ChSystemSMC::AdhesionForceModel_mapper enum_map4;
+        marchive >> CHNVP(enum_map4(adhesion_force_model), "adhesion_force_model");
+
+        ChSystemSMC::TangentialDisplacementModel_mapper enum_map5;
+        marchive >> CHNVP(enum_map5(tangential_displ_mode), "tangential_displ_mode");
+
+        marchive >> CHNVP(use_material_properties);
+        marchive >> CHNVP(characteristic_vel);
+        marchive >> CHNVP(min_slip_vel);
+        marchive >> CHNVP(min_roll_vel);
+        marchive >> CHNVP(min_spin_vel);
+
+        marchive >> CHNVP(max_iteration);
+        marchive >> CHNVP(max_iteration_normal);
+        marchive >> CHNVP(max_iteration_sliding);
+        marchive >> CHNVP(max_iteration_spinning);
+        marchive >> CHNVP(max_iteration_bilateral);
+        marchive >> CHNVP(max_iteration_fem);
+
+        marchive >> CHNVP(tolerance);
+        marchive >> CHNVP(tol_speed);
+        marchive >> CHNVP(tolerance_objective);
+
+        marchive >> CHNVP(skip_residual);
+    }
 };
 
 /// Aggregate of all settings for Chrono::Multicore.
@@ -248,6 +381,32 @@ class settings_container {
     friend class ChSystemMulticore;
     friend class ChSystemMulticoreNSC;
     friend class ChSystemMulticoreSMC;
+
+    inline void ArchiveOUT(ChArchiveOut& marchive) {
+        marchive.VersionWrite<settings_container>();
+        marchive << CHNVP(collision);
+        marchive << CHNVP(solver);
+        marchive << CHNVP(step_size);
+        marchive << CHNVP(gravity);
+        marchive << CHNVP(perform_thread_tuning);
+        marchive << CHNVP(min_threads);
+        marchive << CHNVP(max_threads);
+        marchive << CHNVP(system_type);
+        SystemType_mapper enum_map;
+        marchive << CHNVP(enum_map(system_type), "system_type");
+    }
+    inline void ArchiveIN(ChArchiveIn& marchive) {
+        int version = marchive.VersionRead<settings_container>();
+        marchive >> CHNVP(collision);
+        marchive >> CHNVP(solver);
+        marchive >> CHNVP(step_size);
+        marchive >> CHNVP(gravity);
+        marchive >> CHNVP(perform_thread_tuning);
+        marchive >> CHNVP(min_threads);
+        marchive >> CHNVP(max_threads);
+        SystemType_mapper enum_map;
+        marchive >> CHNVP(enum_map(system_type), "system_type");
+    }
 };
 
 /// @} multicore_module

@@ -22,6 +22,7 @@
 
 #include <algorithm>
 
+#include "chrono/serialization/ChArchive.h"
 #include "chrono/physics/ChSystem.h"
 
 namespace chrono {
@@ -52,6 +53,25 @@ class ChApi ChSystemSMC : public ChSystem {
         OneStep,   ///< use only current relative tangential velocity
         MultiStep  ///< use contact history (from contact initiation)
     };
+
+    CH_ENUM_MAPPER_BEGIN(ContactForceModel);
+      CH_ENUM_VAL(ContactForceModel::Hooke);
+      CH_ENUM_VAL(ContactForceModel::Hertz);
+      CH_ENUM_VAL(ContactForceModel::PlainCoulomb);
+      CH_ENUM_VAL(ContactForceModel::Flores);
+    CH_ENUM_MAPPER_END(ContactForceModel);
+
+    CH_ENUM_MAPPER_BEGIN(AdhesionForceModel);
+      CH_ENUM_VAL(AdhesionForceModel::Constant);
+      CH_ENUM_VAL(AdhesionForceModel::DMT);
+      CH_ENUM_VAL(AdhesionForceModel::Perko);
+    CH_ENUM_MAPPER_END(AdhesionForceModel);
+
+    CH_ENUM_MAPPER_BEGIN(TangentialDisplacementModel);
+      CH_ENUM_VAL(TangentialDisplacementModel::None);
+      CH_ENUM_VAL(TangentialDisplacementModel::OneStep);
+      CH_ENUM_VAL(TangentialDisplacementModel::MultiStep);
+    CH_ENUM_MAPPER_END(TangentialDisplacementModel);
 
     /// Constructor for ChSystemSMC.
     ChSystemSMC(bool use_material_properties = true);
@@ -128,6 +148,8 @@ class ChApi ChSystemSMC : public ChSystem {
     double m_minSlipVelocity;                    ///< slip velocity below which no tangential forces are generated
     double m_characteristicVelocity;             ///< characteristic impact velocity (Hooke model)
 };
+
+
 
 CH_CLASS_VERSION(ChSystemSMC, 0)
 

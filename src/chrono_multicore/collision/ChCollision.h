@@ -139,6 +139,8 @@ class CH_MULTICORE_API ChCNarrowphaseDispatch {
     void DispatchHybridMPR();
     void Dispatch_Init(uint index, uint& icoll, uint& ID_A, uint& ID_B, ConvexShape* shapeA, ConvexShape* shapeB);
     void Dispatch_Finalize(uint icoll, uint ID_A, uint ID_B, int nC);
+    void ArchiveOUT(ChArchiveOut& marchive);
+    void ArchiveIN(ChArchiveIn& marchive);
     ChMulticoreDataManager* data_manager;
 
   private:

@@ -22,6 +22,7 @@
 #include "chrono_multicore/ChDataManager.h"
 #include "chrono_multicore/physics/Ch3DOFContainer.h"
 #include "chrono_multicore/collision/ChCollision.h"
+#include "chrono_multicore/constraints/ChConstraintRigidRigid.h"
 
 #include "chrono/serialization/ChArchive.h"
 #include "chrono/serialization/ChBlazeArchive.h"
@@ -177,10 +178,26 @@ void ChMulticoreDataManager::ArchiveOUT(ChArchiveOut& marchive)  //##### for Chr
     // stream out all member data
     ArchiveOUTHostData(marchive);
     ArchiveOUTShapeData(marchive);
-    marchive << CHNVP(node_container);
-    marchive << CHNVP(fea_container);
+    marchive << CHNVP(this->system_descriptor);
+    marchive << CHNVP(this->node_container);
+    marchive << CHNVP(this->fea_container);
+    marchive << CHNVP(this->rigid_rigid);
+    //this->bilateral // nothing interesting to archive
+    //this->broadphase // nothing intersting to archive
+    marchive << CHNVP(this->narrowphase);
+    //this->aabb_generator // nothing interesting to archive
+    // marchive << CHNVP(this->body_list); // todo
+    // marchive << CHNVP(this->link_list);
+    // marchive << CHNVP(this->other_physics_list); // to finish
+
     ArchiveOUTIndexingVariables(marchive);
-    // marchive << CHNVP(Fc_current);
+
+    marchive << CHNVP(Fc_current);
+    // marchive << CHNVP(this->system_timer); // to finish
+    // marchive << CHNVP(this->settings);
+    // marchive << CHNVP(this->measures);
+    // this->composition_strategy; // nothing interesting to archive
+    // this->add_contact_callback; // nothing interesting to archive
 }
 
 void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chrono serialization
@@ -190,369 +207,385 @@ void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chron
     // stream in all member data
     ArchiveINHostData(marchive);
     ArchiveINShapeData(marchive);
-    marchive >> CHNVP(node_container);
-    marchive >> CHNVP(fea_container);
+    marchive >> CHNVP(this->system_descriptor);
+    marchive >> CHNVP(this->node_container);
+    marchive >> CHNVP(this->fea_container);
+    marchive >> CHNVP(this->rigid_rigid);
+    //this->bilateral // nothing interesting to archive
+    //this->broadphase // nothing intersting to archive
+    marchive >> CHNVP(this->narrowphase);
+    // this->aabb_generator // nothing interesting to archive
+    // marchive >> CHNVP(this->body_list); // todo
+    // marchive >> CHNVP(this->link_list);
+    // marchive >> CHNVP(this->other_physics_list); // to finish
+
     ArchiveINIndexingVariables(marchive);
-    // marchive >> CHNVP(Fc_current);
+
+    marchive >> CHNVP(Fc_current);
+    // marchive >> CHNVP(this->system_timer); // to finish
+    // marchive >> CHNVP(this->settings);
+    // marchive >> CHNVP(this->measures);
+    // this->composition_strategy; // nothing interesting to archive
+    // this->add_contact_callback; // nothing interesting to archive
 }
 
 void ChMulticoreDataManager::ArchiveOUTShapeData(ChArchiveOut& marchive) {
-    marchive << CHNVP(shape_data.fam_rigid);
-    marchive << CHNVP(shape_data.id_rigid);
-    marchive << CHNVP(shape_data.typ_rigid);
-    marchive << CHNVP(shape_data.local_rigid);
-    marchive << CHNVP(shape_data.start_rigid);
-    marchive << CHNVP(shape_data.length_rigid);
+    marchive << CHNVP(this->shape_data.fam_rigid);
+    marchive << CHNVP(this->shape_data.id_rigid);
+    marchive << CHNVP(this->shape_data.typ_rigid);
+    marchive << CHNVP(this->shape_data.local_rigid);
+    marchive << CHNVP(this->shape_data.start_rigid);
+    marchive << CHNVP(this->shape_data.length_rigid);
 
-    marchive << CHNVP(shape_data.ObR_rigid);
-    marchive << CHNVP(shape_data.ObA_rigid);
+    marchive << CHNVP(this->shape_data.ObR_rigid);
+    marchive << CHNVP(this->shape_data.ObA_rigid);
 
-    marchive << CHNVP(shape_data.sphere_rigid);
-    marchive << CHNVP(shape_data.box_like_rigid);
-    marchive << CHNVP(shape_data.triangle_rigid);
-    marchive << CHNVP(shape_data.capsule_rigid);
-    marchive << CHNVP(shape_data.rbox_like_rigid);
-    marchive << CHNVP(shape_data.convex_rigid);
-    marchive << CHNVP(shape_data.tetrahedron_rigid);
+    marchive << CHNVP(this->shape_data.sphere_rigid);
+    marchive << CHNVP(this->shape_data.box_like_rigid);
+    marchive << CHNVP(this->shape_data.triangle_rigid);
+    marchive << CHNVP(this->shape_data.capsule_rigid);
+    marchive << CHNVP(this->shape_data.rbox_like_rigid);
+    marchive << CHNVP(this->shape_data.convex_rigid);
+    marchive << CHNVP(this->shape_data.tetrahedron_rigid);
 
-    marchive << CHNVP(shape_data.triangle_global);
-    marchive << CHNVP(shape_data.obj_data_A_global);
-    marchive << CHNVP(shape_data.obj_data_R_global);
+    marchive << CHNVP(this->shape_data.triangle_global);
+    marchive << CHNVP(this->shape_data.obj_data_A_global);
+    marchive << CHNVP(this->shape_data.obj_data_R_global);
 }
 
 
 void ChMulticoreDataManager::ArchiveOUTHostData(ChArchiveOut& marchive) {
-    marchive << CHNVP(host_data.aabb_min);
-    marchive << CHNVP(host_data.aabb_max);
+    marchive << CHNVP(this->host_data.aabb_min);
+    marchive << CHNVP(this->host_data.aabb_max);
 
-    marchive << CHNVP(host_data.aabb_min_tet);
-    marchive << CHNVP(host_data.aabb_max_tet);
+    marchive << CHNVP(this->host_data.aabb_min_tet);
+    marchive << CHNVP(this->host_data.aabb_max_tet);
 
-    marchive << CHNVP(host_data.pair_shapeIDs);
-    marchive << CHNVP(host_data.contact_shapeIDs);
+    marchive << CHNVP(this->host_data.pair_shapeIDs);
+    marchive << CHNVP(this->host_data.contact_shapeIDs);
 
-    marchive << CHNVP(host_data.norm_rigid_rigid);
-    marchive << CHNVP(host_data.cpta_rigid_rigid);
-    marchive << CHNVP(host_data.cptb_rigid_rigid);
-    marchive << CHNVP(host_data.dpth_rigid_rigid);
-    marchive << CHNVP(host_data.erad_rigid_rigid);
-    marchive << CHNVP(host_data.bids_rigid_rigid);
+    marchive << CHNVP(this->host_data.norm_rigid_rigid);
+    marchive << CHNVP(this->host_data.cpta_rigid_rigid);
+    marchive << CHNVP(this->host_data.cptb_rigid_rigid);
+    marchive << CHNVP(this->host_data.dpth_rigid_rigid);
+    marchive << CHNVP(this->host_data.erad_rigid_rigid);
+    marchive << CHNVP(this->host_data.bids_rigid_rigid);
 
-    marchive << CHNVP(host_data.norm_rigid_fluid);
-    marchive << CHNVP(host_data.cpta_rigid_fluid);
-    marchive << CHNVP(host_data.dpth_rigid_fluid);
-    marchive << CHNVP(host_data.neighbor_rigid_fluid);
-    marchive << CHNVP(host_data.c_counts_rigid_fluid);
+    marchive << CHNVP(this->host_data.norm_rigid_fluid);
+    marchive << CHNVP(this->host_data.cpta_rigid_fluid);
+    marchive << CHNVP(this->host_data.dpth_rigid_fluid);
+    marchive << CHNVP(this->host_data.neighbor_rigid_fluid);
+    marchive << CHNVP(this->host_data.c_counts_rigid_fluid);
 
-    marchive << CHNVP(host_data.neighbor_3dof_3dof);
-    marchive << CHNVP(host_data.c_counts_3dof_3dof);
-    marchive << CHNVP(host_data.particle_indices_3dof);
-    marchive << CHNVP(host_data.reverse_mapping_3dof);
+    marchive << CHNVP(this->host_data.neighbor_3dof_3dof);
+    marchive << CHNVP(this->host_data.c_counts_3dof_3dof);
+    marchive << CHNVP(this->host_data.particle_indices_3dof);
+    marchive << CHNVP(this->host_data.reverse_mapping_3dof);
 
-    marchive << CHNVP(host_data.norm_rigid_tet);
-    marchive << CHNVP(host_data.cpta_rigid_tet);
-    marchive << CHNVP(host_data.cptb_rigid_tet);
-    marchive << CHNVP(host_data.dpth_rigid_tet);
-    marchive << CHNVP(host_data.neighbor_rigid_tet);
-    marchive << CHNVP(host_data.face_rigid_tet);
-    marchive << CHNVP(host_data.c_counts_rigid_tet);
+    marchive << CHNVP(this->host_data.norm_rigid_tet);
+    marchive << CHNVP(this->host_data.cpta_rigid_tet);
+    marchive << CHNVP(this->host_data.cptb_rigid_tet);
+    marchive << CHNVP(this->host_data.dpth_rigid_tet);
+    marchive << CHNVP(this->host_data.neighbor_rigid_tet);
+    marchive << CHNVP(this->host_data.face_rigid_tet);
+    marchive << CHNVP(this->host_data.c_counts_rigid_tet);
 
-    marchive << CHNVP(host_data.norm_rigid_tet_node);
-    marchive << CHNVP(host_data.cpta_rigid_tet_node);
-    marchive << CHNVP(host_data.dpth_rigid_tet_node);
-    marchive << CHNVP(host_data.neighbor_rigid_tet_node);
-    marchive << CHNVP(host_data.c_counts_rigid_tet_node);
+    marchive << CHNVP(this->host_data.norm_rigid_tet_node);
+    marchive << CHNVP(this->host_data.cpta_rigid_tet_node);
+    marchive << CHNVP(this->host_data.dpth_rigid_tet_node);
+    marchive << CHNVP(this->host_data.neighbor_rigid_tet_node);
+    marchive << CHNVP(this->host_data.c_counts_rigid_tet_node);
 
-    marchive << CHNVP(host_data.norm_marker_tet);
-    marchive << CHNVP(host_data.cpta_marker_tet);
-    marchive << CHNVP(host_data.cptb_marker_tet);
-    marchive << CHNVP(host_data.dpth_marker_tet);
-    marchive << CHNVP(host_data.neighbor_marker_tet);
-    marchive << CHNVP(host_data.face_marker_tet);
-    marchive << CHNVP(host_data.c_counts_marker_tet);
+    marchive << CHNVP(this->host_data.norm_marker_tet);
+    marchive << CHNVP(this->host_data.cpta_marker_tet);
+    marchive << CHNVP(this->host_data.cptb_marker_tet);
+    marchive << CHNVP(this->host_data.dpth_marker_tet);
+    marchive << CHNVP(this->host_data.neighbor_marker_tet);
+    marchive << CHNVP(this->host_data.face_marker_tet);
+    marchive << CHNVP(this->host_data.c_counts_marker_tet);
 
-    marchive << CHNVP(host_data.ct_force);
-    marchive << CHNVP(host_data.ct_torque);
+    marchive << CHNVP(this->host_data.ct_force);
+    marchive << CHNVP(this->host_data.ct_torque);
 
-    marchive << CHNVP(host_data.ct_body_force);
-    marchive << CHNVP(host_data.ct_body_torque);
+    marchive << CHNVP(this->host_data.ct_body_force);
+    marchive << CHNVP(this->host_data.ct_body_torque);
 
-    marchive << CHNVP(host_data.shear_neigh);
-    marchive << CHNVP(host_data.shear_disp);
-    marchive << CHNVP(host_data.contact_relvel_init);
-    marchive << CHNVP(host_data.contact_duration);
+    marchive << CHNVP(this->host_data.shear_neigh);
+    marchive << CHNVP(this->host_data.shear_disp);
+    marchive << CHNVP(this->host_data.contact_relvel_init);
+    marchive << CHNVP(this->host_data.contact_duration);
 
-    marchive << CHNVP(host_data.ct_body_map);
+    marchive << CHNVP(this->host_data.ct_body_map);
 
-    marchive << CHNVP(host_data.fric_rigid_rigid);
+    marchive << CHNVP(this->host_data.fric_rigid_rigid);
 
-    marchive << CHNVP(host_data.coh_rigid_rigid);
+    marchive << CHNVP(this->host_data.coh_rigid_rigid);
 
-    marchive << CHNVP(host_data.compliance_rigid_rigid);
+    marchive << CHNVP(this->host_data.compliance_rigid_rigid);
 
-    marchive << CHNVP(host_data.modulus_rigid_rigid);
-    marchive << CHNVP(host_data.adhesion_rigid_rigid);
-    marchive << CHNVP(host_data.cr_rigid_rigid);
-    marchive << CHNVP(host_data.smc_rigid_rigid);
+    marchive << CHNVP(this->host_data.modulus_rigid_rigid);
+    marchive << CHNVP(this->host_data.adhesion_rigid_rigid);
+    marchive << CHNVP(this->host_data.cr_rigid_rigid);
+    marchive << CHNVP(this->host_data.smc_rigid_rigid);
 
-    marchive << CHNVP(host_data.pos_rigid);
-    marchive << CHNVP(host_data.rot_rigid);
-    marchive << CHNVP(host_data.active_rigid);
-    marchive << CHNVP(host_data.collide_rigid);
-    marchive << CHNVP(host_data.mass_rigid);
+    marchive << CHNVP(this->host_data.pos_rigid);
+    marchive << CHNVP(this->host_data.rot_rigid);
+    marchive << CHNVP(this->host_data.active_rigid);
+    marchive << CHNVP(this->host_data.collide_rigid);
+    marchive << CHNVP(this->host_data.mass_rigid);
 
-    marchive << CHNVP(host_data.pos_3dof);
-    marchive << CHNVP(host_data.sorted_pos_3dof);
-    marchive << CHNVP(host_data.vel_3dof);
-    marchive << CHNVP(host_data.sorted_vel_3dof);
+    marchive << CHNVP(this->host_data.pos_3dof);
+    marchive << CHNVP(this->host_data.sorted_pos_3dof);
+    marchive << CHNVP(this->host_data.vel_3dof);
+    marchive << CHNVP(this->host_data.sorted_vel_3dof);
 
-    marchive << CHNVP(host_data.pos_node_fea);
-    marchive << CHNVP(host_data.vel_node_fea);
-    marchive << CHNVP(host_data.mass_node_fea);
-    marchive << CHNVP(host_data.tet_indices);
+    marchive << CHNVP(this->host_data.pos_node_fea);
+    marchive << CHNVP(this->host_data.vel_node_fea);
+    marchive << CHNVP(this->host_data.mass_node_fea);
+    marchive << CHNVP(this->host_data.tet_indices);
 
-    marchive << CHNVP(host_data.boundary_triangles_fea);
-    marchive << CHNVP(host_data.boundary_node_fea);
-    marchive << CHNVP(host_data.boundary_element_fea);
-    marchive << CHNVP(host_data.boundary_family_fea);
+    marchive << CHNVP(this->host_data.boundary_triangles_fea);
+    marchive << CHNVP(this->host_data.boundary_node_fea);
+    marchive << CHNVP(this->host_data.boundary_element_fea);
+    marchive << CHNVP(this->host_data.boundary_family_fea);
 
-    marchive << CHNVP(host_data.bilateral_type);
+    marchive << CHNVP(this->host_data.bilateral_type);
 
-    marchive << CHNVP(host_data.bilateral_mapping);
+    marchive << CHNVP(this->host_data.bilateral_mapping);
 
-    marchive << CHNVP(host_data.shaft_rot);
-    marchive << CHNVP(host_data.shaft_inr);
-    marchive << CHNVP(host_data.shaft_active);
+    marchive << CHNVP(this->host_data.shaft_rot);
+    marchive << CHNVP(this->host_data.shaft_inr);
+    marchive << CHNVP(this->host_data.shaft_active);
 
-    marchive << CHNVP(host_data.sliding_friction);
-    marchive << CHNVP(host_data.cohesion);
+    marchive << CHNVP(this->host_data.sliding_friction);
+    marchive << CHNVP(this->host_data.cohesion);
 
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.Nshur);
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.D);
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.D_T);
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M);
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M_inv);
-    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, host_data.M_invD);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, this->host_data.Nshur);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, this->host_data.D);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, this->host_data.D_T);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, this->host_data.M);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, this->host_data.M_inv);
+    ChBlazeArchive::ArchiveOUTBlazeCompressedMatrix(marchive, this->host_data.M_invD);
 
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.R_full);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.R);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.b);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.s);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.M_invk);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.v);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.hf);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.gamma);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.E);
-    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, host_data.Fc);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, this->host_data.R_full);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, this->host_data.R);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, this->host_data.b);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, this->host_data.s);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, this->host_data.M_invk);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, this->host_data.v);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, this->host_data.hf);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, this->host_data.gamma);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, this->host_data.E);
+    ChBlazeArchive::ArchiveOUTBlazeDynamicVector(marchive, this->host_data.Fc);
 
-    marchive << CHNVP(host_data.bin_intersections);
-    marchive << CHNVP(host_data.bin_number);
-    marchive << CHNVP(host_data.bin_number_out);
-    marchive << CHNVP(host_data.bin_aabb_number);
-    marchive << CHNVP(host_data.bin_start_index);
-    marchive << CHNVP(host_data.bin_num_contact);
+    marchive << CHNVP(this->host_data.bin_intersections);
+    marchive << CHNVP(this->host_data.bin_number);
+    marchive << CHNVP(this->host_data.bin_number_out);
+    marchive << CHNVP(this->host_data.bin_aabb_number);
+    marchive << CHNVP(this->host_data.bin_start_index);
+    marchive << CHNVP(this->host_data.bin_num_contact);
 }
 
 void ChMulticoreDataManager::ArchiveOUTIndexingVariables(ChArchiveOut& marchive) {
-    marchive << CHNVP(num_rigid_bodies);
-    marchive << CHNVP(num_fluid_bodies);
-    marchive << CHNVP(num_shafts);
-    marchive << CHNVP(num_motors);
-    marchive << CHNVP(num_linmotors);
-    marchive << CHNVP(num_rotmotors);
-    marchive << CHNVP(num_dof);
-    marchive << CHNVP(num_rigid_shapes);
-    marchive << CHNVP(num_rigid_contacts);
-    marchive << CHNVP(num_rigid_fluid_contacts);
-    marchive << CHNVP(num_fluid_contacts);
-    marchive << CHNVP(num_unilaterals);
-    marchive << CHNVP(num_bilaterals);
-    marchive << CHNVP(num_constraints);
-    marchive << CHNVP(num_fea_nodes);
-    marchive << CHNVP(num_fea_tets);
-    marchive << CHNVP(num_rigid_tet_contacts);
-    marchive << CHNVP(num_marker_tet_contacts);
-    marchive << CHNVP(num_rigid_tet_node_contacts);
-    marchive << CHNVP(nnz_bilaterals);
+    marchive << CHNVP(this->num_rigid_bodies);
+    marchive << CHNVP(this->num_fluid_bodies);
+    marchive << CHNVP(this->num_shafts);
+    marchive << CHNVP(this->num_motors);
+    marchive << CHNVP(this->num_linmotors);
+    marchive << CHNVP(this->num_rotmotors);
+    marchive << CHNVP(this->num_dof);
+    marchive << CHNVP(this->num_rigid_shapes);
+    marchive << CHNVP(this->num_rigid_contacts);
+    marchive << CHNVP(this->num_rigid_fluid_contacts);
+    marchive << CHNVP(this->num_fluid_contacts);
+    marchive << CHNVP(this->num_unilaterals);
+    marchive << CHNVP(this->num_bilaterals);
+    marchive << CHNVP(this->num_constraints);
+    marchive << CHNVP(this->num_fea_nodes);
+    marchive << CHNVP(this->num_fea_tets);
+    marchive << CHNVP(this->num_rigid_tet_contacts);
+    marchive << CHNVP(this->num_marker_tet_contacts);
+    marchive << CHNVP(this->num_rigid_tet_node_contacts);
+    marchive << CHNVP(this->nnz_bilaterals);
 }
 
 void ChMulticoreDataManager::ArchiveINShapeData(ChArchiveIn& marchive) {
-    marchive >> CHNVP(shape_data.fam_rigid);
-    marchive >> CHNVP(shape_data.id_rigid);
-    marchive >> CHNVP(shape_data.typ_rigid);
-    marchive >> CHNVP(shape_data.local_rigid);
-    marchive >> CHNVP(shape_data.start_rigid);
-    marchive >> CHNVP(shape_data.length_rigid);
+    marchive >> CHNVP(this->shape_data.fam_rigid);
+    marchive >> CHNVP(this->shape_data.id_rigid);
+    marchive >> CHNVP(this->shape_data.typ_rigid);
+    marchive >> CHNVP(this->shape_data.local_rigid);
+    marchive >> CHNVP(this->shape_data.start_rigid);
+    marchive >> CHNVP(this->shape_data.length_rigid);
 
-    marchive >> CHNVP(shape_data.ObR_rigid);
-    marchive >> CHNVP(shape_data.ObA_rigid);
+    marchive >> CHNVP(this->shape_data.ObR_rigid);
+    marchive >> CHNVP(this->shape_data.ObA_rigid);
 
-    marchive >> CHNVP(shape_data.sphere_rigid);
-    marchive >> CHNVP(shape_data.box_like_rigid);
-    marchive >> CHNVP(shape_data.triangle_rigid);
-    marchive >> CHNVP(shape_data.capsule_rigid);
-    marchive >> CHNVP(shape_data.rbox_like_rigid);
-    marchive >> CHNVP(shape_data.convex_rigid);
-    marchive >> CHNVP(shape_data.tetrahedron_rigid);
+    marchive >> CHNVP(this->shape_data.sphere_rigid);
+    marchive >> CHNVP(this->shape_data.box_like_rigid);
+    marchive >> CHNVP(this->shape_data.triangle_rigid);
+    marchive >> CHNVP(this->shape_data.capsule_rigid);
+    marchive >> CHNVP(this->shape_data.rbox_like_rigid);
+    marchive >> CHNVP(this->shape_data.convex_rigid);
+    marchive >> CHNVP(this->shape_data.tetrahedron_rigid);
 
-    marchive >> CHNVP(shape_data.triangle_global);
-    marchive >> CHNVP(shape_data.obj_data_A_global);
-    marchive >> CHNVP(shape_data.obj_data_R_global);
+    marchive >> CHNVP(this->shape_data.triangle_global);
+    marchive >> CHNVP(this->shape_data.obj_data_A_global);
+    marchive >> CHNVP(this->shape_data.obj_data_R_global);
 }
 
 
 void ChMulticoreDataManager::ArchiveINHostData(ChArchiveIn& marchive) {
-    marchive >> CHNVP(host_data.aabb_min);
-    marchive >> CHNVP(host_data.aabb_max);
+    marchive >> CHNVP(this->host_data.aabb_min);
+    marchive >> CHNVP(this->host_data.aabb_max);
 
-    marchive >> CHNVP(host_data.aabb_min_tet);
-    marchive >> CHNVP(host_data.aabb_max_tet);
+    marchive >> CHNVP(this->host_data.aabb_min_tet);
+    marchive >> CHNVP(this->host_data.aabb_max_tet);
 
-    marchive >> CHNVP(host_data.pair_shapeIDs);
-    marchive >> CHNVP(host_data.contact_shapeIDs);
+    marchive >> CHNVP(this->host_data.pair_shapeIDs);
+    marchive >> CHNVP(this->host_data.contact_shapeIDs);
 
-    marchive >> CHNVP(host_data.norm_rigid_rigid);
-    marchive >> CHNVP(host_data.cpta_rigid_rigid);
-    marchive >> CHNVP(host_data.cptb_rigid_rigid);
-    marchive >> CHNVP(host_data.dpth_rigid_rigid);
-    marchive >> CHNVP(host_data.erad_rigid_rigid);
-    marchive >> CHNVP(host_data.bids_rigid_rigid);
+    marchive >> CHNVP(this->host_data.norm_rigid_rigid);
+    marchive >> CHNVP(this->host_data.cpta_rigid_rigid);
+    marchive >> CHNVP(this->host_data.cptb_rigid_rigid);
+    marchive >> CHNVP(this->host_data.dpth_rigid_rigid);
+    marchive >> CHNVP(this->host_data.erad_rigid_rigid);
+    marchive >> CHNVP(this->host_data.bids_rigid_rigid);
 
-    marchive >> CHNVP(host_data.norm_rigid_fluid);
-    marchive >> CHNVP(host_data.cpta_rigid_fluid);
-    marchive >> CHNVP(host_data.dpth_rigid_fluid);
-    marchive >> CHNVP(host_data.neighbor_rigid_fluid);
-    marchive >> CHNVP(host_data.c_counts_rigid_fluid);
+    marchive >> CHNVP(this->host_data.norm_rigid_fluid);
+    marchive >> CHNVP(this->host_data.cpta_rigid_fluid);
+    marchive >> CHNVP(this->host_data.dpth_rigid_fluid);
+    marchive >> CHNVP(this->host_data.neighbor_rigid_fluid);
+    marchive >> CHNVP(this->host_data.c_counts_rigid_fluid);
 
-    marchive >> CHNVP(host_data.neighbor_3dof_3dof);
-    marchive >> CHNVP(host_data.c_counts_3dof_3dof);
-    marchive >> CHNVP(host_data.particle_indices_3dof);
-    marchive >> CHNVP(host_data.reverse_mapping_3dof);
+    marchive >> CHNVP(this->host_data.neighbor_3dof_3dof);
+    marchive >> CHNVP(this->host_data.c_counts_3dof_3dof);
+    marchive >> CHNVP(this->host_data.particle_indices_3dof);
+    marchive >> CHNVP(this->host_data.reverse_mapping_3dof);
 
-    marchive >> CHNVP(host_data.norm_rigid_tet);
-    marchive >> CHNVP(host_data.cpta_rigid_tet);
-    marchive >> CHNVP(host_data.cptb_rigid_tet);
-    marchive >> CHNVP(host_data.dpth_rigid_tet);
-    marchive >> CHNVP(host_data.neighbor_rigid_tet);
-    marchive >> CHNVP(host_data.face_rigid_tet);
-    marchive >> CHNVP(host_data.c_counts_rigid_tet);
+    marchive >> CHNVP(this->host_data.norm_rigid_tet);
+    marchive >> CHNVP(this->host_data.cpta_rigid_tet);
+    marchive >> CHNVP(this->host_data.cptb_rigid_tet);
+    marchive >> CHNVP(this->host_data.dpth_rigid_tet);
+    marchive >> CHNVP(this->host_data.neighbor_rigid_tet);
+    marchive >> CHNVP(this->host_data.face_rigid_tet);
+    marchive >> CHNVP(this->host_data.c_counts_rigid_tet);
 
-    marchive >> CHNVP(host_data.norm_rigid_tet_node);
-    marchive >> CHNVP(host_data.cpta_rigid_tet_node);
-    marchive >> CHNVP(host_data.dpth_rigid_tet_node);
-    marchive >> CHNVP(host_data.neighbor_rigid_tet_node);
-    marchive >> CHNVP(host_data.c_counts_rigid_tet_node);
+    marchive >> CHNVP(this->host_data.norm_rigid_tet_node);
+    marchive >> CHNVP(this->host_data.cpta_rigid_tet_node);
+    marchive >> CHNVP(this->host_data.dpth_rigid_tet_node);
+    marchive >> CHNVP(this->host_data.neighbor_rigid_tet_node);
+    marchive >> CHNVP(this->host_data.c_counts_rigid_tet_node);
 
-    marchive >> CHNVP(host_data.norm_marker_tet);
-    marchive >> CHNVP(host_data.cpta_marker_tet);
-    marchive >> CHNVP(host_data.cptb_marker_tet);
-    marchive >> CHNVP(host_data.dpth_marker_tet);
-    marchive >> CHNVP(host_data.neighbor_marker_tet);
-    marchive >> CHNVP(host_data.face_marker_tet);
-    marchive >> CHNVP(host_data.c_counts_marker_tet);
+    marchive >> CHNVP(this->host_data.norm_marker_tet);
+    marchive >> CHNVP(this->host_data.cpta_marker_tet);
+    marchive >> CHNVP(this->host_data.cptb_marker_tet);
+    marchive >> CHNVP(this->host_data.dpth_marker_tet);
+    marchive >> CHNVP(this->host_data.neighbor_marker_tet);
+    marchive >> CHNVP(this->host_data.face_marker_tet);
+    marchive >> CHNVP(this->host_data.c_counts_marker_tet);
 
-    marchive >> CHNVP(host_data.ct_force);
-    marchive >> CHNVP(host_data.ct_torque);
+    marchive >> CHNVP(this->host_data.ct_force);
+    marchive >> CHNVP(this->host_data.ct_torque);
 
-    marchive >> CHNVP(host_data.ct_body_force);
-    marchive >> CHNVP(host_data.ct_body_torque);
+    marchive >> CHNVP(this->host_data.ct_body_force);
+    marchive >> CHNVP(this->host_data.ct_body_torque);
 
-    marchive >> CHNVP(host_data.shear_neigh);
-    marchive >> CHNVP(host_data.shear_disp);
-    marchive >> CHNVP(host_data.contact_relvel_init);
-    marchive >> CHNVP(host_data.contact_duration);
+    marchive >> CHNVP(this->host_data.shear_neigh);
+    marchive >> CHNVP(this->host_data.shear_disp);
+    marchive >> CHNVP(this->host_data.contact_relvel_init);
+    marchive >> CHNVP(this->host_data.contact_duration);
 
-    marchive >> CHNVP(host_data.ct_body_map);
+    marchive >> CHNVP(this->host_data.ct_body_map);
 
-    marchive >> CHNVP(host_data.fric_rigid_rigid);
+    marchive >> CHNVP(this->host_data.fric_rigid_rigid);
 
-    marchive >> CHNVP(host_data.coh_rigid_rigid);
+    marchive >> CHNVP(this->host_data.coh_rigid_rigid);
 
-    marchive >> CHNVP(host_data.compliance_rigid_rigid);
+    marchive >> CHNVP(this->host_data.compliance_rigid_rigid);
 
-    marchive >> CHNVP(host_data.modulus_rigid_rigid);
-    marchive >> CHNVP(host_data.adhesion_rigid_rigid);
-    marchive >> CHNVP(host_data.cr_rigid_rigid);
-    marchive >> CHNVP(host_data.smc_rigid_rigid);
+    marchive >> CHNVP(this->host_data.modulus_rigid_rigid);
+    marchive >> CHNVP(this->host_data.adhesion_rigid_rigid);
+    marchive >> CHNVP(this->host_data.cr_rigid_rigid);
+    marchive >> CHNVP(this->host_data.smc_rigid_rigid);
 
-    marchive >> CHNVP(host_data.pos_rigid);
-    marchive >> CHNVP(host_data.rot_rigid);
-    marchive >> CHNVP(host_data.active_rigid);
-    marchive >> CHNVP(host_data.collide_rigid);
-    marchive >> CHNVP(host_data.mass_rigid);
+    marchive >> CHNVP(this->host_data.pos_rigid);
+    marchive >> CHNVP(this->host_data.rot_rigid);
+    marchive >> CHNVP(this->host_data.active_rigid);
+    marchive >> CHNVP(this->host_data.collide_rigid);
+    marchive >> CHNVP(this->host_data.mass_rigid);
 
-    marchive >> CHNVP(host_data.pos_3dof);
-    marchive >> CHNVP(host_data.sorted_pos_3dof);
-    marchive >> CHNVP(host_data.vel_3dof);
-    marchive >> CHNVP(host_data.sorted_vel_3dof);
+    marchive >> CHNVP(this->host_data.pos_3dof);
+    marchive >> CHNVP(this->host_data.sorted_pos_3dof);
+    marchive >> CHNVP(this->host_data.vel_3dof);
+    marchive >> CHNVP(this->host_data.sorted_vel_3dof);
 
-    marchive >> CHNVP(host_data.pos_node_fea);
-    marchive >> CHNVP(host_data.vel_node_fea);
-    marchive >> CHNVP(host_data.mass_node_fea);
-    marchive >> CHNVP(host_data.tet_indices);
+    marchive >> CHNVP(this->host_data.pos_node_fea);
+    marchive >> CHNVP(this->host_data.vel_node_fea);
+    marchive >> CHNVP(this->host_data.mass_node_fea);
+    marchive >> CHNVP(this->host_data.tet_indices);
 
-    marchive >> CHNVP(host_data.boundary_triangles_fea);
-    marchive >> CHNVP(host_data.boundary_node_fea);
-    marchive >> CHNVP(host_data.boundary_element_fea);
-    marchive >> CHNVP(host_data.boundary_family_fea);
+    marchive >> CHNVP(this->host_data.boundary_triangles_fea);
+    marchive >> CHNVP(this->host_data.boundary_node_fea);
+    marchive >> CHNVP(this->host_data.boundary_element_fea);
+    marchive >> CHNVP(this->host_data.boundary_family_fea);
 
-    marchive >> CHNVP(host_data.bilateral_type);
+    marchive >> CHNVP(this->host_data.bilateral_type);
 
-    marchive >> CHNVP(host_data.bilateral_mapping);
+    marchive >> CHNVP(this->host_data.bilateral_mapping);
 
-    marchive >> CHNVP(host_data.shaft_rot);
-    marchive >> CHNVP(host_data.shaft_inr);
-    marchive >> CHNVP(host_data.shaft_active);
+    marchive >> CHNVP(this->host_data.shaft_rot);
+    marchive >> CHNVP(this->host_data.shaft_inr);
+    marchive >> CHNVP(this->host_data.shaft_active);
 
-    marchive >> CHNVP(host_data.sliding_friction);
-    marchive >> CHNVP(host_data.cohesion);
+    marchive >> CHNVP(this->host_data.sliding_friction);
+    marchive >> CHNVP(this->host_data.cohesion);
 
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.Nshur);
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.D);
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.D_T);
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M);
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M_inv);
-    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, host_data.M_invD);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, this->host_data.Nshur);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, this->host_data.D);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, this->host_data.D_T);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, this->host_data.M);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, this->host_data.M_inv);
+    ChBlazeArchive::ArchiveINBlazeCompressedMatrix(marchive, this->host_data.M_invD);
 
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.R_full);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.R);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.b);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.s);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.M_invk);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.v);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.hf);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.gamma);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.E);
-    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, host_data.Fc);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, this->host_data.R_full);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, this->host_data.R);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, this->host_data.b);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, this->host_data.s);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, this->host_data.M_invk);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, this->host_data.v);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, this->host_data.hf);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, this->host_data.gamma);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, this->host_data.E);
+    ChBlazeArchive::ArchiveINBlazeDynamicVector(marchive, this->host_data.Fc);
 
-    marchive >> CHNVP(host_data.bin_intersections);
-    marchive >> CHNVP(host_data.bin_number);
-    marchive >> CHNVP(host_data.bin_number_out);
-    marchive >> CHNVP(host_data.bin_aabb_number);
-    marchive >> CHNVP(host_data.bin_start_index);
-    marchive >> CHNVP(host_data.bin_num_contact);
+    marchive >> CHNVP(this->host_data.bin_intersections);
+    marchive >> CHNVP(this->host_data.bin_number);
+    marchive >> CHNVP(this->host_data.bin_number_out);
+    marchive >> CHNVP(this->host_data.bin_aabb_number);
+    marchive >> CHNVP(this->host_data.bin_start_index);
+    marchive >> CHNVP(this->host_data.bin_num_contact);
 }
 
 void ChMulticoreDataManager::ArchiveINIndexingVariables(ChArchiveIn& marchive) {
-    marchive >> CHNVP(num_rigid_bodies);
-    marchive >> CHNVP(num_fluid_bodies);
-    marchive >> CHNVP(num_shafts);
-    marchive >> CHNVP(num_motors);
-    marchive >> CHNVP(num_linmotors);
-    marchive >> CHNVP(num_rotmotors);
-    marchive >> CHNVP(num_dof);
-    marchive >> CHNVP(num_rigid_shapes);
-    marchive >> CHNVP(num_rigid_contacts);
-    marchive >> CHNVP(num_rigid_fluid_contacts);
-    marchive >> CHNVP(num_fluid_contacts);
-    marchive >> CHNVP(num_unilaterals);
-    marchive >> CHNVP(num_bilaterals);
-    marchive >> CHNVP(num_constraints);
-    marchive >> CHNVP(num_fea_nodes);
-    marchive >> CHNVP(num_fea_tets);
-    marchive >> CHNVP(num_rigid_tet_contacts);
-    marchive >> CHNVP(num_marker_tet_contacts);
-    marchive >> CHNVP(num_rigid_tet_node_contacts);
-    marchive >> CHNVP(nnz_bilaterals);
+    marchive >> CHNVP(this->num_rigid_bodies);
+    marchive >> CHNVP(this->num_fluid_bodies);
+    marchive >> CHNVP(this->num_shafts);
+    marchive >> CHNVP(this->num_motors);
+    marchive >> CHNVP(this->num_linmotors);
+    marchive >> CHNVP(this->num_rotmotors);
+    marchive >> CHNVP(this->num_dof);
+    marchive >> CHNVP(this->num_rigid_shapes);
+    marchive >> CHNVP(this->num_rigid_contacts);
+    marchive >> CHNVP(this->num_rigid_fluid_contacts);
+    marchive >> CHNVP(this->num_fluid_contacts);
+    marchive >> CHNVP(this->num_unilaterals);
+    marchive >> CHNVP(this->num_bilaterals);
+    marchive >> CHNVP(this->num_constraints);
+    marchive >> CHNVP(this->num_fea_nodes);
+    marchive >> CHNVP(this->num_fea_tets);
+    marchive >> CHNVP(this->num_rigid_tet_contacts);
+    marchive >> CHNVP(this->num_marker_tet_contacts);
+    marchive >> CHNVP(this->num_rigid_tet_node_contacts);
+    marchive >> CHNVP(this->nnz_bilaterals);
 }
 

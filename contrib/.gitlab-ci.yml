@@ -81,8 +81,8 @@ linux:doxygen:deploy:
     - chmod 0700 ~/.ssh
 # This private key is only useable from specific IPs, so it should be okay to
 # be included here.
-    - cp $API_PRIVATE_KEY ~/.ssh/id_rsa
-    - chmod 0600 ~/.ssh/id_rsa
+    - cp $API_PRIVATE_KEY ~/.ssh/id_ed25519
+    - chmod 0600 ~/.ssh/id_ed25519
 # Remove any duplicate host key entries, if necessary
     - if test -f ~/.ssh/known_hosts; then ssh-keygen -R $API_REINDEX_ENDPOINT; fi
 # Cache a verified host pubkey from file to avoid MITM attacks
@@ -94,7 +94,14 @@ linux:doxygen:deploy:
     # - doxygen Doxyfile_Generate_Search_Index
     - rsync -ra /tmp/chrono_doxygen/html/* $API_HTML_ENDPOINT
     - rsync /tmp/chrono_doxygen/searchdata.xml $API_SEARCH_ENDPOINT
-    - ssh $API_REINDEX_ENDPOINT /var/www/cgi-bin/doxyindexer.cgi /var/www/cgi-bin/searchdata.xml
+    - ssh $API_REINDEX_ENDPOINT /usr/bin/doxyindexer -o $API_CGI_DIR $API_CGI_DIR/searchdata.xml
+  needs:
+    - job: linux:arch-gcc:test
+      artifacts: false
+    - job: macos:bigsur:test
+      artifacts: false
+    - job: windows:vs2019:test
+      artifacts: false
   environment:
     name: doxygen
     url: http://api.projectchrono.org/
@@ -284,6 +291,7 @@ linux:ubuntu1804:deploy-python3.8:
   tags:
   - windows
   before_script:
+  - $Env:CONDA_INSTALL_LOCN= "C:\Users\builder\anaconda3"
   - echo $CI_PROJECT_DIR
   - git submodule init
   - git submodule update

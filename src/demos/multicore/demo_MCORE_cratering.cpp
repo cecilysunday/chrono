@@ -62,9 +62,9 @@ static inline void progressbar(unsigned int x, unsigned int n, unsigned int w = 
     unsigned int c = (unsigned int)(ratio * w);
 
     std::cout << std::setw(3) << (int)(ratio * 100) << "% [";
-    for (unsigned int x = 0; x < c; x++)
+    for (unsigned int ix = 0; ix < c; ix++)
         std::cout << "=";
-    for (unsigned int x = c; x < w; x++)
+    for (unsigned int ix = c; ix < w; ix++)
         std::cout << " ";
     std::cout << "]\r" << std::flush;
 }
@@ -122,8 +122,21 @@ class ContactReporter : public ChContactContainer::ReportContactCallback {
         auto bodyA = static_cast<ChBody*>(modA);
         auto bodyB = static_cast<ChBody*>(modB);
 
-        csv << bodyA->GetIdentifier() << bodyB->GetIdentifier();
-        csv << pA << pB;
+		ChCollisionModelMulticore* pmodelA = static_cast<ChCollisionModelMulticore*>(bodyA->GetCollisionModel().get());
+        ChCollisionModelMulticore* pmodelB = static_cast<ChCollisionModelMulticore*>(bodyB->GetCollisionModel().get());
+		
+		auto shapeA = std::static_pointer_cast<ChCollisionShapeMulticore>(pmodelA->GetShapes().at(0));
+        auto shapeB = std::static_pointer_cast<ChCollisionShapeMulticore>(pmodelB->GetShapes().at(0));
+
+		double radiusA = -1;
+        double radiusB = -1;
+
+        if (shapeA->GetType() == ChCollisionShape::Type::SPHERE) radiusA = shapeA->B.x;
+        if (shapeB->GetType() == ChCollisionShape::Type::SPHERE) radiusB = shapeB->B.x;
+
+        csv << bodyA->GetIdentifier() << radiusA << bodyA->GetPos().x() << bodyA->GetPos().y() << bodyA->GetPos().z();
+        csv << bodyB->GetIdentifier() << radiusB << bodyB->GetPos().x() << bodyB->GetPos().y() << bodyB->GetPos().z();
+        csv << pA << pB << distance << eff_radius;
         csv << plane_coord.Get_A_Xaxis() << plane_coord.Get_A_Yaxis() << plane_coord.Get_A_Zaxis();
         csv << cforce << ctorque;
         csv << endl;
@@ -142,7 +155,7 @@ class ContactReporter : public ChContactContainer::ReportContactCallback {
 
 // Simulation phase
 enum class ProblemPhase { SETTLING, DROPPING };
-ProblemPhase problem = ProblemPhase::DROPPING;
+ProblemPhase problem = ProblemPhase::SETTLING;
 
 // Desired number of OpenMP threads (will be clamped to maximum available)
 int threads = 20;
@@ -175,7 +188,7 @@ ChSystemSMC::TangentialDisplacementModel tangential_displ_mode = ChSystemSMC::Ta
 
 // Output
 bool povray_output = false;
-bool intermediate_checkpoints = false;
+bool intermediate_checkpoints = true;
 
 #ifdef USE_SMC
 const std::string out_dir = GetChronoOutputPath() + "CRATER_SMC";
@@ -269,6 +282,8 @@ int CreateObjects(ChSystemMulticore* system) {
 #endif
 
     // Create a mixture entirely made out of spheres
+    double r = 1.01 * r_g;
+    utils::PDSampler<double> sampler(2 * r);
     utils::Generator gen(system);
 
     std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::MixtureType::SPHERE, 1.0);
@@ -278,12 +293,10 @@ int CreateObjects(ChSystemMulticore* system) {
 
     gen.setBodyIdentifier(Id_g);
 
-    double r = 1.01 * r_g;
 
     for (int i = 0; i < numLayers; i++) {
         double center = r + layerHeight / 2 + i * (2 * r + layerHeight);
-        gen.createObjectsBox(utils::SamplingType::POISSON_DISK, 2 * r, ChVector<>(0, 0, center),
-                             ChVector<>(hDimX - r, hDimY - r, layerHeight / 2));
+        gen.CreateObjectsBox(sampler, ChVector<>(0, 0, center), ChVector<>(hDimX - r, hDimY - r, layerHeight / 2));
         cout << "Layer " << i << "  total bodies: " << gen.getTotalNumBodies() << endl;
     }
 
@@ -439,6 +452,7 @@ int main(int argc, char* argv[]) {
 
         if (!filesystem::path(checkpoint_file).exists()) {
             cout << "Checkpoint file " << checkpoint_file << " not found" << endl;
+            cout << "Make sure to first run a SETTLING problem." << endl;
             return 1;       
         }
 
@@ -460,7 +474,6 @@ int main(int argc, char* argv[]) {
     }
 
     // Number of steps
-    int num_steps = (int)std::ceil(time_end / time_step);
     int out_steps = (int)std::ceil((1.0 / time_step) / out_fps);
 
     // Zero velocity level for settling check

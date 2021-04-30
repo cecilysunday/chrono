@@ -64,7 +64,7 @@ void function_CalcContactForces(
     real min_spin_vel,                                    // threshold spinning velocity
     real dT,                                              // integration time step
     real* body_mass,                                      // body masses (per body)
-    real3* pos,                                           // body positions 
+    real3* pos,                                           // body positions
     quaternion* rot,                                      // body orientations
     real* vel,                                            // body linear and angular velocities
     real3* friction,                                      // eff. coefficients of friction (per contact)
@@ -146,7 +146,7 @@ void function_CalcContactForces(
     real adhesionSPerko_eff = adhesion[index].z;
 
     real cr_eff = cr[index];
-
+   
     real user_kn = smc_params[index].x;
     real user_kt = smc_params[index].y;
     real user_gn = smc_params[index].z;
@@ -160,12 +160,12 @@ void function_CalcContactForces(
     //     Ft = kt * delta_t - gt * v_t
     // The stiffness and damping coefficients are obtained differently, based
     // on the force model and on how coefficients are specified.
-    real kn;
-    real kt;
-    real gn;
-    real gt;
-    real kn_simple;
-    real gn_simple;
+    real kn = 0;
+    real kt = 0;
+    real gn = 0;
+    real gt = 0;
+    real kn_simple = 0;
+    real gn_simple = 0;
 
     real t_contact = 0;
     real relvel_init = abs(relvel_n_mag);
@@ -173,8 +173,8 @@ void function_CalcContactForces(
     real3 delta_t = real3(0);
 
     int i;
-    int contact_id;
-    int shear_body1;
+    int contact_id = -1;
+    int shear_body1 = -1;
     int shear_body2;
     int shear_shape1;
     int shear_shape2;
@@ -328,7 +328,6 @@ void function_CalcContactForces(
             if (use_mat_props) {
                 real sqrt_Rd = Sqrt(delta_n);
                 real Sn = 2 * E_eff * sqrt_Rd;
-                real St = 8 * G_eff * sqrt_Rd;
                 real loge = (cr_eff < eps) ? Log(eps) : Log(cr_eff);
                 real beta = loge / Sqrt(loge * loge + CH_C_PI * CH_C_PI);
                 kn = (2.0 / 3) * Sn;

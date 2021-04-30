@@ -92,7 +92,7 @@ class ChApi ChStreamIn : public ChStream {
 
     /// Returns true if end of stream reached.
     /// Child classes should implement it.
-    virtual bool End_of_stream() { return true; };
+    virtual bool End_of_stream() const { return true; }
 
   protected:
     /// Inputs a raw chunk of data, from pointer 'data' up to 'n'
@@ -582,7 +582,7 @@ class ChApi ChStreamFile {
     virtual void Read(char* data, size_t n);
 
     /// Returns true if end of stream reached.
-    virtual bool End_of_stream() { return file.eof(); };
+    virtual bool End_of_stream() const { return file.eof(); }
 
     /// Reference to fstream encapsulated here.
     std::fstream& GetFstream() { return file; }
@@ -612,7 +612,7 @@ class ChApi ChStreamOstreamWrapper {
     virtual void Write(const char* data, size_t n);
 
     /// Returns true if end of stream reached.
-    virtual bool End_of_stream() const { return afile->eof(); };
+    virtual bool End_of_stream() const { return afile->eof(); }
 
     /// Reference to ostream encapsulated here.
     std::ostream* GetOstream() const { return afile; }
@@ -642,7 +642,7 @@ class ChApi ChStreamIstreamWrapper {
     virtual void Read(char* data, size_t n);
 
     /// Returns true if end of stream reached.
-    virtual bool End_of_stream() { return afile->eof(); };
+    virtual bool End_of_stream() const { return afile->eof(); }
 
     /// Reference to istream encapsulated here.
     std::istream* GetIstream() { return afile; }
@@ -676,7 +676,7 @@ class ChApi ChStreamVectorWrapper {
     virtual void Write(const char* data, size_t n);
 
     /// Returns true if end of stream (end of vector) reached.
-    virtual bool End_of_stream();
+    virtual bool End_of_stream() const;
 
     /// Direct reference to std::vector<char> encapsulated here.
     std::vector<char>* GetVector() { return vbuffer; }
@@ -695,10 +695,10 @@ class ChApi ChStreamOutBinaryStream : public ChStreamOstreamWrapper, public ChSt
     ChStreamOutBinaryStream(std::ostream* mfile) : ChStreamOstreamWrapper(mfile), ChStreamOutBinary(){};
     virtual ~ChStreamOutBinaryStream(){};
 
-    virtual bool End_of_stream() { return ChStreamOstreamWrapper::End_of_stream(); }
+    virtual bool End_of_stream() const override { return ChStreamOstreamWrapper::End_of_stream(); }
 
   private:
-    virtual void Output(const char* data, size_t n) { ChStreamOstreamWrapper::Write(data, n); }
+    virtual void Output(const char* data, size_t n) override { ChStreamOstreamWrapper::Write(data, n); }
 };
 
 ///
@@ -710,10 +710,10 @@ class ChApi ChStreamInBinaryStream : public ChStreamIstreamWrapper, public ChStr
     ChStreamInBinaryStream(std::istream* mfile) : ChStreamIstreamWrapper(mfile), ChStreamInBinary(){};
     virtual ~ChStreamInBinaryStream(){};
 
-    virtual bool End_of_stream() { return ChStreamIstreamWrapper::End_of_stream(); }
+    virtual bool End_of_stream() const override { return ChStreamIstreamWrapper::End_of_stream(); }
 
   private:
-    virtual void Input(char* data, size_t n) { ChStreamIstreamWrapper::Read(data, n); }
+    virtual void Input(char* data, size_t n) override { ChStreamIstreamWrapper::Read(data, n); }
 };
 
 ///
@@ -725,10 +725,10 @@ class ChApi ChStreamOutBinaryVector : public ChStreamVectorWrapper, public ChStr
     ChStreamOutBinaryVector(std::vector<char>* mchars) : ChStreamVectorWrapper(mchars), ChStreamOutBinary(){};
     virtual ~ChStreamOutBinaryVector(){};
 
-    virtual bool End_of_stream() { return ChStreamVectorWrapper::End_of_stream(); }
+    virtual bool End_of_stream() const override { return ChStreamVectorWrapper::End_of_stream(); }
 
   private:
-    virtual void Output(const char* data, size_t n) { ChStreamVectorWrapper::Write(data, n); }
+    virtual void Output(const char* data, size_t n) override { ChStreamVectorWrapper::Write(data, n); }
 };
 
 ///
@@ -740,10 +740,10 @@ class ChApi ChStreamInBinaryVector : public ChStreamVectorWrapper, public ChStre
     ChStreamInBinaryVector(std::vector<char>* mchars) : ChStreamVectorWrapper(mchars), ChStreamInBinary(){};
     virtual ~ChStreamInBinaryVector(){};
 
-    virtual bool End_of_stream() { return ChStreamVectorWrapper::End_of_stream(); }
+    virtual bool End_of_stream() const override { return ChStreamVectorWrapper::End_of_stream(); }
 
   private:
-    virtual void Input(char* data, size_t n) { ChStreamVectorWrapper::Read(data, n); }
+    virtual void Input(char* data, size_t n) override { ChStreamVectorWrapper::Read(data, n); }
 };
 
 ///
@@ -755,10 +755,10 @@ class ChApi ChStreamOutAsciiVector : public ChStreamVectorWrapper, public ChStre
     ChStreamOutAsciiVector(std::vector<char>* mchars) : ChStreamVectorWrapper(mchars), ChStreamOutAscii(){};
     virtual ~ChStreamOutAsciiVector(){};
 
-    virtual bool End_of_stream() { return ChStreamVectorWrapper::End_of_stream(); }
+    virtual bool End_of_stream() const override { return ChStreamVectorWrapper::End_of_stream(); }
 
   private:
-    virtual void Output(const char* data, size_t n) { ChStreamVectorWrapper::Write(data, n); }
+    virtual void Output(const char* data, size_t n) override { ChStreamVectorWrapper::Write(data, n); }
 };
 
 ///
@@ -770,10 +770,10 @@ class ChApi ChStreamInAsciiVector : public ChStreamVectorWrapper, public ChStrea
     ChStreamInAsciiVector(std::vector<char>* mchars) : ChStreamVectorWrapper(mchars), ChStreamInAscii(){};
     virtual ~ChStreamInAsciiVector(){};
 
-    virtual bool End_of_stream() { return ChStreamVectorWrapper::End_of_stream(); }
+    virtual bool End_of_stream() const override { return ChStreamVectorWrapper::End_of_stream(); }
 
   private:
-    virtual void Input(char* data, size_t n) { ChStreamVectorWrapper::Read(data, n); }
+    virtual void Input(char* data, size_t n) override { ChStreamVectorWrapper::Read(data, n); }
 };
 
 ///
@@ -811,10 +811,10 @@ class ChApi ChStreamInBinaryFile : public ChStreamFile, public ChStreamInBinary 
     ChStreamInBinaryFile(const char* filename);
     virtual ~ChStreamInBinaryFile();
 
-    virtual bool End_of_stream() { return ChStreamFile::End_of_stream(); }
+    virtual bool End_of_stream() const override { return ChStreamFile::End_of_stream(); }
 
   private:
-    virtual void Input(char* data, size_t n) { ChStreamFile::Read(data, n); }
+    virtual void Input(char* data, size_t n) override { ChStreamFile::Read(data, n); }
 };
 
 ///
@@ -826,10 +826,10 @@ class ChApi ChStreamInAsciiFile : public ChStreamFile, public ChStreamInAscii {
     ChStreamInAsciiFile(const char* filename);
     virtual ~ChStreamInAsciiFile();
 
-    virtual bool End_of_stream() { return ChStreamFile::End_of_stream(); }
+    virtual bool End_of_stream() const override { return ChStreamFile::End_of_stream(); }
 
   private:
-    virtual void Input(char* data, size_t n) { ChStreamFile::Read(data, n); }
+    virtual void Input(char* data, size_t n) override { ChStreamFile::Read(data, n); }
 };
 
 }  // end namespace chrono

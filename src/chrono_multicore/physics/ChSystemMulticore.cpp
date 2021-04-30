@@ -72,6 +72,7 @@ ChSystemMulticore::ChSystemMulticore() : ChSystem() {
     data_manager->system_timer.AddTimer("collision");
     data_manager->system_timer.AddTimer("collision_broad");
     data_manager->system_timer.AddTimer("collision_narrow");
+    data_manager->system_timer.AddTimer("collision_custom");
 
     data_manager->system_timer.AddTimer("ChIterativeSolverMulticore_Solve");
     data_manager->system_timer.AddTimer("ChIterativeSolverMulticore_Setup");
@@ -127,9 +128,11 @@ bool ChSystemMulticore::Integrate_Y() {
     data_manager->system_timer.start("collision");
     collision_system->Run();
     collision_system->ReportContacts(this->contact_container.get());
+    data_manager->system_timer.start("collision_custom");
     for (size_t ic = 0; ic < collision_callbacks.size(); ic++) {
         collision_callbacks[ic]->OnCustomCollision(this);
     }
+    data_manager->system_timer.stop("collision_custom");
     data_manager->system_timer.stop("collision");
 
     data_manager->system_timer.start("advance");
@@ -554,8 +557,8 @@ void ChSystemMulticore::UpdateMotorLinks() {
 // Update all fluid nodes
 // currently a stub
 void ChSystemMulticore::Update3DOFBodies() {
-    data_manager->node_container->Update(ch_time);
-    data_manager->fea_container->Update(ch_time);
+    data_manager->node_container->Update3DOF(ch_time);
+    data_manager->fea_container->Update3DOF(ch_time);
 }
 
 //

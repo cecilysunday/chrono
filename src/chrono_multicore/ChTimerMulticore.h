@@ -109,7 +109,7 @@ class CH_MULTICORE_API ChTimerMulticore {
         // marchive << CHNVP(it);
     }
     inline void ArchiveIN(ChArchiveIn& marchive) {
-        int version = marchive.VersionRead<ChTimerMulticore>();
+        marchive.VersionRead<ChTimerMulticore>();
         marchive >> CHNVP(total_timers);
         // marchive >> CHNVP(timer_list);
         // marchive >> CHNVP(it);

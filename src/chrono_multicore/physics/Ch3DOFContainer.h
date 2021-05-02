@@ -142,7 +142,7 @@ class CH_MULTICORE_API Ch3DOFContainer : public ChPhysicsItem {
     /// Method to allow de-serialization of transient data from archives.
     virtual void ArchiveIN(ChArchiveIn& marchive) {
         // version number
-        int version = marchive.VersionRead<Ch3DOFContainer>();
+        marchive.VersionRead<Ch3DOFContainer>();
         // deserialize parent class
         // stream in all member data:
         marchive >> CHNVP(kernel_radius);

@@ -172,8 +172,8 @@ void ChMulticoreDataManager::PrintMatrix(CompressedMatrix<real> src) {
 
 void ChMulticoreDataManager::ArchiveOUTBodyList(ChArchiveOut& marchive) {
     marchive << CHNVP(this->body_list->size());
-    for (int i = 0; i < this->body_list->size(); ++i) {
-        marchive << CHNVP(this->body_list[i]);
+    for (size_t i = 0; i < this->body_list->size(); ++i) {
+        marchive << CHNVP((*this->body_list)[i]);
     }
 }
 
@@ -181,10 +181,10 @@ void ChMulticoreDataManager::ArchiveINBodyList(ChArchiveIn& marchive) {
     size_t size = 0;
     marchive >> CHNVP(size);
     this->body_list->resize(size);
-    ChBody body;
-    for (int i = 0; i < size; ++i) {
+    std::shared_ptr<ChBody> body;
+    for (size_t i = 0; i < size; ++i) {
         marchive >> CHNVP(body);
-        (*this->body_list)[i] = std::make_shared<ChBody>(body);
+        (*this->body_list)[i];
     }
 }
 
@@ -219,7 +219,7 @@ void ChMulticoreDataManager::ArchiveOUT(ChArchiveOut& marchive)  //##### for Chr
 void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chrono serialization
 {
     // suggested: use versioning
-    int version = marchive.VersionRead<ChMulticoreDataManager>();
+    marchive.VersionRead<ChMulticoreDataManager>();
     // stream in all member data
     ArchiveINHostData(marchive);
     ArchiveINShapeData(marchive);

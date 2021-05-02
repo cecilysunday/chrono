@@ -111,7 +111,7 @@ class collision_measures {
         marchive << CHNVP(mpm_bins_per_axis);
     }
     inline void ArchiveIN(ChArchiveIn& marchive) {
-        int version = marchive.VersionRead<collision_measures>();
+        marchive.VersionRead<collision_measures>();
         marchive >> CHNVP(min_bounding_point);
         marchive >> CHNVP(max_bounding_point);
         marchive >> CHNVP(global_origin);
@@ -189,7 +189,7 @@ class solver_measures {
         marchive << CHNVP(violation);
     }
     inline void ArchiveIN(ChArchiveIn& marchive) {
-        int version = marchive.VersionRead<solver_measures>();
+        marchive.VersionRead<solver_measures>();
         marchive >> CHNVP(total_iteration);
         marchive >> CHNVP(residual);
         marchive >> CHNVP(objective_value);
@@ -221,7 +221,7 @@ class measures_container {
         marchive << CHNVP(solver);
     }
     inline void ArchiveIN(ChArchiveIn& marchive) {
-        int version = marchive.VersionRead<measures_container>();
+        marchive.VersionRead<measures_container>();
         marchive >> CHNVP(collision);
         marchive >> CHNVP(solver);
     }

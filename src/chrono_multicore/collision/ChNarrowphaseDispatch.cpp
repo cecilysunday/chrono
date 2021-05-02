@@ -1045,7 +1045,7 @@ void ChCNarrowphaseDispatch::ArchiveOUT(ChArchiveOut& marchive) {
     marchive << CHNVP(this->t_bin_start_index);
 }
 void ChCNarrowphaseDispatch::ArchiveIN(ChArchiveIn& marchive) {
-    int version = marchive.VersionRead<ChCNarrowphaseDispatch>();
+    marchive.VersionRead<ChCNarrowphaseDispatch>();
 
     marchive >> CHNVP(this->contact_rigid_active);
     marchive >> CHNVP(this->contact_rigid_fluid_active);

@@ -168,7 +168,7 @@ inline void real3::ArchiveOUT(ChArchiveOut& marchive) {
 
 inline void real3::ArchiveIN(ChArchiveIn& marchive) {
     // suggested: use versioning
-    int version = marchive.VersionRead<real3>();  // must use specialized template (any)
+    marchive.VersionRead<real3>();  // must use specialized template (any)
     // stream in all member array
     marchive >> CHNVP(array[0], "x");
     marchive >> CHNVP(array[1], "y");

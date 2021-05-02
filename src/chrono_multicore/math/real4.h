@@ -146,7 +146,7 @@ inline void real4::ArchiveOUT(ChArchiveOut& marchive) {
 
 inline void real4::ArchiveIN(ChArchiveIn& marchive) {
     // suggested: use versioning
-    int version = marchive.VersionRead<real4>();  // must use specialized template (any)
+    marchive.VersionRead<real4>();  // must use specialized template (any)
     // stream in all member array
     marchive >> CHNVP(array[0], "x");
     marchive >> CHNVP(array[1], "y");
@@ -257,7 +257,7 @@ inline void quaternion::ArchiveOUT(ChArchiveOut& marchive) {
 
 inline void quaternion::ArchiveIN(ChArchiveIn& marchive) {
     // suggested: use versioning
-    int version = marchive.VersionRead<quaternion>();  // must use specialized template (any)
+    marchive.VersionRead<quaternion>();  // must use specialized template (any)
     // stream in all member array
     marchive >> CHNVP(array[0], "x");
     marchive >> CHNVP(array[1], "y");

@@ -102,7 +102,7 @@ class collision_settings {
 
     }
     inline void ArchiveIN(ChArchiveIn& marchive) {
-        int version = marchive.VersionRead<collision_settings>();
+        marchive.VersionRead<collision_settings>();
         marchive >> CHNVP(min_bounding_point);
         marchive >> CHNVP(max_bounding_point);
         marchive >> CHNVP(collision_envelope);
@@ -299,7 +299,7 @@ class solver_settings {
         marchive << CHNVP(skip_residual);
     }
     inline void ArchiveIN(ChArchiveIn& marchive) {
-        int version = marchive.VersionRead<collision_settings>();
+        marchive.VersionRead<collision_settings>();
         SolverType_mapper enum_map;
         marchive >> CHNVP(enum_map(solver_type), "solver_type");
 
@@ -396,7 +396,7 @@ class settings_container {
         marchive << CHNVP(enum_map(system_type), "system_type");
     }
     inline void ArchiveIN(ChArchiveIn& marchive) {
-        int version = marchive.VersionRead<settings_container>();
+        marchive.VersionRead<settings_container>();
         marchive >> CHNVP(collision);
         marchive >> CHNVP(solver);
         marchive >> CHNVP(step_size);

@@ -49,7 +49,7 @@ struct bool2 {
 
     void ArchiveIN(ChArchiveIn& marchive) {
         // suggested: use versioning
-        int version = marchive.VersionRead<bool2>();
+        marchive.VersionRead<bool2>();
         // stream in all member array
         marchive >> CHNVP(x, "x");
         marchive >> CHNVP(y, "y");
@@ -68,7 +68,7 @@ struct short2 {
 
     void ArchiveIN(ChArchiveIn& marchive) {
         // suggested: use versioning
-        int version = marchive.VersionRead<short2>();
+        marchive.VersionRead<short2>();
         // stream in all member array
         marchive >> CHNVP(x, "x");
         marchive >> CHNVP(y, "y");
@@ -118,7 +118,7 @@ inline void vec2::ArchiveOUT(ChArchiveOut& marchive) {
 
 inline void vec2::ArchiveIN(ChArchiveIn& marchive) {
     // suggested: use versioning
-    int version = marchive.VersionRead<vec2>();  // must use specialized template (any)
+    marchive.VersionRead<vec2>();  // must use specialized template (any)
     // stream in all member array
     marchive >> CHNVP(array[0], "x");
     marchive >> CHNVP(array[1], "y");
@@ -180,7 +180,7 @@ inline void vec3::ArchiveOUT(ChArchiveOut& marchive) {
 
 inline void vec3::ArchiveIN(ChArchiveIn& marchive) {
     // suggested: use versioning
-    int version = marchive.VersionRead<vec3>();  // must use specialized template (any)
+    marchive.VersionRead<vec3>();  // must use specialized template (any)
     // stream in all member array
     marchive >> CHNVP(array[0], "x");
     marchive >> CHNVP(array[1], "y");
@@ -202,7 +202,7 @@ struct vec4 {
 
     inline void ArchiveIN(ChArchiveIn& marchive) {
         // suggested: use versioning
-        int version = marchive.VersionRead<vec4>();  // must use specialized template (any)
+        marchive.VersionRead<vec4>();  // must use specialized template (any)
         // stream in all member array
         marchive >> CHNVP(x, "x");
         marchive >> CHNVP(y, "y");
@@ -225,7 +225,7 @@ struct uvec4 {
 
     inline void ArchiveIN(ChArchiveIn& marchive) {
         // suggested: use versioning
-        int version = marchive.VersionRead<uvec4>();  // must use specialized template (any)
+        marchive.VersionRead<uvec4>();  // must use specialized template (any)
         // stream in all member array
         marchive >> CHNVP(x, "x");
         marchive >> CHNVP(y, "y");
@@ -252,7 +252,7 @@ struct uvec3 {
 
     inline void ArchiveIN(ChArchiveIn& marchive) {
         // suggested: use versioning
-        int version = marchive.VersionRead<uvec3>();  // must use specialized template (any)
+        marchive.VersionRead<uvec3>();  // must use specialized template (any)
         // stream in all member array
         marchive >> CHNVP(x, "x");
         marchive >> CHNVP(y, "y");

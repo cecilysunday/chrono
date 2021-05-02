@@ -699,7 +699,7 @@ void ChConstraintRigidRigid::ArchiveOUT(ChArchiveOut& marchive) {
 /// Method to allow de-serialization of transient data from archives.
 void ChConstraintRigidRigid::ArchiveIN(ChArchiveIn& marchive) {
     // version number
-    int version = marchive.VersionRead<ChConstraintRigidRigid>();
+    marchive.VersionRead<ChConstraintRigidRigid>();
     // deserialize parent class
     // stream in all member data:
     marchive >> CHNVP(contact_active_pairs);

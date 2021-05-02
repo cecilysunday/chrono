@@ -408,13 +408,13 @@ int main(int argc, char* argv[]) {
         }
 
         {
-            //std::string binfile = out_dir + "/foo_archive.dat";
-            //ChStreamInBinaryFile mfilei(binfile.c_str());
+            std::string binfile = out_dir + "/foo_archive.dat";
+            ChStreamInBinaryFile mfilei(binfile.c_str());
 
             // Use a binary archive object to deserialize C++ objects from the binary file
-            //ChArchiveInBinary marchivein(mfilei);
+            ChArchiveInBinary marchivein(mfilei);
 
-            //my_deserialization_example2(marchivein);
+            my_deserialization_example2(marchivein);
         }
         GetLog() << "Serialization test ended with success.\n\n";
 

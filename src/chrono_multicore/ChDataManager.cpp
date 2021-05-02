@@ -213,7 +213,7 @@ void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chron
     //this->broadphase // nothing intersting to archive
     marchive >> CHNVP(this->narrowphase);
     // this->aabb_generator // nothing interesting to archive
-    // marchive >> CHNVP(this->body_list); // todo
+    marchive >> CHNVP(this->body_list); // todo
     // marchive >> CHNVP(this->link_list);
     // marchive >> CHNVP(this->other_physics_list); // to finish
 

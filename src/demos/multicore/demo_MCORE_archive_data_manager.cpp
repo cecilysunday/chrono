@@ -28,6 +28,10 @@
 #include "chrono/core/ChException.h"
 #include "chrono/solver/ChConstraintTuple.h"
 #include "chrono_multicore/constraints/ChConstraintRigidRigid.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
+
+#include "chrono/utils/ChUtilsCreators.h"
+#include "chrono/utils/ChUtilsInputOutput.h"
 
 #include "chrono/core/ChGlobal.h"
 #include "chrono/serialization/ChArchive.h"
@@ -42,6 +46,7 @@
 #include "chrono_multicore/ChDataManager.h"
 
 using namespace chrono;
+using namespace chrono::collision;
 using blaze::CompressedMatrix;
 using blaze::DynamicVector;
 using blaze::Submatrix;
@@ -78,7 +83,6 @@ void Assert_near(const quaternion& a, const quaternion& b, real COMPARE_EPS = C_
 //
 // Example on how to serialize OUT some data:
 //
-
 void my_serialization_example(ChArchiveOut& marchive)
 {
     ChMulticoreDataManager* dataManager = new ChMulticoreDataManager();
@@ -206,6 +210,171 @@ void my_deserialization_example(ChArchiveIn& marchive)
 }
 
 
+// -----------------------------------------------------------------------------
+// Create the falling spherical objects in a uniform rectangular grid.
+// -----------------------------------------------------------------------------
+void AddFallingBalls(ChSystemMulticore* sys) {
+    // Common material
+    auto ballMat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    ballMat->SetYoungModulus(2e6f);
+    ballMat->SetFriction(0.4f);
+    ballMat->SetRestitution(0.4f);
+    ballMat->SetAdhesion(0);
+
+    // Create the falling balls
+    int ballId = 0;
+    double mass = 1;
+    double radius = 0.15;
+    ChVector<> inertia = (2.0 / 5.0) * mass * radius * radius * ChVector<>(1, 1, 1);
+
+    for (int ix = -2; ix <= 2; ix++) {
+        for (int iy = -2; iy <= 2; iy++) {
+            ChVector<> pos(0.4 * ix, 0.4 * iy, 1);
+
+            auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+            ball->SetIdentifier(ballId++);
+            ball->SetMass(mass);
+            ball->SetInertiaXX(inertia);
+            ball->SetPos(pos);
+            ball->SetRot(ChQuaternion<>(1, 0, 0, 0));
+            ball->SetBodyFixed(false);
+            ball->SetCollide(true);
+
+            ball->GetCollisionModel()->ClearModel();
+            utils::AddSphereGeometry(ball.get(), ballMat, radius);
+            ball->GetCollisionModel()->BuildModel();
+
+            sys->AddBody(ball);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Create a bin consisting of five boxes attached to the ground.
+// -----------------------------------------------------------------------------
+void AddContainer(ChSystemMulticoreSMC* sys) {
+    // IDs for the two bodies
+    int binId = -200;
+
+    // Create a common material
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    mat->SetYoungModulus(2e6f);
+    mat->SetFriction(0.4f);
+    mat->SetRestitution(0.4f);
+
+    // Create the containing bin (4 x 4 x 1)
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    bin->SetIdentifier(binId);
+    bin->SetMass(1);
+    bin->SetPos(ChVector<>(0, 0, 0));
+    bin->SetRot(Q_from_AngY(1 * CH_C_PI / 20));
+    bin->SetCollide(true);
+    bin->SetBodyFixed(true);
+
+    ChVector<> hdim(2, 2, 0.5);
+    double hthick = 0.1;
+
+    bin->GetCollisionModel()->ClearModel();
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hdim.y(), hthick), ChVector<>(0, 0, -hthick));
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hthick, hdim.y(), hdim.z()),
+                          ChVector<>(-hdim.x() - hthick, 0, hdim.z()));
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hthick, hdim.y(), hdim.z()),
+                          ChVector<>(hdim.x() + hthick, 0, hdim.z()));
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hthick, hdim.z()),
+                          ChVector<>(0, -hdim.y() - hthick, hdim.z()));
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hthick, hdim.z()),
+                          ChVector<>(0, hdim.y() + hthick, hdim.z()));
+    bin->GetCollisionModel()->BuildModel();
+
+    sys->AddBody(bin);
+}
+
+// Use a binary archive object to serialize (export) C++ objects into the binary file
+int ExportSystem(const ChSystemMulticoreSMC &msystem, const std::string &path) {
+	const std::string bin_name = path + "/state_export.bin";
+	ChStreamOutBinaryFile mfileo(bin_name.c_str());
+
+	ChArchiveOutBinary marchive(mfileo);
+	marchive << CHNVP(msystem.data_manager);
+
+	return 0;
+}
+
+
+// Use a binary archive object to serialize (import) C++ objects into the system
+int ImportSystem(const ChSystemMulticoreSMC &msystem, const std::string &path) {
+	const std::string bin_name = path + "/state_export.bin";
+	ChStreamInBinaryFile mfileo(bin_name.c_str());
+
+	ChArchiveInBinary marchive(mfileo);
+	marchive >> CHNVP(msystem.data_manager);
+
+	return 0;
+}
+
+// -----------------------------------------------------------------------------
+// Create the system, specify simulation parameters, and run simulation loop.
+// -----------------------------------------------------------------------------
+int SetupSystem(ChSystemMulticoreSMC* msystem) {
+    // System parameters
+	double gravity = 9.81;
+
+    uint max_iteration = 100;
+    real tolerance = 1e-3;
+
+
+    // Set number of threads
+    msystem->SetNumThreads(8);
+
+    // Set gravitational acceleration
+    msystem->Set_G_acc(ChVector<>(0, 0, -gravity));
+
+    // Set solver parameters
+    msystem->GetSettings()->solver.max_iteration_bilateral = max_iteration;
+    msystem->GetSettings()->solver.tolerance = tolerance;
+
+    msystem->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    msystem->GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
+
+	// Create the container and spheres
+	AddContainer(msystem);
+    AddFallingBalls(msystem);
+
+    return 0;
+}
+
+void RunSim(ChSystemMulticoreSMC *msystem)
+{
+	double time_step = 1e-3;
+	// Run simulation
+	double time_end = 0.1;
+	int num_steps = (int)std::ceil(time_end / time_step);
+	double time = 0;
+
+	for (int i = 0; i < num_steps; i++) {
+		msystem->DoStepDynamics(time_step);
+		time += time_step;
+	}
+}
+
+void my_serialization_example2(ChArchiveOut& marchive)
+{
+	ChSystemMulticoreSMC system;
+	SetupSystem(&system);
+	RunSim(&system);
+
+	marchive << CHNVP(system.data_manager);
+}
+
+void my_deserialization_example2(ChArchiveIn& marchive)
+{
+	ChSystemMulticoreSMC system;
+	SetupSystem(&system);
+
+	marchive >> CHNVP(system.data_manager);
+}
+
+
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
@@ -235,17 +404,17 @@ int main(int argc, char* argv[]) {
             // Use a binary archive object to serialize C++ objects into the binary file
             ChArchiveOutBinary marchiveout(mfileo);
 
-            my_serialization_example(marchiveout);
+            my_serialization_example2(marchiveout);
         }
 
         {
-            std::string binfile = out_dir + "/foo_archive.dat";
-            ChStreamInBinaryFile mfilei(binfile.c_str());
+            //std::string binfile = out_dir + "/foo_archive.dat";
+            //ChStreamInBinaryFile mfilei(binfile.c_str());
 
             // Use a binary archive object to deserialize C++ objects from the binary file
-            ChArchiveInBinary marchivein(mfilei);
+            //ChArchiveInBinary marchivein(mfilei);
 
-            my_deserialization_example(marchivein);
+            //my_deserialization_example2(marchivein);
         }
         GetLog() << "Serialization test ended with success.\n\n";
 

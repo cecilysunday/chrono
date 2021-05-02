@@ -170,6 +170,24 @@ void ChMulticoreDataManager::PrintMatrix(CompressedMatrix<real> src) {
     // at least implement these two functions, with the exact names
     // ArchiveIN() and ArchiveOUT():
 
+void ChMulticoreDataManager::ArchiveOUTBodyList(ChArchiveOut& marchive) {
+    marchive << CHNVP(this->body_list->size());
+    for (int i = 0; i < this->body_list->size(); ++i) {
+        marchive << CHNVP(this->body_list[i]);
+    }
+}
+
+void ChMulticoreDataManager::ArchiveINBodyList(ChArchiveIn& marchive) {
+    size_t size = 0;
+    marchive >> CHNVP(size);
+    this->body_list->resize(size);
+    ChBody body;
+    for (int i = 0; i < size; ++i) {
+        marchive >> CHNVP(body);
+        (*this->body_list)[i] = std::make_shared<ChBody>(body);
+    }
+}
+
 void ChMulticoreDataManager::ArchiveOUT(ChArchiveOut& marchive)  //##### for Chrono serialization
 {
     marchive.VersionWrite<ChMulticoreDataManager>();
@@ -184,7 +202,7 @@ void ChMulticoreDataManager::ArchiveOUT(ChArchiveOut& marchive)  //##### for Chr
     //this->broadphase // nothing intersting to archive
     marchive << CHNVP(this->narrowphase);
     //this->aabb_generator // nothing interesting to archive
-    // marchive << CHNVP(this->body_list); // todo
+    this->ArchiveOUTBodyList(marchive);
     // marchive << CHNVP(this->link_list);
     // marchive << CHNVP(this->other_physics_list); // to finish
 
@@ -213,7 +231,7 @@ void ChMulticoreDataManager::ArchiveIN(ChArchiveIn& marchive)  //##### for Chron
     //this->broadphase // nothing intersting to archive
     marchive >> CHNVP(this->narrowphase);
     // this->aabb_generator // nothing interesting to archive
-    marchive >> CHNVP(this->body_list); // todo
+    this->ArchiveINBodyList(marchive);
     // marchive >> CHNVP(this->link_list);
     // marchive >> CHNVP(this->other_physics_list); // to finish
 

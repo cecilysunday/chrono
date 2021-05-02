@@ -507,10 +507,12 @@ class CH_MULTICORE_API ChMulticoreDataManager {
     void ArchiveOUTHostData(ChArchiveOut& marchive);
     void ArchiveOUTShapeData(ChArchiveOut& marchive);
     void ArchiveOUTIndexingVariables(ChArchiveOut& marchive);
+    void ArchiveOUTBodyList(ChArchiveOut& marchive);
 
     void ArchiveINHostData(ChArchiveIn& marchive);
     void ArchiveINShapeData(ChArchiveIn& marchive);
     void ArchiveINIndexingVariables(ChArchiveIn& marchive);
+    void ArchiveINBodyList(ChArchiveIn& marchive);
 };
 
 /// @} multicore_module

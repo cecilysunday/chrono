@@ -292,6 +292,7 @@ set(ChronoEngine_physics_loads_SOURCES
     physics/ChLoad.cpp
     physics/ChLoadsBody.cpp
     physics/ChLoadsXYZnode.cpp
+    physics/ChLoadsXYZROTnode.cpp
     physics/ChLoadBodyMesh.cpp
 )
 
@@ -303,6 +304,7 @@ set(ChronoEngine_physics_loads_HEADERS
     physics/ChLoaderUVW.h
     physics/ChLoad.h
     physics/ChLoadsXYZnode.h
+    physics/ChLoadsXYZROTnode.h
     physics/ChLoadsBody.h
     physics/ChLoadBodyMesh.h
     physics/ChLoadContainer.h
@@ -365,6 +367,8 @@ set(ChronoEngine_fea_SOURCES
     fea/ChBeamSectionShape.cpp
     fea/ChBeamSectionCosserat.cpp
     fea/ChBeamSectionEuler.cpp
+    fea/ChBeamSectionTaperedTimoshenko.cpp
+    fea/ChBeamSectionTaperedTimoshenkoFPM.cpp
     fea/ChBeamSectionCable.cpp
     fea/ChContinuumMaterial.cpp
     fea/ChGaussIntegrationRule.cpp
@@ -397,6 +401,8 @@ set(ChronoEngine_fea_HEADERS
     fea/ChBeamSectionShape.h
     fea/ChBeamSectionCosserat.h
     fea/ChBeamSectionEuler.h
+    fea/ChBeamSectionTaperedTimoshenko.h
+    fea/ChBeamSectionTaperedTimoshenkoFPM.h
     fea/ChBeamSectionCable.h
     fea/ChBuilderBeam.h
     fea/ChContinuumMaterial.h
@@ -465,6 +471,8 @@ source_group(fea\\nodes FILES
 set(ChronoEngine_fea_elements_SOURCES
     fea/ChElementBeamANCF.cpp
     fea/ChElementBeamEuler.cpp
+    fea/ChElementBeamTaperedTimoshenko.cpp
+    fea/ChElementBeamTaperedTimoshenkoFPM.cpp
     fea/ChElementBeamIGA.cpp
     fea/ChElementCableANCF.cpp
     fea/ChElementGeneric.cpp
@@ -491,6 +499,8 @@ set(ChronoEngine_fea_elements_HEADERS
     fea/ChElementBeam.h
     fea/ChElementBeamANCF.h
     fea/ChElementBeamEuler.h
+    fea/ChElementBeamTaperedTimoshenko.h
+    fea/ChElementBeamTaperedTimoshenkoFPM.h
     fea/ChElementBeamIGA.h
     fea/ChElementCableANCF.h
     fea/ChElementBrick.h
